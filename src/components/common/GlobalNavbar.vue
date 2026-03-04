@@ -1,14 +1,12 @@
 <template>
-  <header class="app-navbar">
-    <div class="app-navbar__left">
-      <slot name="left">
-        <div class="app-navbar__brand">SIGAP</div>
-      </slot>
-    </div>
+  <header class="global-navbar">
+    <div class="global-navbar__inner">
+      <img class="global-navbar__logo" :src="logoSrc" alt="Logo" />
 
-    <div class="app-navbar__right">
-      <NotificationBell v-model="notifications" />
-      <UserProfile initials="EV" name="Evelyn Depthios" role="Guru Tetap" />
+      <div class="global-navbar__right">
+        <NotificationBell v-model="notifications" />
+        <UserProfile initials="EV" name="Evelyn Depthios" role="Guru Tetap" />
+      </div>
     </div>
   </header>
 </template>
@@ -17,6 +15,7 @@
 import { ref } from "vue";
 import NotificationBell from "@/components/header/NotificationBell.vue";
 import UserProfile from "@/components/header/UserProfile.vue";
+import logoSrc from "@/assets/logo-candle-tree.png";
 
 const notifications = ref([
   {
@@ -47,34 +46,34 @@ const notifications = ref([
 </script>
 
 <style scoped>
-.app-navbar {
+.global-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  background: #eef1f4;
+  border-bottom: 1px solid #d8dee6;
+}
+
+.global-navbar__inner {
+  width: 100%;
+  min-height: 72px;
+  padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.global-navbar__logo {
+  height: 34px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.global-navbar__right {
+  display: flex;
+  align-items: center;
   gap: 16px;
-  padding: 16px 24px;
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  z-index: 30;
-}
-
-.app-navbar__left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.app-navbar__brand {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--primary);
-}
-
-.app-navbar__right {
-  display: flex;
-  align-items: center;
-  gap: 20px;
 }
 </style>
