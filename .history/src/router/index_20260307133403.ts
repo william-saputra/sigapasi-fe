@@ -5,12 +5,12 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/leaves/history',
-      name: 'leaves-history',
+      path: "/leaves/history",
+      name: "leaves-history",
       component: LeavesHistoryView,
     },
     {
-      path: '/leaves/request',
+      path: "/leaves/request",
       name: 'leave-request',
       component: () => import('@/views/leaves/LeaveRequestView.vue'),
     },
