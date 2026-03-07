@@ -11,17 +11,17 @@ const router = createRouter({
     {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
-      component: () => import('@/views/PengaturanSlotWaktuView.vue'),
+      component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),
     },
     {
       path: '/penyusunan-jadwal',
       name: 'penyusunan-jadwal',
-      component: () => import('@/views/PenyusunanJadwalView.vue'),
+      component: () => import('@/views/schedules/PenyusunanJadwalView.vue'),
     },
     {
       path: '/slot-waktu',
       name: 'MasterSlotWaktu',
-      component: () => import('@/views/MasterSlotWaktuView.vue'),
+      component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
     },
     {
       path: '/leaves/history',
