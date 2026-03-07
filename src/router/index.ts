@@ -5,10 +5,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      redirect: '/pengaturan-slot-waktu',
-    },
-    {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
       component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),
