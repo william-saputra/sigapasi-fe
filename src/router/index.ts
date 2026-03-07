@@ -5,6 +5,25 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: '/',
+      redirect: '/pengaturan-slot-waktu',
+    },
+    {
+      path: '/pengaturan-slot-waktu',
+      name: 'pengaturan-slot-waktu',
+      component: () => import('@/views/PengaturanSlotWaktuView.vue'),
+    },
+    {
+      path: '/penyusunan-jadwal',
+      name: 'penyusunan-jadwal',
+      component: () => import('@/views/PenyusunanJadwalView.vue'),
+    },
+    {
+      path: '/slot-waktu',
+      name: 'MasterSlotWaktu',
+      component: () => import('@/views/MasterSlotWaktuView.vue'),
+    },
+    {
       path: '/leaves/history',
       name: 'leaves-history',
       component: LeavesHistoryView,
