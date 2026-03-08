@@ -87,9 +87,7 @@ const isFetchingOptions = ref(false)
 async function fetchSemesterOptions() {
   isFetchingOptions.value = true
   try {
-    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>(
-      '/reviews/periods/semester-options',
-    )
+    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>('/reviews/periods/semester-options')
   } catch {
     semesterOptions.value = []
   } finally {

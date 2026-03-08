@@ -87,9 +87,7 @@ const isFetchingOptions = ref(false)
 async function fetchSemesterOptions() {
   isFetchingOptions.value = true
   try {
-    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>(
-      '/reviews/periods/semester-options',
-    )
+    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>('/reviews/periods/semester-options')
   } catch {
     semesterOptions.value = []
   } finally {
@@ -598,25 +596,6 @@ function getProgressPercent(row: ReviewPeriodRow): number {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.1);
-}
-
-select.form-control {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236B7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  padding-right: 36px;
-  cursor: pointer;
-}
-
-select.form-control:disabled {
-  background-color: var(--bg-light);
-  color: var(--text-grey);
-  cursor: not-allowed;
-}
-
-select.form-control option:disabled {
-  color: var(--text-grey);
 }
 
 .form-control.is-invalid {
