@@ -4010,6 +4010,8 @@
         "node": ">=0.4.0"
       }
     },
+<<<<<<< HEAD
+=======
     "node_modules/detect-libc": {
       "version": "2.1.2",
       "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
@@ -4020,6 +4022,7 @@
         "node": ">=8"
       }
     },
+>>>>>>> origin/dev
     "node_modules/dunder-proto": {
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz",
@@ -4033,7 +4036,7 @@
       "engines": {
         "node": ">= 0.4"
       }
-    },
+    }
     "node_modules/eastasianwidth": {
       "version": "0.2.0",
       "resolved": "https://registry.npmjs.org/eastasianwidth/-/eastasianwidth-0.2.0.tgz",
@@ -4837,6 +4840,8 @@
         "url": "https://github.com/sponsors/ljharb"
       }
     },
+<<<<<<< HEAD
+=======
     "node_modules/graceful-fs": {
       "version": "4.2.11",
       "resolved": "https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz",
@@ -4844,6 +4849,7 @@
       "dev": true,
       "license": "ISC"
     },
+>>>>>>> origin/dev
     "node_modules/has-flag": {
       "version": "4.0.0",
       "resolved": "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz",
