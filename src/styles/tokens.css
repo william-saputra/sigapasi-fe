@@ -1,0 +1,22 @@
+:root {
+  /* --- DESIGN SYSTEM CANDLE TREE --- */
+  --primary: #1B5E20;
+  --primary-hover: #144a18;
+  --bg-light: #F9FAFB;
+  --text-dark: #1F2937;
+  --text-grey: #6B7280;
+  --border: #E5E7EB;
+  --white: #FFFFFF;
+  --radius: 8px;
+  --font: "Public Sans", sans-serif;
+
+  /* Status Colors */
+  --warning-bg: #FFF7ED;
+  --warning-text: #C2410C;
+
+  --success-bg: #ECFDF5;
+  --success-text: #047857;
+
+  --danger-bg: #FEF2F2;
+  --danger-text: #DC2626;
+}

@@ -1,6 +1,7 @@
 import type { LoginRequest } from '../../interfaces/accounts/auth.interface';
 import type { BaseResponse } from '@/interfaces/base-response.interface';
 import type { CurrentUser } from '@/interfaces/accounts/profile.interface';
+import { getCurrentUser, getAuthToken } from '@/lib/auth';
 import { defineStore } from 'pinia';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
@@ -21,6 +22,10 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
+    initializeAuth() {
+      this.token = getAuthToken();
+      this.user = getCurrentUser();
+    },
     // User Login
     async login(payload: LoginRequest) {
       try {
