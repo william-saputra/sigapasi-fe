@@ -12,7 +12,7 @@ const router = createRouter({
     {
       path: "/leaves/request",
       name: "leave-request",
-      component: () => import("@/views/leaves/LeaveRequestView.vue"),
+      component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
     },
   ],
 });

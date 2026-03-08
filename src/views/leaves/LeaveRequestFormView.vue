@@ -1,17 +1,21 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, onMounted} from "vue";
 import { useRouter } from "vue-router";
-
-type LeaveType = "harian" | "parsial";
+import { useLeaveStore } from "@/stores/leaves/leaverequest.store"; // Sesuaikan path jika beda
+import type { CreateLeaveRequestDTO } from "@/interfaces/leaves/leaverequest.interface"; // Sesuaikan path jika beda
 
 const router = useRouter();
-const leaveQuota = 4;
+const leaveStore = useLeaveStore();
+
+onMounted(() => {
+  leaveStore.fetchLeaveQuota();
+});
 
 const showSuccess = ref(false);
 const uploadedFile = ref<File | null>(null);
 
 const form = reactive({
-  leaveType: "harian" as LeaveType,
+  leaveType: "FULL_DAY", // Diubah jadi FULL_DAY agar sesuai dengan Backend
   startDate: "",
   endDate: "",
   singleDate: "",
@@ -36,14 +40,15 @@ const errors = reactive({
   quota: false,
 });
 
-const isHarian = computed(() => form.leaveType === "harian");
-const isSakit = computed(() => form.category === "sakit");
+const isHarian = computed(() => form.leaveType === "FULL_DAY");
+const isSakit = computed(() => form.category === "SAKIT");
 
 function resetErrors() {
   Object.keys(errors).forEach((key) => {
     errors[key as keyof typeof errors] = false;
   });
   showSuccess.value = false;
+  leaveStore.error = null; // Reset error dari backend juga
 }
 
 function handleFileChange(event: Event) {
@@ -96,7 +101,7 @@ function validateForm() {
       }
 
       const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-      if (totalDays > leaveQuota) {
+      if (totalDays > leaveStore.leaveQuota && !isSakit.value) {
         errors.quota = true;
         hasError = true;
       }
@@ -147,16 +152,37 @@ function validateForm() {
   return !hasError;
 }
 
-function submitForm() {
+async function submitForm() {
   if (!validateForm()) return;
 
-  showSuccess.value = true;
+  // Susun Payload sesuai DTO Java
+  const payload: CreateLeaveRequestDTO = {
+    type: form.leaveType,
+    category: form.category,
+    reason: form.reason,
+    attachment: uploadedFile.value,
+    // Jika Harian ambil startDate/endDate, jika Parsial ambil dari singleDate
+    startDate: isHarian.value ? form.startDate : form.singleDate,
+    endDate: isHarian.value ? form.endDate : form.singleDate,
+    // Kirim null kalau harian
+    startTime: isHarian.value ? null : form.startTime,
+    endTime: isHarian.value ? null : form.endTime,
+  };
 
-  // nanti bisa diganti ke API submit
-  console.log("Submit payload", {
-    ...form,
-    document: uploadedFile.value?.name ?? null,
-  });
+  try {
+    // Tembak API lewat store
+    await leaveStore.createLeaveRequest(payload);
+
+    // Kalau sukses, tampilkan notif lalu pindah halaman
+    showSuccess.value = true;
+    setTimeout(() => {
+      router.push({ name: "leaves-history" }); // Pastikan nama route ini benar di router kamu
+    }, 1500);
+
+  } catch (error) {
+    console.error("Gagal submit form:", error);
+    // Error handling sudah di-set di dalam store (leaveStore.error)
+  }
 }
 
 function goBack() {
@@ -170,35 +196,36 @@ function goBack() {
       <div class="request-card__header">
         <h2>Pengajuan Cuti Guru</h2>
         <div class="quota-badge">
-          Sisa Jatah Cuti: <span>{{ leaveQuota }}</span> Hari
+          Sisa Jatah Cuti: <span>{{ leaveStore.leaveQuota }}</span> Hari
         </div>
       </div>
 
       <div class="request-card__body">
         <div v-if="showSuccess" class="alert-success">
-          ✅ Pengajuan berhasil dikirim! Status saat ini:
-          <strong>Pending Approval</strong>.
+          ✅ Pengajuan berhasil dikirim! Mengalihkan halaman...
+        </div>
+
+        <div v-if="leaveStore.error" class="alert-error">
+          ⚠️ Gagal: {{ leaveStore.error }}
         </div>
 
         <form @submit.prevent="submitForm">
-          <!-- Tipe Izin -->
           <div class="form-group">
             <label class="form-label">Tipe Izin</label>
 
             <div class="radio-group-container">
               <label class="radio-card">
-                <input v-model="form.leaveType" type="radio" value="harian" />
+                <input v-model="form.leaveType" type="radio" value="FULL_DAY" />
                 <div class="radio-card-content">📅 Cuti Harian (Full Day)</div>
               </label>
 
               <label class="radio-card">
-                <input v-model="form.leaveType" type="radio" value="parsial" />
+                <input v-model="form.leaveType" type="radio" value="PARTIAL" />
                 <div class="radio-card-content">🕒 Izin Parsial (Jam)</div>
               </label>
             </div>
           </div>
 
-          <!-- Mode Harian -->
           <div v-if="isHarian" id="sectionHarian">
             <div class="form-group">
               <div class="row">
@@ -243,7 +270,6 @@ function goBack() {
             </div>
           </div>
 
-          <!-- Mode Parsial -->
           <div v-else id="sectionParsial">
             <div class="form-group">
               <label class="form-label">
@@ -294,7 +320,6 @@ function goBack() {
             </div>
           </div>
 
-          <!-- Kategori -->
           <div class="form-group">
             <label class="form-label">
               Kategori Izin <span class="required-star">*</span>
@@ -306,17 +331,16 @@ function goBack() {
               :class="{ 'is-invalid': errors.category }"
             >
               <option value="">Pilih kategori izin</option>
-              <option value="pribadi">Izin Pribadi</option>
-              <option value="sakit">Sakit</option>
-              <option value="keluarga">Keperluan Keluarga</option>
-              <option value="dinas">Keperluan Dinas</option>
+              <option value="IZIN_PRIBADI">Izin Pribadi</option>
+              <option value="SAKIT">Sakit</option>
+              <option value="DINAS_LUAR">Keperluan Dinas Luar</option>
+              <option value="MELAHIRKAN">Melahirkan</option>
             </select>
             <div v-if="errors.category" class="error-message show">
               Kategori izin wajib dipilih.
             </div>
           </div>
 
-          <!-- Alasan -->
           <div class="form-group">
             <label class="form-label">
               Alasan / Keterangan <span class="required-star">*</span>
@@ -333,7 +357,6 @@ function goBack() {
             </div>
           </div>
 
-          <!-- Upload -->
           <div class="form-group">
             <label class="form-label">
               Unggah Dokumen Pendukung
@@ -342,7 +365,7 @@ function goBack() {
             <input
               type="file"
               class="form-control"
-              accept=".jpg,.png,.pdf"
+              accept=".jpg,.jpeg,.png,.pdf"
               @change="handleFileChange"
               :class="{ 'is-invalid': errors.document }"
             />
@@ -352,13 +375,12 @@ function goBack() {
             <div class="note">Format: PDF/JPG/PNG. Maks 2MB. Wajib untuk kategori Sakit.</div>
           </div>
 
-          <!-- Actions -->
           <div class="action-row">
-            <button type="button" class="btn-secondary" @click="goBack">
-              Kembali
+            <button type="button" class="btn-secondary" @click="goBack" :disabled="leaveStore.isLoading">
+              Batal
             </button>
-            <button type="submit" class="btn-primary">
-              Ajukan Permohonan
+            <button type="submit" class="btn-primary" :disabled="leaveStore.isLoading">
+              {{ leaveStore.isLoading ? 'Mengirim...' : 'Ajukan Permohonan' }}
             </button>
           </div>
         </form>
@@ -368,6 +390,7 @@ function goBack() {
 </template>
 
 <style scoped>
+/* SEMUA CSS KAMU TETAP SAMA, DITAMBAH 1 CLASS BARU DI BAWAH */
 .container {
   max-width: 1000px;
   margin: 0 auto;
@@ -438,6 +461,11 @@ function goBack() {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(27, 94, 32, 0.1);
+}
+
+.form-control:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
 }
 
 .textarea-control {
@@ -527,6 +555,17 @@ function goBack() {
   font-weight: 500;
 }
 
+/* TAMBAHAN ALERT ERROR UNTUK BACKEND */
+.alert-error {
+  background-color: #fef2f2;
+  border: 1px solid #dc2626;
+  color: #dc2626;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
 .action-row {
   display: flex;
   justify-content: space-between;
@@ -555,8 +594,13 @@ function goBack() {
   border: none;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--primary-hover);
+}
+
+.btn-primary:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
 }
 
 .btn-secondary {
@@ -565,8 +609,13 @@ function goBack() {
   border: 1px solid var(--border);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
