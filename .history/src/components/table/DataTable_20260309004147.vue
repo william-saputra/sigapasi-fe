@@ -52,10 +52,10 @@
   </table>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps({
+defineProps({
   columns: { type: Array, required: true }, // [{key,label,thStyle}]
   rows: { type: Array, required: true },
   expandable: { type: Boolean, default: false },
