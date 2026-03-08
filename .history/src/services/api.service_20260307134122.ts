@@ -8,7 +8,7 @@ const apiClient = axios.create({
 })
 
 // Intercept setiap request: sisipkan JWT token dari localStorage jika tersedia
-apiClient.interceptors.request.use((config: import('axios').InternalAxiosRequestConfig) => {
+apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`

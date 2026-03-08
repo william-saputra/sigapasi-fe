@@ -3,7 +3,7 @@ import type { BaseResponse } from '@/interfaces/base-response.interface'
 
 // Instance utama Axios untuk seluruh request API
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: '/api',
   headers: { 'Content-Type': 'application/json' },
 })
 
