@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRouter } from 'vue-router';
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { storeToRefs } from "pinia";
+
 import NotificationBell from "@/components/header/NotificationBell.vue";
 import UserProfile from "@/components/header/UserProfile.vue";
 import logoSrc from "@/assets/logo-candle-tree.png";
-import { isAuthenticated } from '@/lib/rbac';
 import VButton from "./VButton.vue";
+import { useAuthStore } from "@/stores/accounts/auth.store";
+
+const router = useRouter();
+const authStore = useAuthStore();
+const { user, token } = storeToRefs(authStore);
 
 const notifications = ref([
   {
@@ -34,10 +40,14 @@ const notifications = ref([
   },
 ]);
 
-const router = useRouter();
+const isLoggedIn = computed(() => !!token.value && !!user.value);
+
+onMounted(() => {
+  authStore.initializeAuth();
+});
 
 function goToLogin() {
-  router.push('/login')
+  router.push("/login");
 }
 </script>
 
@@ -47,10 +57,9 @@ function goToLogin() {
       <img class="global-navbar__logo" :src="logoSrc" alt="Logo" />
 
       <div class="global-navbar__right">
-        <template v-if="isAuthenticated()">
+        <template v-if="isLoggedIn">
           <NotificationBell v-model="notifications" />
-          <UserProfile
-          />
+          <UserProfile class="pr-12"/>
         </template>
 
         <template v-else>
@@ -65,8 +74,9 @@ function goToLogin() {
 
 <style scoped>
 .global-navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   z-index: 1000;
   width: 100%;
   background: white;

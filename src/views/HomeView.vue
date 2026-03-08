@@ -47,7 +47,7 @@ const roles = [
     <main>
 
       <!-- Hero Section -->
-      <section class="">
+      <section class="relative min-h-screen flex items-center">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(251,191,36,0.14),_transparent_24%)]" />
         <div class="relative mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-24">
           <div>
@@ -75,13 +75,12 @@ const roles = [
               </div>
             </div>
           </div>
-
           
         </div>
       </section>
 
       <!-- Features Section -->
-      <section id="fitur" class="mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12 mt-30">
+      <section id="fitur" class="mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12 mt-10">
         <div class="mb-8 max-w-2xl">
           <div class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">Fitur Utama</div>
           <h2 class="mt-2 text-3xl font-bold tracking-tight">Satu beranda untuk proses akademik dan SDM guru</h2>
