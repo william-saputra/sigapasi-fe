@@ -118,7 +118,7 @@ async function confirmDelete() {
 
   if (!accountStore.error) {
     closeDeleteModal()
-    router.push('/akun')
+    router.push('/accounts')
   }
 }
 
