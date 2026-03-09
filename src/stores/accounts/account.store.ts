@@ -94,7 +94,6 @@ export const useAccountStore = defineStore('account', {
         )
 
         this.subjects = response.data.data ?? []
-        showSuccess(response.data.message || 'Subjects loaded successfully')
 
         return this.subjects
       } catch (error) {

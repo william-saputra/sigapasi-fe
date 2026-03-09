@@ -1,47 +1,48 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { storeToRefs } from 'pinia'
+import { useAuthStore } from '@/stores/accounts/auth.store'
 
-const props = withDefaults(defineProps<{ role?: string }>(), {
-  role: 'admin',
-})
+type Role = 'ADMIN' | 'STAFF' | 'HEAD' | 'TEACHER'
 
-type Role = 'admin' | 'staff' | 'kepala_sekolah' | 'guru'
+const authStore = useAuthStore()
+const { user: authUser } = storeToRefs(authStore)
 
 const roleLabels: Record<Role, string> = {
-  admin: 'Admin',
-  staff: 'Staff',
-  kepala_sekolah: 'Kepala Sekolah',
-  guru: 'Guru',
+  ADMIN: 'Admin',
+  STAFF: 'Staff',
+  HEAD: 'Kepala Sekolah',
+  TEACHER: 'Guru',
 }
 
 const roleGreetings: Record<Role, string> = {
-  admin: 'Kelola dan pantau seluruh operasional sistem dari satu tempat.',
-  staff: 'Bantu koordinasi jadwal, cuti, dan administrasi harian sekolah.',
-  kepala_sekolah: 'Pantau kinerja, evaluasi guru, dan ambil keputusan strategis.',
-  guru: 'Lihat jadwal mengajar, ajukan cuti, dan pantau perkembangan kelasmu.',
+  ADMIN: 'Kelola dan pantau seluruh operasional sistem dari satu tempat.',
+  STAFF: 'Bantu koordinasi jadwal, cuti, dan administrasi harian sekolah.',
+  HEAD: 'Pantau kinerja, evaluasi guru, dan ambil keputusan strategis.',
+  TEACHER: 'Lihat jadwal mengajar, ajukan cuti, dan pantau perkembangan kelasmu.',
 }
 
 const statsMap: Record<Role, { label: string; value: string; note: string; icon: string }[]> = {
-  admin: [
+  ADMIN: [
     { label: 'Jadwal Aktif', value: '24', note: '2 perlu penyesuaian', icon: 'fa-solid fa-calendar-days' },
     { label: 'Pengajuan Cuti', value: '5', note: '3 menunggu approval', icon: 'fa-solid fa-file-lines' },
     { label: 'Guru Pengganti', value: '3', note: 'Slot perlu ditugaskan', icon: 'fa-solid fa-rotate' },
     { label: 'Review Guru', value: '12', note: '4 evaluasi pending', icon: 'fa-solid fa-star-half-stroke' },
   ],
-  staff: [
+  STAFF: [
     { label: 'Jadwal Hari Ini', value: '24', note: '2 perlu penyesuaian', icon: 'fa-solid fa-calendar-days' },
     { label: 'Kehadiran Guru', value: '87%', note: 'Dari total guru aktif', icon: 'fa-solid fa-circle-check' },
     { label: 'Cuti Pending', value: '3', note: 'Menunggu diproses', icon: 'fa-solid fa-hourglass-half' },
     { label: 'Notifikasi', value: '7', note: 'Belum ditindaklanjuti', icon: 'fa-solid fa-bell' },
   ],
-  kepala_sekolah: [
+  HEAD: [
     { label: 'Total Guru', value: '48', note: '2 cuti hari ini', icon: 'fa-solid fa-chalkboard-user' },
     { label: 'Kelas Berjalan', value: '22/24', note: '2 kelas kosong', icon: 'fa-solid fa-school' },
     { label: 'Approval Cuti', value: '5', note: '3 butuh keputusan', icon: 'fa-solid fa-file-circle-check' },
     { label: 'Skor Evaluasi', value: '4.2', note: 'Rata-rata bulan ini', icon: 'fa-solid fa-chart-line' },
   ],
-  guru: [
+  TEACHER: [
     { label: 'Kelas Hari Ini', value: '3', note: '1 kelas tersisa', icon: 'fa-solid fa-book-open' },
     { label: 'Sisa Cuti', value: '9', note: 'Hari dari jatah tahunan', icon: 'fa-solid fa-umbrella-beach' },
     { label: 'Tugas Pengganti', value: '1', note: 'Jadwal besok pagi', icon: 'fa-solid fa-person-chalkboard' },
@@ -50,7 +51,7 @@ const statsMap: Record<Role, { label: string; value: string; note: string; icon:
 }
 
 const menusMap: Record<Role, { title: string; desc: string; to: string; icon: string }[]> = {
-  admin: [
+  ADMIN: [
     { title: 'Kelola Jadwal', desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
     { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/cuti', icon: 'fa-solid fa-file-circle-check' },
     { title: 'Guru Pengganti', desc: 'Cari dan tetapkan guru pengganti kelas kosong.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
@@ -58,19 +59,19 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/accounts', icon: 'fa-solid fa-users-gear' },
     { title: 'Laporan', desc: 'Unduh laporan operasional dan kinerja.', to: '/laporan', icon: 'fa-solid fa-file-export' },
   ],
-  staff: [
+  STAFF: [
     { title: 'Jadwal Hari Ini', desc: 'Cek dan perbarui jadwal pelajaran harian.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
     { title: 'Proses Cuti', desc: 'Bantu proses administrasi pengajuan cuti.', to: '/cuti', icon: 'fa-solid fa-file-lines' },
     { title: 'Guru Pengganti', desc: 'Koordinasi penugasan guru pengganti.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
     { title: 'Data Guru', desc: 'Lihat dan perbarui data profil guru.', to: '/guru', icon: 'fa-solid fa-chalkboard-user' },
   ],
-  kepala_sekolah: [
+  HEAD: [
     { title: 'Dashboard Kinerja', desc: 'Pantau KPI dan kinerja keseluruhan sekolah.', to: '/kinerja', icon: 'fa-solid fa-chart-line' },
     { title: 'Approval Cuti', desc: 'Setujui atau tolak pengajuan cuti guru.', to: '/cuti', icon: 'fa-solid fa-file-circle-check' },
     { title: 'Hasil Review', desc: 'Lihat rekap evaluasi 360 derajat guru.', to: '/review', icon: 'fa-solid fa-star-half-stroke' },
     { title: 'Jadwal Sekolah', desc: 'Pantau jadwal dan kehadiran kelas.', to: '/jadwal', icon: 'fa-solid fa-school' },
   ],
-  guru: [
+  TEACHER: [
     { title: 'Jadwal Mengajar', desc: 'Lihat jadwal kelas dan ruanganmu hari ini.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
     { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/cuti/ajukan', icon: 'fa-solid fa-umbrella-beach' },
     { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/review/saya', icon: 'fa-solid fa-star' },
@@ -78,7 +79,22 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
   ],
 }
 
-const currentRole = computed<Role>(() => props.role as Role)
+const normalizeRole = (role?: string | null): Role => {
+  switch (role?.toUpperCase()) {
+    case 'ADMIN':
+      return 'ADMIN'
+    case 'STAFF':
+      return 'STAFF'
+    case 'HEAD':
+      return 'HEAD'
+    case 'TEACHER':
+      return 'TEACHER'
+    default:
+      return 'ADMIN'
+  }
+}
+
+const currentRole = computed<Role>(() => normalizeRole(authUser.value?.role))
 const stats = computed(() => statsMap[currentRole.value])
 const menus = computed(() => menusMap[currentRole.value])
 const greeting = computed(() => roleGreetings[currentRole.value])
@@ -105,11 +121,10 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
             v-for="(s, i) in stats"
             :key="s.label"
             class="stat-card"
-            
             :style="`--i:${i}`"
           >
             <div class="stat-icon">
-                <i :class="s.icon"></i>
+              <i :class="s.icon"></i>
             </div>
             <div>
               <p class="stat-label">{{ s.label }}</p>
@@ -252,7 +267,6 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   transition: box-shadow 0.2s ease, transform 0.2s ease;
   animation: fadeUp 0.35s ease both;
   animation-delay: calc(var(--i) * 55ms);
-  
 }
 
 .stat-card:hover {
@@ -269,19 +283,6 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.stat-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--r-sm);
-  background: var(--green-light);
-  color: var(--green);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
 }
 
 .stat-label {
