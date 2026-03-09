@@ -1,10 +1,8 @@
 <template>
-  <div class="app-root">
-    <GlobalNavbar />
-    <main class="app-main">
-      <RouterView />
-    </main>
-  </div>
+  <GlobalNavbar />
+  <main class="app-content">
+    <RouterView />
+  </main>
 </template>
 
 <script setup lang="ts">
@@ -20,5 +18,10 @@ import GlobalNavbar from '@/components/common/GlobalNavbar.vue'
 
 .app-main {
   padding: 24px 0 32px;
+}
+
+.app-content {
+  padding-top: 72px;
+  min-height: 100vh;
 }
 </style>

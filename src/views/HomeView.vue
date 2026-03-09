@@ -47,12 +47,12 @@ const roles = [
     <main>
 
       <!-- Hero Section -->
-      <section class="relative min-h-screen flex items-center">
+      <section class="relative pt-28 lg:pt-32 pb-16 lg:pb-24">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(16,185,129,0.14),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(251,191,36,0.14),_transparent_24%)]" />
-        <div class="relative mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-24">
+        <div class="relative mx-auto grid max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-18">
           <div>
             <div class="mb-4 inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm text-emerald-800 shadow-sm">
-              Operasional sekolah dalam satu sistem
+              Operasional Penjadwalan Guru dan Evaluasi
             </div>
             <div class="flex flex-col gap-3">
               <h1 class="text-4xl font-bold leading-tight lg:text-6xl">

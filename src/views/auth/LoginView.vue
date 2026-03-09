@@ -32,7 +32,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="flex h-screen items-center justify-center overflow-hidden bg-[#F7FAF7] text-slate-900">
+  <div class="flex h-[90vh] items-center justify-center overflow-hidden bg-[#F7FAF7] text-slate-900">
     <div class="w-full max-w-md">
       <div class="rounded-[32px] border border-emerald-100 bg-white p-9 shadow-xl shadow-emerald-100/40 sm:p-10">
         <div class="mb-8">
