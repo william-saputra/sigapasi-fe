@@ -38,14 +38,14 @@ const router = createRouter({
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
     },
     {
-      path: '/leaves/history',
-      name: 'leaves-history',
+      path: "/leaves/history",
+      name: "leaves-history",
       component: LeavesHistoryView,
     },
     {
-      path: '/leaves/request',
-      name: 'leave-request',
-      component: () => import('@/views/leaves/LeaveRequestView.vue'),
+      path: "/leaves/request",
+      name: "leave-request",
+      component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
     },
     {
       path: '/reviews/periods',

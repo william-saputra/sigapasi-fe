@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 
 import AppLayout from "@/components/common/AppLayout.vue";
@@ -8,107 +9,69 @@ import AppCard from "@/components/common/AppCard.vue";
 import AppBadge from "@/components/common/AppBadge.vue";
 import DataTable from "@/components/table/DataTable.vue";
 
+// Import Store dan Interfaces yang sudah kita buat
+import { useLeaveStore } from "@/stores/leaves/leaverequest.store"; // Sesuaikan path-nya jika berbeda
+import type { LeaveRequestResponseDTO } from "@/interfaces/leaves/leaverequest.interface"; // Sesuaikan path-nya
+
 const router = useRouter();
+const leaveStore = useLeaveStore();
 
-type LeaveRequestType = "FULL_DAY" | "PARTIAL";
-type LeaveCategory = "SAKIT" | "IZIN_PRIBADI" | "DINAS_LUAR" | "MELAHIRKAN";
-type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED";
+// Fetch data dari backend saat halaman dimuat
+onMounted(() => {
+  leaveStore.fetchAllLeaves();
+});
 
-type LeaveRequestRow = {
-  id: string;
-  type: LeaveRequestType;
-  category: LeaveCategory;
-  start_date: string;
-  end_date: string;
-  start_time: string | null;
-  end_time: string | null;
-  reason: string;
-  attachment_url: string | null;
-  status: LeaveStatus;
-  rejection_reason: string | null;
-  created_at: string;
-};
-
+// Update key menjadi camelCase menyesuaikan response backend
 const columns = [
-  { key: "created_at", label: "TGL DIAJUKAN", thStyle: "width: 16%;" },
+  { key: "createdAt", label: "TGL DIAJUKAN", thStyle: "width: 16%;" },
   { key: "detail", label: "DETAIL IZIN", thStyle: "width: 20%;" },
   { key: "period", label: "WAKTU PELAKSANAAN", thStyle: "width: 24%;" },
   { key: "status", label: "STATUS", thStyle: "width: 14%;" },
   { key: "note", label: "CATATAN / ALASAN", thStyle: "width: 26%;" },
 ];
 
-const rows: LeaveRequestRow[] = [
-  {
-    id: "550e8400-e29b-41d4-a716-446655440001",
-    type: "PARTIAL",
-    category: "IZIN_PRIBADI",
-    start_date: "2026-02-25",
-    end_date: "2026-02-25",
-    start_time: "08:00:00",
-    end_time: "10:00:00",
-    reason: "Keperluan pribadi",
-    attachment_url: null,
-    status: "PENDING",
-    rejection_reason: null,
-    created_at: "2026-02-25T08:30:00+07:00",
-  },
-  {
-    id: "550e8400-e29b-41d4-a716-446655440002",
-    type: "FULL_DAY",
-    category: "IZIN_PRIBADI",
-    start_date: "2026-02-20",
-    end_date: "2026-02-22",
-    start_time: null,
-    end_time: null,
-    reason: "Keperluan keluarga",
-    attachment_url: null,
-    status: "REJECTED",
-    rejection_reason: "Sisa jatah cuti tidak mencukupi untuk 3 hari.",
-    created_at: "2026-02-18T14:10:00+07:00",
-  },
-];
-
 function onNewLeave() {
   router.push({ name: "leave-request" });
 }
 
-function formatCategory(category: LeaveCategory): string {
-  const map: Record<LeaveCategory, string> = {
+function formatCategory(category: string): string {
+  const map: Record<string, string> = {
     SAKIT: "Sakit",
     IZIN_PRIBADI: "Izin Pribadi",
     DINAS_LUAR: "Dinas Luar",
     MELAHIRKAN: "Melahirkan",
   };
-  return map[category];
+  return map[category] || category;
 }
 
-function formatType(type: LeaveRequestType): string {
-  const map: Record<LeaveRequestType, string> = {
+function formatType(type: string): string {
+  const map: Record<string, string> = {
     FULL_DAY: "Cuti Harian",
     PARTIAL: "Parsial (Jam Tertentu)",
   };
-  return map[type];
+  return map[type] || type;
 }
 
-function formatStatus(status: LeaveStatus): string {
-  const map: Record<LeaveStatus, string> = {
+function formatStatus(status: string): string {
+  const map: Record<string, string> = {
     PENDING: "Pending",
     APPROVED: "Approved",
     REJECTED: "Rejected",
   };
-  return map[status];
+  return map[status] || status;
 }
 
-function getStatusVariant(status: LeaveStatus): "pending" | "success" | "danger" {
-  const map: Record<LeaveStatus, "pending" | "success" | "danger"> = {
+function getStatusVariant(status: string): "pending" | "success" | "danger" {
+  const map: Record<string, "pending" | "success" | "danger"> = {
     PENDING: "pending",
     APPROVED: "success",
     REJECTED: "danger",
   };
-  return map[status];
+  return map[status] || "pending";
 }
 
 function formatDate(dateString: string): string {
+  if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("id-ID", {
     day: "2-digit",
     month: "short",
@@ -117,6 +80,7 @@ function formatDate(dateString: string): string {
 }
 
 function formatCreatedDate(createdAt: string): string {
+  if (!createdAt) return "-";
   const createdDate = new Date(createdAt);
   const today = new Date();
 
@@ -130,6 +94,7 @@ function formatCreatedDate(createdAt: string): string {
 }
 
 function formatCreatedTime(createdAt: string): string {
+  if (!createdAt) return "-";
   return (
     new Date(createdAt).toLocaleTimeString("id-ID", {
       hour: "2-digit",
@@ -141,10 +106,11 @@ function formatCreatedTime(createdAt: string): string {
 
 function formatTimeOnly(time: string | null): string {
   if (!time) return "";
-  return time.slice(0, 5);
+  return time.slice(0, 5); // Mengambil HH:mm dari format HH:mm:ss
 }
 
 function calculateDayCount(startDate: string, endDate: string): number {
+  if (!startDate || !endDate) return 0;
   const start = new Date(startDate);
   const end = new Date(endDate);
 
@@ -157,26 +123,26 @@ function calculateDayCount(startDate: string, endDate: string): number {
   return diffDays;
 }
 
-function getPeriodDisplay(row: LeaveRequestRow): { label: string; meta: string } {
-  const startLabel = formatDate(row.start_date);
-  const endLabel = formatDate(row.end_date);
+function getPeriodDisplay(row: LeaveRequestResponseDTO): { label: string; meta: string } {
+  const startLabel = formatDate(row.startDate);
+  const endLabel = formatDate(row.endDate);
 
   if (row.type === "PARTIAL") {
     return {
       label: startLabel,
-      meta: `${formatTimeOnly(row.start_time)} - ${formatTimeOnly(row.end_time)} WIB`,
+      meta: `${formatTimeOnly(row.startTime)} - ${formatTimeOnly(row.endTime)} WIB`,
     };
   }
 
-  const days = calculateDayCount(row.start_date, row.end_date);
+  const days = calculateDayCount(row.startDate, row.endDate);
 
   return {
-    label: row.start_date === row.end_date ? startLabel : `${startLabel} - ${endLabel}`,
+    label: row.startDate === row.endDate ? startLabel : `${startLabel} - ${endLabel}`,
     meta: `${days} Hari Kerja`,
   };
 }
 
-function getNoteMode(status: LeaveStatus): "waiting" | "rejected" | "normal" {
+function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
   if (status === "PENDING") return "waiting";
   if (status === "REJECTED") return "rejected";
   return "normal";
@@ -195,10 +161,18 @@ function getNoteMode(status: LeaveStatus): "waiting" | "rejected" | "normal" {
     </PageHeader>
 
     <AppCard>
-      <DataTable :columns="columns" :rows="rows">
-        <template #cell:created_at="{ row }">
-          <div style="font-weight: 600">{{ formatCreatedDate(row.created_at) }}</div>
-          <div class="meta-text">{{ formatCreatedTime(row.created_at) }}</div>
+      <div v-if="leaveStore.isLoading" style="text-align: center; padding: 20px;">
+        Memuat data...
+      </div>
+
+      <div v-else-if="leaveStore.error" style="color: red; text-align: center; padding: 20px;">
+        {{ leaveStore.error }}
+      </div>
+
+      <DataTable v-else :columns="columns" :rows="leaveStore.sortedLeaves">
+        <template #cell:createdAt="{ row }">
+          <div style="font-weight: 600">{{ formatCreatedDate(row.createdAt) }}</div>
+          <div class="meta-text">{{ formatCreatedTime(row.createdAt) }}</div>
         </template>
 
         <template #cell:detail="{ row }">
@@ -230,7 +204,7 @@ function getNoteMode(status: LeaveStatus): "waiting" | "rejected" | "normal" {
               Ditolak oleh Kepsek:
             </div>
             <div class="note-box danger">
-              "{{ row.rejection_reason }}"
+              "{{ row.rejectionReason }}"
             </div>
           </template>
 
