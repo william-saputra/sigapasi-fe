@@ -52,20 +52,32 @@
   </table>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps({
-  columns: { type: Array, required: true }, // [{key,label,thStyle}]
-  rows: { type: Array, required: true },
-  expandable: { type: Boolean, default: false },
-})
+export interface TableColumn {
+  key: string
+  label: string
+  thStyle?: string
+}
 
-const emit = defineEmits(['expand'])
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Row = Record<string, any>
 
-const expandedIds = ref([])
+withDefaults(
+  defineProps<{
+    columns: TableColumn[]
+    rows: Row[]
+    expandable?: boolean
+  }>(),
+  { expandable: false },
+)
 
-function toggle(id) {
+const emit = defineEmits<{ expand: [id: string | number] }>()
+
+const expandedIds = ref<(string | number)[]>([])
+
+function toggle(id: string | number) {
   const idx = expandedIds.value.indexOf(id)
   if (idx >= 0) {
     expandedIds.value.splice(idx, 1)
@@ -75,7 +87,7 @@ function toggle(id) {
   }
 }
 
-function isExpanded(id) {
+function isExpanded(id: string | number): boolean {
   return expandedIds.value.includes(id)
 }
 </script>

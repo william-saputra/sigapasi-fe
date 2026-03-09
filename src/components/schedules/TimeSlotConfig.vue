@@ -42,13 +42,7 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
   }, 4000)
 }
 
-/** Determines target grades based on 'apply to all grades' checkbox */
-function resolveTargetGrades(): number[] {
-  if (applyToAllGrades.value) {
-    return store.availableGrades
-  }
-  return store.activeGrade !== null ? [store.activeGrade] : []
-}
+
 
 /** Triggers grid slot generation with configured time, duration, and count */
 function onGenerate() {
@@ -72,8 +66,7 @@ function onStartTimeChange() {
 
 /** Persists current day's slot configuration to the backend for selected grades */
 async function onSave() {
-  const targetGrades = resolveTargetGrades()
-  if (targetGrades.length === 0) {
+  if (!store.activeGrade && !applyToAllGrades.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -82,11 +75,11 @@ async function onSave() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      targetGrades,
+      applyToAllGrades.value,
     )
     const gradeLabel = applyToAllGrades.value
       ? 'semua tingkatan'
-      : `Kelas ${store.activeGrade}`
+      : `Jenjang ${store.activeGrade}`
     showNotification(`Struktur slot berhasil disimpan untuk ${gradeLabel}!`, 'success')
   } catch {
     showNotification(store.error || 'Gagal menyimpan struktur slot.', 'error')
@@ -110,8 +103,7 @@ async function confirmApply() {
   store.copyScheduleToDays(selectedDays.value)
   showApplyModal.value = false
 
-  const targetGrades = resolveTargetGrades()
-  if (targetGrades.length === 0) {
+  if (!store.activeGrade && !applyToAllGrades.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -126,14 +118,14 @@ async function confirmApply() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      targetGrades,
+      applyToAllGrades.value,
     )
     for (const payload of payloads) {
       await store.saveSlotStructure(
         payload.day,
         payload.slots,
         activeSemesterId.value,
-        targetGrades,
+        applyToAllGrades.value,
       )
     }
     showNotification('Pengaturan berhasil disimpan dan disalin!', 'success')
@@ -251,7 +243,7 @@ function confirmClearAll() {
         class="h-4 w-4 scale-110 accent-blue-600"
       />
       <span class="text-sm text-blue-800">
-        Terapkan konfigurasi ini ke <strong>semua tingkatan kelas</strong>
+        Terapkan konfigurasi ini ke <strong>semua jenjang pendidikan</strong>
       </span>
     </label>
 

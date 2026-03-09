@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LeavesHistoryView from '../views/leaves/LeavesHistoryView.vue'
-import HomeView from '../views/HomeView.vue'
 
 function getRoleFromToken(): string | null {
   try {
     const token = localStorage.getItem('token')
     if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    const part = token.split('.')[1]
+    if (!part) return null
+    const payload = JSON.parse(atob(part))
     return payload.role ?? null
   } catch {
     return null
@@ -24,41 +25,6 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/',
-      name: 'home',
-      component: HomeView,
-    },
-    {
-      path: '/home',
-      name: 'landing',
-      component: () => import('@/views/LandingView.vue'),
-    },
-    {
-      path: '/account/:id',
-      name: 'account-detail',
-      component: () => import('@/views/accounts/AccountDetailView.vue'),
-    },
-    {
-      path: '/accounts',
-      name: 'accounts',
-      component: () => import('@/views/accounts/ListAccountView.vue'),
-    },
-    {
-      path: '/account/create',
-      name: 'account-create',
-      component: () => import('@/views/accounts/AccountFormView.vue'),
-    },
-    {
-      path: '/account/edit/:id',
-      name: 'account-edit',
-      component: () => import('@/views/accounts/AccountFormView.vue'),
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/views/auth/LoginView.vue'),
-    },
-    {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
       component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),
@@ -74,14 +40,14 @@ const router = createRouter({
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
     },
     {
-      path: "/leaves/history",
-      name: "leaves-history",
+      path: '/leaves/history',
+      name: 'leaves-history',
       component: LeavesHistoryView,
     },
     {
-      path: "/leaves/request",
-      name: "leave-request",
-      component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
+      path: '/leaves/request',
+      name: 'leave-request',
+      component: () => import('@/views/leaves/LeaveRequestView.vue'),
     },
     {
       path: '/reviews/periods',

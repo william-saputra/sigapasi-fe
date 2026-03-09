@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import AppLayout from '@/components/common/AppLayout.vue'
 import PageHeader from '@/components/header/PageHeader.vue'
@@ -11,7 +10,6 @@ import apiService from '@/services/api.service'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
-const router = useRouter()
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -89,9 +87,7 @@ const isFetchingOptions = ref(false)
 async function fetchSemesterOptions() {
   isFetchingOptions.value = true
   try {
-    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>(
-      '/reviews/periods/semester-options',
-    )
+    semesterOptions.value = await apiService.get<SemesterOptionDTO[]>('/reviews/periods/semester-options')
   } catch {
     semesterOptions.value = []
   } finally {
@@ -257,13 +253,8 @@ function getProgressPercent(row: ReviewPeriodRow): number {
         </template>
 
         <!-- Aksi -->
-        <template #cell:aksi="{ row }">
-          <button
-            class="btn-outline"
-            @click="router.push({ name: 'reviews-period-detail', params: { periodId: row.id } })"
-          >
-            📂 Buka Periode
-          </button>
+        <template #cell:aksi>
+          <button class="btn-outline">📂 Buka Periode</button>
         </template>
       </DataTable>
     </AppCard>

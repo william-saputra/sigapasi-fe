@@ -9,6 +9,9 @@ import type {
     SlotTypeEnum,
     UISlot,
     AcademicYearSemesterResponseDTO,
+    GradeLevelEnum,
+    CreateAcademicYearRequestDTO,
+    CreateSemesterRequestDTO,
 } from '@/interfaces/schedules/timeSlot.types'
 import { ALL_DAYS } from '@/interfaces/schedules/timeSlot.types'
 
@@ -56,9 +59,10 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
     const error = ref<string | null>(null)
 
     const academicYears = ref<AcademicYearSemesterResponseDTO[]>([])
+    const activeAcademicYearId = ref<string>('')
     const activeSemesterId = ref<string>('')
-    const activeGrade = ref<number | null>(10)
-    const availableGrades = ref<number[]>([10, 11, 12])
+    const activeGrade = ref<GradeLevelEnum>('SD')
+    const availableGrades = ref<GradeLevelEnum[]>(['SD', 'SMP', 'SMA'])
 
     // --- Computed & Getters ---
     const currentSchedule = computed(() => schedules.value[currentDay.value])
@@ -73,7 +77,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         end_time: string
         duration: number
         sessionLabel: string
-        slots: Record<number, UISlot | undefined>
+        slots: Partial<Record<GradeLevelEnum, UISlot>>
     }
 
     const masterGridData = computed(() => {
@@ -93,7 +97,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 const representative = slotsAtTime[0]
 
                 // Build slot-map: grade_level -> UISlot
-                const slotsByGrade: Record<number, UISlot | undefined> = {}
+                const slotsByGrade: Partial<Record<GradeLevelEnum, UISlot>> = {}
                 for (const sl of slotsAtTime) {
                     if (sl.grade_level !== undefined) {
                         slotsByGrade[sl.grade_level] = sl
@@ -180,20 +184,27 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             const data = await apiService.get<AcademicYearSemesterResponseDTO[]>('/slot/academic-years')
             academicYears.value = data
 
+            // Auto-select the active academic year if not already set
+            if (!activeAcademicYearId.value) {
+                const activeYear = data.find((ay) => ay.is_active || ay.isActive)
+                if (activeYear) {
+                    activeAcademicYearId.value = activeYear.id
+                } else if (data.length > 0) {
+                    const firstData = data[0]
+                    if (firstData) activeAcademicYearId.value = firstData.id
+                }
+            }
+
             // Auto-select the active semester if not already set
-            if (!activeSemesterId.value) {
-                for (const ay of data) {
-                    const activeSemester = ay.listSemesters.find((s) => s.isActive)
+            if (!activeSemesterId.value && activeAcademicYearId.value) {
+                const selectedYear = data.find(ay => ay.id === activeAcademicYearId.value)
+                if (selectedYear) {
+                    const activeSemester = selectedYear.listSemesters.find((s) => s.is_active || s.isActive)
                     if (activeSemester) {
                         activeSemesterId.value = activeSemester.id
-                        break
-                    }
-                }
-                // Fallback: pick the first semester available
-                if (!activeSemesterId.value && data.length > 0) {
-                    const firstSemester = data[0]?.listSemesters?.[0]
-                    if (firstSemester) {
-                        activeSemesterId.value = firstSemester.id
+                    } else if (selectedYear.listSemesters.length > 0) {
+                        const firstSemester = selectedYear.listSemesters[0]
+                        if (firstSemester) activeSemesterId.value = firstSemester.id
                     }
                 }
             }
@@ -207,6 +218,28 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         await fetchSlotStructure()
     }
 
+    async function createAcademicYear(payload: CreateAcademicYearRequestDTO): Promise<void> {
+        error.value = null
+        try {
+            await apiService.post('/academic-setup/academic-years', payload)
+            await fetchAcademicYears()
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Gagal membuat tahun ajaran baru.'
+            throw err
+        }
+    }
+
+    async function createSemester(payload: CreateSemesterRequestDTO): Promise<void> {
+        error.value = null
+        try {
+            await apiService.post('/academic-setup/semesters', payload)
+            await fetchAcademicYears() // Refetch to update list
+        } catch (err: any) {
+            error.value = err.response?.data?.message || 'Gagal membuat semester baru.'
+            throw err
+        }
+    }
+
     /** Retrieves slot configurations for all grade levels operating in parallel */
     async function fetchSlotStructureForAll(): Promise<void> {
         if (!activeSemesterId.value) {
@@ -217,19 +250,20 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         isLoading.value = true
         error.value = null
         try {
-            // Fetch all grades in parallel
-            const requests = availableGrades.value.map(grade =>
-                apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
-                    params: { semester_id: activeSemesterId.value, grade_level: grade },
-                })
-            )
-            const results = await Promise.all(requests)
+            // Fetch all grades at once (no grade_level param)
+            const data = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
+                params: { semester_id: activeSemesterId.value },
+            })
 
             // Reset schedules
             schedules.value = emptySchedules()
+            
+            if (!data || data.length === 0) {
+                return // Graceful Empty State
+            }
 
             // Merge all results
-            results.flat().forEach((dto: any) => {
+            data.forEach((dto: any) => {
                 const day = (dto.dayOfWeek || dto.day_of_week) as DayOfWeekEnum
                 const startStr = dto.startTime || dto.start_time
                 const endStr = dto.endTime || dto.end_time
@@ -292,9 +326,12 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 },
             })
 
-            console.log(data)
             // Reset all days
             schedules.value = emptySchedules()
+
+            if (!data || data.length === 0) {
+                return // Graceful Empty State
+            }
 
             // Group by day_of_week, parse times
             data.forEach((dto: any) => {
@@ -336,8 +373,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 })
             }
         } catch (err: any) {
-            error.value =
-                err.response?.data?.message || err.message || 'Gagal mengambil data struktur slot.'
+            // Only set error for non-200 HTTP errors. Axios treats 200 OK as success, so [] won't throw error
+            error.value = err.response?.data?.message || err.message || 'Gagal mengambil data struktur slot.'
         } finally {
             isLoading.value = false
         }
@@ -348,58 +385,97 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         day: DayOfWeekEnum,
         slotsToSave: UISlot[],
         semesterId: string,
-        targetGrades: number[],
+        applyToAllGrades: boolean,
     ): Promise<void> {
         isSaving.value = true
         error.value = null
         try {
             const pendingLocks = slotsToSave.filter((s) => s.is_locked)
+            console.log("Saving slot structure. pendingLocks size:", pendingLocks.length, pendingLocks);
 
             const slots: any[] = slotsToSave.map((s) => ({
-                sessionNumber: s.session_number,
                 session_number: s.session_number,
-                startTime: formatToLocalTime(s.start_time),
                 start_time: formatToLocalTime(s.start_time),
-                endTime: formatToLocalTime(s.end_time),
                 end_time: formatToLocalTime(s.end_time),
-                slotType: s.slot_type as SlotTypeEnum,
                 slot_type: s.slot_type as SlotTypeEnum,
+                is_locked: s.is_locked,
+                locked_label: s.locked_label,
             }))
 
-            // POST once per target grade
-            for (const targetGrade of targetGrades) {
-                const payload: any = {
-                    semesterId: semesterId,
-                    semester_id: semesterId,
-                    dayOfWeek: day,
-                    day_of_week: day,
-                    gradeLevel: targetGrade,
-                    grade_level: targetGrade,
-                    slots,
-                }
-                await apiService.post('/slot/structure', payload)
-            }
-
-            // Refresh from the backend to get server-generated IDs & validated data
-            await fetchSlotStructure()
-
-            // Re-apply locks: match by start_time to get the new server UUIDs
-            if (pendingLocks.length > 0) {
-                const newSlots = schedules.value[day]
-
+            const applyLocks = async (gradeData: any[]) => {
+                if (pendingLocks.length === 0) return;
                 for (const lock of pendingLocks) {
-                    const matchingNewSlot = newSlots.find((s) => s.start_time === lock.start_time)
-
-                    if (matchingNewSlot && matchingNewSlot.id && lock.locked_label) {
-                        await apiService.post(`/slot/locked-slots/${matchingNewSlot.id}`, {
-                            lockedLabel: lock.locked_label,
-                        })
+                    const matchingDto = gradeData.find((dto: any) => {
+                        const startStr = dto.startTime || dto.start_time
+                        return parseIsoTime(startStr) === lock.start_time &&
+                            (dto.dayOfWeek || dto.day_of_week) === day
+                    })
+                    if (matchingDto && matchingDto.id && lock.locked_label) {
+                        try {
+                            await apiService.post(`/slot/locked-slots/${matchingDto.id}`, {
+                                lockedLabel: lock.locked_label,
+                                locked_label: lock.locked_label
+                            })
+                        } catch (e) {
+                            console.error("Locking failed for slot", matchingDto.id, e);
+                        }
                     }
                 }
-
-                // Final refresh to sync lock state
-                await fetchSlotStructure()
             }
+
+            if (applyToAllGrades) {
+                for (const targetGrade of availableGrades.value) {
+                    const payload: any = {
+                        semester_id: semesterId,
+                        day_of_week: day,
+                        grade_level: targetGrade,
+                        slots,
+                    }
+                    const response = await apiService.post<any>('/slot/structure', payload)
+                    
+                    // If response is an array, apply locks immediately using its elements
+                    if (response && Array.isArray(response)) {
+                        await applyLocks(response)
+                    } else if (response && response.data && Array.isArray(response.data)) {
+                        await applyLocks(response.data)
+                    } else {
+                        // Fallback to GET
+                        const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
+                            params: {
+                                semester_id: semesterId,
+                                grade_level: targetGrade,
+                            },
+                        })
+                        await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                    }
+                }
+            } else {
+                const payload: any = {
+                    semester_id: semesterId,
+                    day_of_week: day,
+                    grade_level: activeGrade.value,
+                    slots,
+                }
+                const response = await apiService.post<any>('/slot/structure', payload)
+                
+                if (response && Array.isArray(response)) {
+                    await applyLocks(response)
+                } else if (response && response.data && Array.isArray(response.data)) {
+                    await applyLocks(response.data)
+                } else {
+                    const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
+                        params: {
+                            semester_id: semesterId,
+                            grade_level: activeGrade.value,
+                        },
+                    })
+                    await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                }
+            }
+
+            // Final refresh to sync lock state
+            await fetchSlotStructure()
+
         } catch (err: any) {
             error.value =
                 err.response?.data?.message || 'Terjadi konflik jadwal. Gagal menyimpan.'
@@ -534,6 +610,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         error,
         // NEW State
         academicYears,
+        activeAcademicYearId,
         activeSemesterId,
         activeGrade,
         availableGrades,
@@ -542,6 +619,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         masterGridData,
         // API Actions
         fetchAcademicYears,
+        createAcademicYear,
+        createSemester,
         fetchSlotStructure,
         fetchSlotStructureForAll,
         saveSlotStructure,
