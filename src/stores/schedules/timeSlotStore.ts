@@ -351,9 +351,10 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
     }
 
     /** Fetch all slot structures from the backend and populate schedules */
+/** Fetch all slot structures from the backend and populate schedules */
     async function fetchSlotStructure(): Promise<void> {
-        // Guard: only fetch when both semester and level are selected
-        if (!activeSemesterId.value || !activeSchoolLevelId.value) {
+        // PERBAIKAN: Hapus guard activeSchoolLevelId karena halaman Guru tidak punya dropdown itu.
+        if (!activeSemesterId.value) {
             schedules.value = emptySchedules()
             return
         }
@@ -361,12 +362,13 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         isLoading.value = true
         error.value = null
         try {
-            const data = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
-                params: {
-                    semester_id: activeSemesterId.value,
-                    school_level_id: activeSchoolLevelId.value,
-                },
-            })
+            // PERBAIKAN: Hanya kirim school_level_id JIKA isinya tidak kosong (berasal dari halaman Admin)
+            const params: any = { semester_id: activeSemesterId.value }
+            if (activeSchoolLevelId.value) {
+                params.school_level_id = activeSchoolLevelId.value
+            }
+
+            const data = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', { params })
 
             // Reset all days
             schedules.value = emptySchedules()
@@ -423,7 +425,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             isLoading.value = false
         }
     }
-
+    
     /** Persists slot structure modifications for specific grades to the backend API */
     async function saveSlotStructure(
         day: DayOfWeekEnum,

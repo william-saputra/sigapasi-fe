@@ -4,12 +4,28 @@ import HomeView from '../views/HomeView.vue'
 
 function getRoleFromToken(): string | null {
   try {
-    const token = localStorage.getItem('token')
-    if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.role ?? null
-  } catch {
-    return null
+    const token = localStorage.getItem('token');
+    
+    // 1. Cek apakah token ada
+    if (!token) return null;
+
+    // 2. Pecah string JWT
+    const parts = token.split('.');
+    
+    // 3. Ambil bagian payload (indeks ke-1) 
+    // Kita simpan ke variabel dan pastikan ada isinya
+    const payloadPart = parts[1];
+
+    if (!payloadPart) return null;
+
+    // 4. Decode menggunakan atob. 
+    // Kita beritahu TS bahwa payloadPart pasti string pakai "as string" 
+    // atau biarkan pengecekan if di atas bekerja.
+    const decodedPayload = JSON.parse(atob(payloadPart));
+    
+    return decodedPayload.role ?? null;
+  } catch (error) {
+    return null;
   }
 }
 
@@ -101,7 +117,21 @@ const router = createRouter({
       component: () => import('@/views/reviews/ReviewAssignmentConfigView.vue'),
       beforeEnter: adminStaffOnly,
     },
+    {
+      path: '/ketersediaan-mengajar',
+      name: 'ketersediaan-mengajar',
+      component: () => import('@/views/schedules/TeacherAvailabilityView.vue'),
+      meta: { requiresTeacher: true } 
+    },
+    {
+      // INI HALAMAN BARU (Ringkasan)
+      path: '/ketersediaan-mengajar/ringkasan',
+      name: 'ketersediaan-ringkasan',
+      component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
+      meta: { requiresTeacher: true } 
+    },
   ],
-})
+}
+)
 
 export default router
