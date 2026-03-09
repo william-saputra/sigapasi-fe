@@ -60,8 +60,14 @@ const isTeacher = computed(() => account.value?.role === 'TEACHER')
 const isAuthenticatedAdmin = computed(() => authUser.value?.role === 'ADMIN')
 
 const displayEmploymentType = computed(() => {
-  if (!isTeacher.value || !account.value?.teacher) return '-'
-  return account.value.teacher.employmentType || '-'
+  if (!isTeacher.value || !account.value?.teacher?.employmentType) return '-'
+
+  const employmentType = account.value.teacher.employmentType
+
+  if (employmentType === 'FULL_TIME') return 'FULL TIME'
+  if (employmentType === 'PART_TIME') return 'PART TIME'
+
+  return employmentType.replace(/_/g, ' ')
 })
 
 const displayMaxWeeklyHours = computed(() => {
@@ -130,7 +136,7 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 function goBack() {
-  router.back()
+  router.push('/home')
 }
 
 onMounted(() => {
