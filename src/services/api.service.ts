@@ -15,10 +15,10 @@ apiClient.interceptors.request.use((config: import('axios').InternalAxiosRequest
     try {
       // Jika token diawali kutip, parse akan mengubahnya jadi string murni
       const token = rawToken.startsWith('"') ? JSON.parse(rawToken) : rawToken
-      config.headers.Authorization = 'Bearer ${token}'
+      config.headers.Authorization = `Bearer ${token}`
     } catch (e) {
       // Fallback jika parse gagal
-      config.headers.Authorization = 'Bearer ${rawToken}'
+      config.headers.Authorization = `Bearer ${rawToken}`
     }
   }
   

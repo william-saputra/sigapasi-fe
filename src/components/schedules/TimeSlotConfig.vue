@@ -201,7 +201,7 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
       @click="onGenerate"
     >
-      <span>⚡ Generate Grid</span>
+      <span>⚡ Generate</span>
     </button>
 
     <hr class="my-5 border-t border-gray-200" />

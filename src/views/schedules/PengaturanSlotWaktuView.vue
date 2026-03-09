@@ -174,7 +174,6 @@ onMounted(async () => {
             <!-- Semester Selection -->
             <div>
               <label class="mb-1 block text-xs font-semibold text-gray-500">Semester</label>
-              <label class="mb-1 block text-xs font-semibold text-gray-500">Semester</label>
               <select
                 v-model="store.activeSemesterId"
                 class="w-40 sm:w-56 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
@@ -191,7 +190,6 @@ onMounted(async () => {
 
             <!-- Grade Level Selection -->
             <div>
-              <label class="mb-1 block text-xs font-semibold text-gray-500">Jenjang</label>
               <label class="mb-1 block text-xs font-semibold text-gray-500">Jenjang</label>
               <select
                 v-model="store.activeSchoolLevelId"

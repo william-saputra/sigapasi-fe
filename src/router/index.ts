@@ -75,14 +75,21 @@ const router = createRouter({
       component: () => import('@/views/auth/LoginView.vue'),
     },
     {
+      path: '/jadwal',
+      name: 'jadwal-dashboard',
+      component: () => import('@/views/schedules/JadwalMainView.vue'),
+    },
+    {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
       component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),
+      beforeEnter: adminStaffOnly,
     },
     {
       path: '/penyusunan-jadwal',
       name: 'penyusunan-jadwal',
       component: () => import('@/views/schedules/PenyusunanJadwalView.vue'),
+      beforeEnter: adminStaffOnly,
     },
     {
       path: '/slot-waktu',

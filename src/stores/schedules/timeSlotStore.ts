@@ -436,6 +436,21 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         isSaving.value = true
         error.value = null
         try {
+            const totalDuration = slotsToSave.reduce((sum, slot) => sum + slot.duration, 0)
+            if (totalDuration > 1440) {
+                console.log(totalDuration)
+                throw new Error('Total durasi keseluruhan dalam satu hari tidak boleh melebihi 1440 menit.')
+            }
+
+            const hasInvalidTime = slotsToSave.some(slot => {
+                const startHour = parseInt(slot.start_time.split(':')[0] || '0')
+                const endHour = parseInt(slot.end_time.split(':')[0] || '0')
+                return startHour >= 24 || endHour >= 24
+            })
+            if (hasInvalidTime) {
+                throw new Error('Akumulasi waktu berakhir melebihi jam 23:59. Silakan sesuaikan kembali jadwal.')
+            }
+
             const pendingLocks = slotsToSave.filter((s) => s.is_locked)
             console.log("Saving slot structure. pendingLocks size:", pendingLocks.length, pendingLocks);
 
@@ -523,8 +538,11 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             await fetchSlotStructure()
 
         } catch (err: any) {
-            error.value =
-                err.response?.data?.message || 'Terjadi konflik jadwal. Gagal menyimpan.'
+            if (err.response) {
+                error.value = err.response?.data?.message || 'Terjadi konflik jadwal. Gagal menyimpan.'
+            } else {
+                error.value = err.message || 'Terjadi konflik jadwal. Gagal menyimpan.'
+            }
             throw err
         } finally {
             isSaving.value = false
