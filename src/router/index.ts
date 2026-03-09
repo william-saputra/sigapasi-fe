@@ -31,7 +31,7 @@ function getRoleFromToken(): string | null {
 
 function adminStaffOnly() {
   const role = getRoleFromToken()
-  if (role !== 'Admin' && role !== 'Staff') {
+  if (role !== 'ADMIN' && role !== 'STAFF') {
     return { path: '/' }
   }
 }

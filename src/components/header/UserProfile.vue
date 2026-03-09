@@ -42,13 +42,13 @@ const displayName = computed(() => user.value?.fullName || "Guest User");
 
 const displayRole = computed(() => {
   switch (user.value?.role) {
-    case "Admin":
+    case "ADMIN":
       return "Admin";
-    case "Staff":
+    case "STAFF":
       return "Staf";
-    case "Teacher":
+    case "TEACHER":
       return "Guru";
-    case "Head":
+    case "HEAD":
       return "Kepala Sekolah";
     default:
       return "-";

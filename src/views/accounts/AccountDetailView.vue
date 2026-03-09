@@ -55,9 +55,9 @@ const formattedBirthDate = computed(() => {
   })
 })
 
-const isTeacher = computed(() => account.value?.role === 'Teacher')
+const isTeacher = computed(() => account.value?.role === 'TEACHER')
 
-const isAuthenticatedAdmin = computed(() => authUser.value?.role === 'Admin')
+const isAuthenticatedAdmin = computed(() => authUser.value?.role === 'ADMIN')
 
 const displayEmploymentType = computed(() => {
   if (!isTeacher.value || !account.value?.teacher) return '-'

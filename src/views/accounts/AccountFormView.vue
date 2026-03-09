@@ -49,10 +49,10 @@ const form = ref({
   },
 })
 
-const isTeacher = computed(() => form.value.role === 'Teacher')
+const isTeacher = computed(() => form.value.role === 'TEACHER')
 const maxBirthDate = computed(() => new Date().toISOString().split('T')[0])
 
-const isAdmin = computed(() => authUser?.role === 'Admin')
+const isAdmin = computed(() => authUser?.role === 'ADMIN')
 const isOwner = computed(() => !!form.value.id && authUser?.id === form.value.id)
 
 const filteredSubjects = computed(() => {
@@ -151,7 +151,7 @@ async function loadAccountDetail() {
     form.value.birthdate = formatDateInput(result.birthdate)
     form.value.role = result.role ?? ''
 
-    if (result.role === 'Teacher' && result.teacher) {
+    if (result.role === 'TEACHER' && result.teacher) {
       await loadSubjects()
 
       form.value.teacher.employmentType = result.teacher.employmentType ?? ''
@@ -380,10 +380,10 @@ onMounted(async () => {
                   @change="handleRoleChange"
                 >
                   <option value="" disabled>Pilih role untuk akun ini</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Staff">Staff</option>
-                  <option value="Teacher">Teacher</option>
-                  <option value="Head">Head</option>
+                  <option value="ADMIN">Admin</option>
+                  <option value="STAFF">Staff</option>
+                  <option value="TEACHER">Teacher</option>
+                  <option value="HEAD">Head</option>
                 </select>
               </div>
             </div>
