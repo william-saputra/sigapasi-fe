@@ -99,7 +99,7 @@ function closeOptionsMenu() {
 
 function goToEdit() {
   closeOptionsMenu()
-  router.push(`/akun/edit/${accountId.value}`)
+  router.push(`/account/edit/${accountId.value}`)
 }
 
 function openDeleteModal() {

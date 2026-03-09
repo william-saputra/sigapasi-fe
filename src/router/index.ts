@@ -28,7 +28,12 @@ const router = createRouter({
     {
       path: '/account/create',
       name: 'account-create',
-      component: () => import('@/views/accounts/CreateAccountView.vue'),
+      component: () => import('@/views/accounts/AccountFormView.vue'),
+    },
+    {
+      path: '/account/edit/:id',
+      name: 'account-edit',
+      component: () => import('@/views/accounts/AccountFormView.vue'),
     },
     {
       path: '/login',
