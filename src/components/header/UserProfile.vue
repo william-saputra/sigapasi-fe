@@ -64,8 +64,12 @@ function closeDropdown() {
 }
 
 function goToDetailAkun() {
-  closeDropdown();
-  router.push("/detail-akun");
+  closeDropdown()
+
+  const userId = user.value?.id
+  if (!userId) return
+
+  router.push(`/account/${userId}`)
 }
 
 async function handleLogout() {

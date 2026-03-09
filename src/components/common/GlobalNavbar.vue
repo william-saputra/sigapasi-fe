@@ -49,12 +49,25 @@ onMounted(() => {
 function goToLogin() {
   router.push("/login");
 }
+
+function goToHome() {
+  if (isLoggedIn.value) {
+    router.push("/home")
+  } else {
+    router.push("/")
+  }
+}
 </script>
 
 <template>
   <header class="global-navbar">
     <div class="global-navbar__inner">
-      <img class="global-navbar__logo" :src="logoSrc" alt="Logo" />
+      <img
+        class="global-navbar__logo"
+        :src="logoSrc"
+        alt="Logo"
+        @click="goToHome"
+      />
 
       <div class="global-navbar__right">
         <template v-if="isLoggedIn">
@@ -97,6 +110,7 @@ function goToLogin() {
   width: auto;
   display: block;
   object-fit: contain;
+  cursor: pointer;
 }
 
 .global-navbar__right {

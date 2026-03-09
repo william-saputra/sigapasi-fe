@@ -1,5 +1,4 @@
 export interface UserRequest {
-    phoneNumber: string;
     email: string;
     password?: string;
     fullName: string;

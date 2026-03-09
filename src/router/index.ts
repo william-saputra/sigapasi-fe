@@ -16,6 +16,21 @@ const router = createRouter({
       component: () => import('@/views/LandingView.vue'),
     },
     {
+      path: '/account/:id',
+      name: 'account-detail',
+      component: () => import('@/views/accounts/AccountDetailView.vue'),
+    },
+    {
+      path: '/accounts',
+      name: 'accounts',
+      component: () => import('@/views/accounts/ListAccountView.vue'),
+    },
+    {
+      path: '/account/create',
+      name: 'account-create',
+      component: () => import('@/views/accounts/CreateAccountView.vue'),
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('@/views/auth/LoginView.vue'),

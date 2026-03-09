@@ -55,7 +55,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/cuti', icon: 'fa-solid fa-file-circle-check' },
     { title: 'Guru Pengganti', desc: 'Cari dan tetapkan guru pengganti kelas kosong.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
     { title: '360 Review', desc: 'Pantau progres dan hasil evaluasi guru.', to: '/review', icon: 'fa-solid fa-chart-line' },
-    { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/pengguna', icon: 'fa-solid fa-users-gear' },
+    { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/accounts', icon: 'fa-solid fa-users-gear' },
     { title: 'Laporan', desc: 'Unduh laporan operasional dan kinerja.', to: '/laporan', icon: 'fa-solid fa-file-export' },
   ],
   staff: [
