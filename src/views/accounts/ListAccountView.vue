@@ -34,13 +34,13 @@ function getAccountRole(account: Users) {
 
 function getRoleClass(role: string) {
   switch (role) {
-    case 'Admin':
+    case 'ADMIN':
       return 'role-admin'
-    case 'Head':
+    case 'HEAD':
       return 'role-head'
-    case 'Teacher':
+    case 'TEACHER':
       return 'role-teacher'
-    case 'Staff':
+    case 'STAFF':
       return 'role-staff'
     default:
       return 'role-default'
