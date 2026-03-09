@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
-import type { DayOfWeekEnum, UISlot, GradeLevelEnum } from '@/interfaces/schedules/timeSlot.types'
+import type { DayOfWeekEnum, UISlot } from '@/interfaces/schedules/timeSlot.types'
 
 // --- Storage & Routing ---
 const router = useRouter()
@@ -11,14 +11,14 @@ const store = useTimeSlotStore()
 
 // --- State ---
 // Filter dropdown state
-const selectedGrade = ref<'ALL' | GradeLevelEnum>('ALL')
+const selectedSchoolLevelId = ref<string>('ALL')
 
 // --- Computed ---
 // Evaluation to check if all grades view is selected
-const isAllGrades = computed(() => selectedGrade.value === 'ALL')
+const isAllLevels = computed(() => selectedSchoolLevelId.value === 'ALL')
 
 // Returns the array of available grades
-const visibleGrades = computed<GradeLevelEnum[]>(() => store.availableGrades)
+const visibleSchoolLevels = computed(() => store.schoolLevels)
 
 // Condition to check if there are any slots across all available days
 const hasData = computed(() =>
@@ -29,10 +29,10 @@ const hasData = computed(() =>
 /** Dispatches data fetch actions depending on current grade filter mode */
 async function loadData() {
   if (!store.activeSemesterId) return
-  if (isAllGrades.value) {
+  if (isAllLevels.value) {
     await store.fetchSlotStructureForAll()
   } else {
-    store.activeGrade = selectedGrade.value as GradeLevelEnum
+    store.activeSchoolLevelId = selectedSchoolLevelId.value
     await store.fetchSlotStructure()
   }
 }
@@ -70,13 +70,16 @@ function slotBadgeClass(slot: UISlot): string {
 }
 
 /** Filters and returns slots for a specific day and a specific grade level */
-function getGradeDaySlots(day: DayOfWeekEnum, grade: GradeLevelEnum): UISlot[] {
-  return (store.schedules[day] ?? []).filter(s => s.grade_level === grade)
+function getLevelDaySlots(day: DayOfWeekEnum, levelId: string): UISlot[] {
+  return (store.schedules[day] ?? []).filter(s => s.school_level_id === levelId)
 }
 
 // --- Lifecycle ---
 /** Initializes components by fetching academic years and slot structures if needed */
 onMounted(async () => {
+  if (store.schoolLevels.length === 0) {
+    await store.fetchSchoolLevels()
+  }
   if (store.academicYears.length === 0) {
     await store.fetchAcademicYears()
   }
@@ -115,11 +118,9 @@ onMounted(async () => {
               @change="onSemesterChange"
             >
               <option value="" disabled>-- Pilih Semester --</option>
-              <template v-for="ay in store.academicYears" :key="ay.id">
-                <option v-for="sem in ay.listSemesters" :key="sem.id" :value="sem.id">
-                  {{ sem.name }}
-                </option>
-              </template>
+              <option v-for="sem in store.flattenedSemesters" :key="sem.id" :value="sem.id">
+                {{ sem.display_name }}
+              </option>
             </select>
           </div>
 
@@ -127,13 +128,13 @@ onMounted(async () => {
           <div>
             <label class="mb-1 block text-xs font-semibold text-gray-500">Tingkatan Kelas</label>
             <select
-              v-model="selectedGrade"
+              v-model="selectedSchoolLevelId"
               class="w-44 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-all focus:border-emerald-700 focus:bg-white focus:ring-2 focus:ring-emerald-700/10 focus:outline-none"
               @change="onGradeChange"
             >
               <option value="ALL">Semua</option>
-              <option v-for="grade in store.availableGrades" :key="grade" :value="grade">
-                {{ grade }}
+              <option v-for="level in visibleSchoolLevels" :key="level.id" :value="level.id">
+                {{ level.name }}
               </option>
             </select>
           </div>
@@ -167,7 +168,7 @@ onMounted(async () => {
       </div>
 
       <!-- Single Grade Layout View -->
-      <div v-else-if="!isAllGrades && !store.isLoading">
+      <div v-else-if="!isAllLevels && !store.isLoading">
         <!-- Daily Columns Grid -->
         <div class="grid grid-cols-5 gap-3">
           <div
@@ -219,18 +220,18 @@ onMounted(async () => {
       </div>
 
       <!-- All Grades Layout View -->
-      <div v-else-if="isAllGrades && !store.isLoading" class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div v-else-if="isAllLevels && !store.isLoading" class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
         <table class="w-full border-collapse text-xs">
           <!-- Table Header -->
           <thead>
             <tr class="bg-emerald-800 text-white uppercase tracking-wide">
               <th class="border border-emerald-700 px-3 py-3 text-center whitespace-nowrap w-16">HARI</th>
               <th
-                v-for="grade in visibleGrades"
-                :key="grade"
+                v-for="level in visibleSchoolLevels"
+                :key="level.id"
                 class="border border-emerald-700 px-4 py-3 text-center whitespace-nowrap min-w-[180px]"
               >
-                {{ grade }}
+                {{ level.name }}
               </th>
             </tr>
           </thead>
@@ -249,14 +250,14 @@ onMounted(async () => {
 
               <!-- Grade Columns In Day -->
               <td
-                v-for="grade in visibleGrades"
-                :key="grade"
+                v-for="level in visibleSchoolLevels"
+                :key="level.id"
                 class="border border-gray-200 p-2 align-top"
               >
-                <template v-if="getGradeDaySlots(day, grade).length > 0">
+                <template v-if="getLevelDaySlots(day, level.id).length > 0">
                   <div
-                    v-for="slot in getGradeDaySlots(day, grade)"
-                    :key="slot.id ?? slot.start_time + grade"
+                    v-for="slot in getLevelDaySlots(day, level.id)"
+                    :key="slot.id ?? slot.start_time + level.id"
                     :class="[
                       'mb-1.5 last:mb-0 rounded-lg border px-2.5 py-2',
                       slot.is_locked

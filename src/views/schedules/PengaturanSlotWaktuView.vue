@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
-import type { DayOfWeekEnum, GradeLevelEnum } from '@/interfaces/schedules/timeSlot.types'
+import type { DayOfWeekEnum } from '@/interfaces/schedules/timeSlot.types'
 import TimeSlotConfig from '@/components/schedules/TimeSlotConfig.vue'
 import TimeSlotGrid from '@/components/schedules/TimeSlotGrid.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
@@ -12,51 +12,25 @@ import BaseModal from '@/components/common/BaseModal.vue'
 const store = useTimeSlotStore()
 
 // --- State ---
-// New Academic Year modal state
-const showAddAcademicYearModal = ref(false)
+// Integrated Setup Modal State
+const showSetupModal = ref(false)
+const setupMode = ref<'SELECT_YEAR' | 'NEW_YEAR'>('SELECT_YEAR')
+const selectedYearId = ref<string>('')
+const newSemesterName = ref('Ganjil')
 const newYearStart = ref<number | undefined>(undefined)
 const newYearEnd = ref<number | undefined>(undefined)
-const addYearError = ref('')
+const setupError = ref('')
 
-// New Semester modal state
-const showAddSemesterModal = ref(false)
-const newSemesterName = ref('')
-const addSemesterError = ref('')
-
-// Preserve previous IDs to revert if ADD_NEW is cancelled
-const prevAcademicYearId = ref<string>('')
+// Preserve previous ID to revert if ADD_NEW is cancelled
 const prevSemesterId = ref<string>('')
 
 // --- Computed ---
-const filteredSemesters = computed(() => {
-  const ay = store.academicYears.find(y => y.id === store.activeAcademicYearId)
-  return ay ? ay.listSemesters : []
-})
+// --- Computed ---
 
 // --- Functions ---
 /** Updates the active selected day in the store */
 function switchDay(day: DayOfWeekEnum) {
   store.setCurrentDay(day)
-}
-
-/** Handles Academic Year dropdown changes. */
-async function onAcademicYearChange(event: Event) {
-  const select = event.target as HTMLSelectElement
-  const value = select.value
-
-  if (value === 'ADD_NEW') {
-    select.value = prevAcademicYearId.value
-    store.activeAcademicYearId = prevAcademicYearId.value
-    newYearStart.value = new Date().getFullYear()
-    newYearEnd.value = newYearStart.value + 1
-    addYearError.value = ''
-    showAddAcademicYearModal.value = true
-    return
-  }
-
-  prevAcademicYearId.value = value
-  store.activeSemesterId = '' // Reset semester when academic year changes
-  store.fetchSlotStructure()
 }
 
 /** Handles Semester dropdown changes. */
@@ -67,68 +41,105 @@ async function onSemesterChange(event: Event) {
   if (value === 'ADD_NEW') {
     select.value = prevSemesterId.value
     store.activeSemesterId = prevSemesterId.value
-    newSemesterName.value = ''
-    addSemesterError.value = ''
-    showAddSemesterModal.value = true
+    showSetupModal.value = true
+    setupMode.value = 'SELECT_YEAR'
+    selectedYearId.value = store.activeAcademicYearId || ''
+    newSemesterName.value = 'Ganjil'
+    newYearStart.value = new Date().getFullYear()
+    newYearEnd.value = newYearStart.value + 1
+    setupError.value = ''
     return
   }
 
   prevSemesterId.value = value
+  // Ensure activeAcademicYearId is somewhat synced if needed, though we rely mostly on activeSemesterId now
+  const selectedSem = store.flattenedSemesters.find(s => s.id === value)
+  if (selectedSem) {
+      store.activeAcademicYearId = selectedSem.academic_year_id
+  }
   await store.fetchSlotStructure()
 }
+
 
 /** Handles Grade dropdown changes. */
 async function onGradeChange() {
   await store.fetchSlotStructure()
 }
 
-/** Validates and adds a new Academic Year. */
-async function confirmAddAcademicYear() {
-  addYearError.value = ''
-  if (!newYearStart.value || !newYearEnd.value) {
-    addYearError.value = 'Tahun mulai dan tahun selesai harus diisi.'
-    return
+/** Validates and acts on the integrated setup modal. */
+async function confirmSetup() {
+  setupError.value = ''
+  
+  if (setupMode.value === 'NEW_YEAR') {
+    if (!newYearStart.value || !newYearEnd.value) {
+      setupError.value = 'Tahun mulai dan tahun selesai harus diisi.'
+      return
+    }
+  } else {
+      if (!selectedYearId.value) {
+          setupError.value = 'Pilih Tahun Ajaran terlebih dahulu.'
+          return
+      }
   }
-  try {
-    await store.createAcademicYear({
-      year_start: String(newYearStart.value),
-      year_end: String(newYearEnd.value)
-    })
-    showAddAcademicYearModal.value = false
-    prevAcademicYearId.value = store.activeAcademicYearId
-  } catch (err: any) {
-    addYearError.value = store.error || 'Gagal menambahkan tahun ajaran'
-  }
-}
 
-/** Validates and adds a new Semester. */
-async function confirmAddSemester() {
-  addSemesterError.value = ''
   if (!newSemesterName.value.trim()) {
-    addSemesterError.value = 'Nama semester harus diisi.'
+    setupError.value = 'Pilih atau isi nama semester.'
     return
   }
-  if (!store.activeAcademicYearId) {
-    addSemesterError.value = 'Pilih Tahun Ajaran terlebih dahulu.'
-    return
-  }
+
   try {
+    store.isLoading = true; // Use store loading state or local if preferred
+    let targetAcademicYearId = selectedYearId.value;
+
+    if (setupMode.value === 'NEW_YEAR') {
+      await store.createAcademicYear({
+        year_start: String(newYearStart.value),
+        year_end: String(newYearEnd.value)
+      })
+      // The API doesn't return the created ID directly in academicYears action, 
+      // but fetchAcademicYears updates the store. We find the matched one.
+      const newlyCreated = store.academicYears.find(ay => 
+        (ay.year_start === String(newYearStart.value) || ay.yearStart === String(newYearStart.value)) && 
+        (ay.year_end === String(newYearEnd.value) || ay.yearEnd === String(newYearEnd.value))
+      )
+      if (newlyCreated) {
+          targetAcademicYearId = newlyCreated.id
+      } else {
+          throw new Error("Gagal menemukan tahun ajaran yang baru dibuat.")
+      }
+    }
+
     await store.createSemester({
-      academic_year_id: store.activeAcademicYearId,
+      academic_year_id: targetAcademicYearId,
       name: newSemesterName.value.trim()
     })
-    showAddSemesterModal.value = false
-    // Auto-select the newly added semester? Usually backend creates it, we can just rely on fetchAcademicYears
+    
+    showSetupModal.value = false
+    
+    // Auto-select the newly added semester (last one in the target academic year)
+    const targetAy = store.academicYears.find(ay => ay.id === targetAcademicYearId)
+    if (targetAy && targetAy.listSemesters.length > 0) {
+        const newestSem = targetAy.listSemesters[targetAy.listSemesters.length - 1]
+        if (newestSem) {
+            store.activeSemesterId = newestSem.id
+            prevSemesterId.value = newestSem.id
+            store.activeAcademicYearId = targetAcademicYearId
+            await store.fetchSlotStructure()
+        }
+    }
+
   } catch (err: any) {
-    addSemesterError.value = store.error || 'Gagal menambahkan semester'
+    setupError.value = store.error || 'Gagal menyimpan pengaturan baru.'
+  } finally {
+      store.isLoading = false;
   }
 }
 
 // --- Lifecycle ---
-/** Initializes components by fetching academic years which automatically fetches slots based on active selections */
+/** Initializes components by fetching school levels and academic years which automatically fetches slots based on active selections */
 onMounted(async () => {
+  await store.fetchSchoolLevels()
   await store.fetchAcademicYears()
-  prevAcademicYearId.value = store.activeAcademicYearId
   prevSemesterId.value = store.activeSemesterId
 })
 </script>
@@ -158,24 +169,11 @@ onMounted(async () => {
           <!-- Dropdowns Container -->
           <div class="flex items-end gap-4">
             
-            <!-- Academic Year Selection -->
-            <div>
-              <label class="mb-1 block text-xs font-semibold text-gray-500">Tahun Ajaran</label>
-              <select
-                v-model="store.activeAcademicYearId"
-                class="w-40 sm:w-56 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
-                @change="onAcademicYearChange"
-              >
-                <option value="" disabled>-- Pilih Tahun Ajaran --</option>
-                <option v-for="ay in store.academicYears" :key="ay.id" :value="ay.id">
-                  {{ ay.year_start ?? ay.yearStart }}/{{ ay.year_end ?? ay.yearEnd }}
-                </option>
-                <option value="ADD_NEW">+ Tambah Tahun Ajaran Baru</option>
-              </select>
-            </div>
+
 
             <!-- Semester Selection -->
             <div>
+              <label class="mb-1 block text-xs font-semibold text-gray-500">Semester</label>
               <label class="mb-1 block text-xs font-semibold text-gray-500">Semester</label>
               <select
                 v-model="store.activeSemesterId"
@@ -184,24 +182,25 @@ onMounted(async () => {
                 :disabled="!store.activeAcademicYearId"
               >
                 <option value="" disabled>-- Pilih Semester --</option>
-                <option v-for="sem in filteredSemesters" :key="sem.id" :value="sem.id">
-                  {{ sem.name }}
+                <option v-for="sem in store.flattenedSemesters" :key="sem.id" :value="sem.id">
+                  {{ sem.display_name }}
                 </option>
-                <option value="ADD_NEW" v-if="store.activeAcademicYearId">+ Tambah Semester Baru</option>
+                <option value="ADD_NEW">+ Tambah Semester Baru</option>
               </select>
             </div>
 
             <!-- Grade Level Selection -->
             <div>
               <label class="mb-1 block text-xs font-semibold text-gray-500">Jenjang</label>
+              <label class="mb-1 block text-xs font-semibold text-gray-500">Jenjang</label>
               <select
-                v-model="store.activeGrade"
+                v-model="store.activeSchoolLevelId"
                 class="w-32 sm:w-40 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
                 @change="onGradeChange"
               >
                 <option value="" disabled>-- Pilih Jenjang --</option>
-                <option v-for="grade in store.availableGrades" :key="grade" :value="grade">
-                  {{ grade }}
+                <option v-for="level in store.schoolLevels" :key="level.id" :value="level.id">
+                  {{ level.name }}
                 </option>
               </select>
             </div>
@@ -256,10 +255,11 @@ onMounted(async () => {
         
         <!-- Setup Requirement Warning -->
         <div
-          v-if="!store.activeSemesterId || !store.activeGrade"
+          v-if="!store.activeSemesterId || !store.activeSchoolLevelId"
           class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-12 text-center"
         >
           <span class="mb-3 text-5xl">📅</span>
+          <p class="text-base font-semibold text-gray-500">Pilih Semester dan Jenjang</p>
           <p class="text-base font-semibold text-gray-500">Pilih Semester dan Jenjang</p>
           <p class="mt-1 text-sm text-gray-400">Gunakan dropdown di atas untuk memulai.</p>
         </div>
@@ -269,82 +269,92 @@ onMounted(async () => {
     </div>
   </div>
 
-  <!-- Add Academic Year Modal -->
-  <BaseModal :show="showAddAcademicYearModal" @close="showAddAcademicYearModal = false">
-    <template #header>
-      <div class="mb-4 text-5xl">📅</div>
-      <h3 class="mb-2 text-lg font-bold text-gray-800">Tambah Tahun Ajaran Baru</h3>
-    </template>
-    <template #body>
-      <div class="mb-4 flex gap-4">
-        <div class="flex-1">
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Tahun Mulai</label>
-          <input
-            v-model.number="newYearStart"
-            type="number"
-            class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
-          />
-        </div>
-        <div class="flex-1">
-          <label class="block text-xs font-semibold text-gray-500 mb-1">Tahun Selesai</label>
-          <input
-            v-model.number="newYearEnd"
-            type="number"
-            class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
-            @keydown.enter="confirmAddAcademicYear"
-          />
-        </div>
-      </div>
-      <p v-if="addYearError" class="mt-2 text-xs text-red-500">{{ addYearError }}</p>
-    </template>
-    <template #footer>
-      <div class="flex gap-4">
-        <button
-          class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300"
-          @click="showAddAcademicYearModal = false"
-        >
-          Batal
-        </button>
-        <button
-          class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
-          @click="confirmAddAcademicYear"
-        >
-          Tambahkan
-        </button>
-      </div>
-    </template>
-  </BaseModal>
-
-  <!-- Add Semester Modal -->
-  <BaseModal :show="showAddSemesterModal" @close="showAddSemesterModal = false">
+  <!-- Integrated Setup Modal -->
+  <BaseModal :show="showSetupModal" @close="showSetupModal = false">
     <template #header>
       <div class="mb-4 text-5xl">📚</div>
-      <h3 class="mb-2 text-lg font-bold text-gray-800">Tambah Semester Baru</h3>
+      <h3 class="mb-2 text-lg font-bold text-gray-800">
+        {{ setupMode === 'NEW_YEAR' ? 'Tambah Tahun Ajaran & Semester' : 'Tambah Semester Baru' }}
+      </h3>
     </template>
     <template #body>
-      <p class="mb-4 text-sm text-gray-500">Masukkan nama semester (misal: Ganjil, Genap).</p>
-      <input
-        v-model="newSemesterName"
-        type="text"
-        placeholder="Contoh: Ganjil"
-        class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
-        @keydown.enter="confirmAddSemester"
-      />
-      <p v-if="addSemesterError" class="mt-2 text-xs text-red-500">{{ addSemesterError }}</p>
+      <!-- Semester Type Input -->
+      <div class="mb-4">
+        <label class="block text-xs font-semibold text-gray-500 mb-1">Tipe Semester</label>
+        <select
+          v-model="newSemesterName"
+          class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
+        >
+          <option value="Ganjil">Ganjil</option>
+          <option value="Genap">Genap</option>
+        </select>
+      </div>
+
+      <!-- Year Selection Mode -->
+      <div v-show="setupMode === 'SELECT_YEAR'" class="mb-4">
+        <label class="block text-xs font-semibold text-gray-500 mb-1">Tahun Ajaran</label>
+        <select
+          v-model="selectedYearId"
+          class="w-full flex-1 rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
+        >
+          <option value="" disabled>-- Pilih Tahun Ajaran --</option>
+          <option v-for="ay in store.academicYears" :key="ay.id" :value="ay.id">
+            {{ ay.year_start ?? ay.yearStart }}/{{ ay.year_end ?? ay.yearEnd }}
+          </option>
+        </select>
+        <button 
+          class="mt-2 text-xs font-semibold text-emerald-700 hover:text-emerald-900 underline"
+          @click="setupMode = 'NEW_YEAR'"
+        >
+          Tambah tahun ajaran
+        </button>
+      </div>
+
+      <!-- New Year Mode -->
+      <div v-show="setupMode === 'NEW_YEAR'" class="mb-4">
+        <label class="block text-xs font-semibold text-gray-500 mb-2">Buat Tahun Ajaran Baru</label>
+        <div class="flex gap-4">
+          <div class="flex-1">
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">Tahun Mulai</label>
+            <input
+              v-model.number="newYearStart"
+              type="number"
+              class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
+            />
+          </div>
+          <div class="flex-1">
+            <label class="block text-[10px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">Tahun Selesai</label>
+            <input
+              v-model.number="newYearEnd"
+              type="number"
+              class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
+            />
+          </div>
+        </div>
+        <button 
+          class="mt-2 text-xs text-gray-500 hover:text-gray-700 underline"
+          @click="setupMode = 'SELECT_YEAR'"
+        >
+          Batal tambah tahun, pilih yang sudah ada
+        </button>
+      </div>
+
+      <p v-if="setupError" class="mt-2 text-xs text-red-500">{{ setupError }}</p>
     </template>
     <template #footer>
       <div class="flex gap-4">
         <button
           class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300"
-          @click="showAddSemesterModal = false"
+          @click="showSetupModal = false"
         >
           Batal
         </button>
         <button
-          class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
-          @click="confirmAddSemester"
+          class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900 disabled:opacity-50"
+          @click="confirmSetup"
+          :disabled="store.isLoading"
         >
-          Tambahkan
+          {{ store.isLoading ? 'Menyimpan...' : 'Simpan' }}
         </button>
       </div>
     </template>
