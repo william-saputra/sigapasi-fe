@@ -15,7 +15,7 @@ const showSuccess = ref(false);
 const uploadedFile = ref<File | null>(null);
 
 const form = reactive({
-  leaveType: "FULL_DAY", // Diubah jadi FULL_DAY agar sesuai dengan Backend
+  leaveType: "FULL_DAY",
   startDate: "",
   endDate: "",
   singleDate: "",

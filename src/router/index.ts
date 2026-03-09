@@ -5,24 +5,24 @@ import HomeView from '../views/HomeView.vue'
 function getRoleFromToken(): string | null {
   try {
     const token = localStorage.getItem('token');
-    
+
     // 1. Cek apakah token ada
     if (!token) return null;
 
     // 2. Pecah string JWT
     const parts = token.split('.');
-    
-    // 3. Ambil bagian payload (indeks ke-1) 
+
+    // 3. Ambil bagian payload (indeks ke-1)
     // Kita simpan ke variabel dan pastikan ada isinya
     const payloadPart = parts[1];
 
     if (!payloadPart) return null;
 
-    // 4. Decode menggunakan atob. 
-    // Kita beritahu TS bahwa payloadPart pasti string pakai "as string" 
+    // 4. Decode menggunakan atob.
+    // Kita beritahu TS bahwa payloadPart pasti string pakai "as string"
     // atau biarkan pengecekan if di atas bekerja.
     const decodedPayload = JSON.parse(atob(payloadPart));
-    
+
     return decodedPayload.role ?? null;
   } catch (error) {
     return null;
@@ -33,6 +33,14 @@ function adminStaffOnly() {
   const role = getRoleFromToken()
   if (role !== 'ADMIN' && role !== 'STAFF') {
     return { path: '/' }
+  }
+}
+
+function teacherOnly() {
+  const role = getRoleFromToken()
+  // Kita gunakan toUpperCase agar lebih aman terhadap perbedaan case dari backend
+  if (role?.toUpperCase() !== 'TEACHER') {
+    return { path: '/' } // Tendang ke home kalau bukan teacher
   }
 }
 
@@ -105,6 +113,7 @@ const router = createRouter({
       path: "/leaves/request",
       name: "leave-request",
       component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
+      beforeEnter: teacherOnly,
     },
     {
       path: '/reviews/periods',
@@ -128,14 +137,13 @@ const router = createRouter({
       path: '/ketersediaan-mengajar',
       name: 'ketersediaan-mengajar',
       component: () => import('@/views/schedules/TeacherAvailabilityView.vue'),
-      meta: { requiresTeacher: true } 
+      meta: { requiresTeacher: true }
     },
     {
-      // INI HALAMAN BARU (Ringkasan)
       path: '/ketersediaan-mengajar/ringkasan',
       name: 'ketersediaan-ringkasan',
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
-      meta: { requiresTeacher: true } 
+      meta: { requiresTeacher: true }
     },
   ],
 }
