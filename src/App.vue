@@ -1,4 +1,5 @@
 <template>
+  <Toaster position="top-center" richColors />
   <GlobalNavbar />
   <main class="app-content">
     <RouterView />
@@ -7,6 +8,7 @@
 
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { Toaster } from 'vue-sonner'
 import GlobalNavbar from '@/components/common/GlobalNavbar.vue'
 </script>
 

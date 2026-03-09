@@ -7,7 +7,7 @@ import type { Subjects } from '@/interfaces/accounts/subjects.interface'
 import type { BaseResponse } from '@/interfaces/base-response.interface'
 
 import { defineStore } from 'pinia'
-import axios, { AxiosError } from 'axios'
+import axios from 'axios'
 import { toast } from 'vue-sonner'
 import { getAuthToken } from '@/lib/auth'
 
@@ -23,7 +23,12 @@ function getAuthHeaders() {
 
 function getErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
-    return error.response?.data?.message || error.message || 'Unknown error'
+    return (
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      error.message ||
+      'Unknown error'
+    )
   }
 
   if (error instanceof Error) {
@@ -31,6 +36,20 @@ function getErrorMessage(error: unknown) {
   }
 
   return 'Unknown error'
+}
+
+function showSuccess(message?: string) {
+  toast.success(message || 'Operation successful')
+}
+
+function showWarning(message?: string) {
+  toast.warning(message || 'Operation failed')
+}
+
+function showError(error: unknown) {
+  const message = getErrorMessage(error)
+  toast.error(message)
+  return message
 }
 
 export const useAccountStore = defineStore('account', {
@@ -52,10 +71,10 @@ export const useAccountStore = defineStore('account', {
         })
 
         this.accounts = response.data.data ?? []
+
         return this.accounts
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while loading accounts: ${this.error}`)
+        this.error = showError(error)
         return []
       } finally {
         this.loading = false
@@ -75,10 +94,11 @@ export const useAccountStore = defineStore('account', {
         )
 
         this.subjects = response.data.data ?? []
+        showSuccess(response.data.message || 'Subjects loaded successfully')
+
         return this.subjects
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while loading subjects: ${this.error}`)
+        this.error = showError(error)
         return []
       } finally {
         this.loading = false
@@ -97,10 +117,16 @@ export const useAccountStore = defineStore('account', {
           },
         )
 
-        return response.data.data ?? null
+        const account = response.data.data ?? null
+
+        if (!account) {
+          showWarning('Account not found')
+          return null
+        }
+
+        return account
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while loading account detail: ${this.error}`)
+        this.error = showError(error)
         return null
       } finally {
         this.loading = false
@@ -120,19 +146,19 @@ export const useAccountStore = defineStore('account', {
           },
         )
 
-        const createdAccount = response.data.data
+        const createdAccount = response.data.data ?? null
 
-        if (createdAccount) {
-          this.accounts.push(createdAccount)
-          toast.success('Account successfully created')
-          return createdAccount
+        if (!createdAccount) {
+          showWarning(response.data.message || 'Failed creating account')
+          return null
         }
 
-        toast.warning('Failed creating account')
-        return null
+        this.accounts.push(createdAccount)
+        showSuccess(response.data.message || 'Account successfully created')
+
+        return createdAccount
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while creating account: ${this.error}`)
+        this.error = showError(error)
         return null
       } finally {
         this.loading = false
@@ -152,26 +178,28 @@ export const useAccountStore = defineStore('account', {
           },
         )
 
-        const updatedAccount = response.data.data
+        const updatedAccount = response.data.data ?? null
 
-        if (updatedAccount) {
-          const index = this.accounts.findIndex(
-            (account) => account.id === updatedAccount.id,
-          )
-
-          if (index !== -1) {
-            this.accounts[index] = updatedAccount
-          }
-
-          toast.success('Account successfully updated')
-          return updatedAccount
+        if (!updatedAccount) {
+          showWarning(response.data.message || 'Failed updating account')
+          return null
         }
 
-        toast.warning('Failed updating account')
-        return null
+        const index = this.accounts.findIndex(
+          (account) => account.id === updatedAccount.id,
+        )
+
+        if (index !== -1) {
+          this.accounts[index] = updatedAccount
+        } else {
+          this.accounts.push(updatedAccount)
+        }
+
+        showSuccess(response.data.message || 'Account successfully updated')
+
+        return updatedAccount
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while updating account: ${this.error}`)
+        this.error = showError(error)
         return null
       } finally {
         this.loading = false
@@ -183,7 +211,7 @@ export const useAccountStore = defineStore('account', {
       this.error = null
 
       try {
-        await axios.delete<BaseResponse<Users>>(
+        const response = await axios.delete<BaseResponse<Users>>(
           `${baseAccountUrl}/delete/${accountId}`,
           {
             headers: getAuthHeaders(),
@@ -191,12 +219,11 @@ export const useAccountStore = defineStore('account', {
         )
 
         this.accounts = this.accounts.filter((account) => account.id !== accountId)
+        showSuccess(response.data.message || 'Account successfully deleted')
 
-        toast.success('Account successfully deleted')
         return true
       } catch (error) {
-        this.error = getErrorMessage(error)
-        toast.error(`Error while deleting account: ${this.error}`)
+        this.error = showError(error)
         return false
       } finally {
         this.loading = false

@@ -299,7 +299,7 @@ onMounted(async () => {
                   id="email"
                   v-model="form.email"
                   type="email"
-                  placeholder="Masukkan email pengguna"
+                  placeholder="Email"
                   :disabled="isEmailDisabled"
                   required
                 />
@@ -311,7 +311,7 @@ onMounted(async () => {
                   id="fullName"
                   v-model="form.fullName"
                   type="text"
-                  placeholder="Masukkan nama pengguna"
+                  placeholder="Nama Lengkap"
                   :disabled="isFullNameDisabled"
                   required
                 />
@@ -330,7 +330,7 @@ onMounted(async () => {
                     id="password"
                     v-model="form.password"
                     :type="showPassword ? 'text' : 'password'"
-                    placeholder="Masukkan password pengguna"
+                    placeholder="Password"
                     :minlength="form.password ? 8 : undefined"
                     :required="!isEditMode"
                     :disabled="isPasswordDisabled"
