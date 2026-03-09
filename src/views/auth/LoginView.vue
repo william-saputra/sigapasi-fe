@@ -92,10 +92,6 @@ const handleLogin = async () => {
             </div>
           </div>
 
-          <p v-if="authStore.error" class="text-sm text-red-600">
-            {{ authStore.error }}
-          </p>
-
           <button
             type="submit"
             :disabled="isLoading"

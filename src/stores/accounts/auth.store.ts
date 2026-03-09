@@ -30,6 +30,7 @@ export const useAuthStore = defineStore('auth', {
     async login(payload: LoginRequest) {
       try {
         this.loading = true;
+
         const response = await axios.post<
           BaseResponse<{ token: string } & CurrentUser>
         >(`${basePostUrl}/login`, payload);
@@ -43,12 +44,22 @@ export const useAuthStore = defineStore('auth', {
         toast.success(response.data.message || 'Login successful');
         this.error = null;
 
-        // Store token and user in LocalStorage
         setLocalStorage('token', this.token);
         setLocalStorage('user', this.user);
+
       } catch (error) {
-        this.error = error instanceof Error ? error.message : 'Unknown error';
-        toast.error(`Error while loading post: ${this.error}`);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            this.error = 'Email atau Password salah';
+            toast.error('Email atau Password salah');
+          } else {
+            this.error = error.response?.data?.message || 'Terjadi kesalahan';
+            toast.error(this.error ?? 'Unknown error');
+          }
+        } else {
+          this.error = 'Unknown error';
+          toast.error(this.error ?? 'Unknown error');
+        }
       } finally {
         this.loading = false;
       }
@@ -65,7 +76,7 @@ export const useAuthStore = defineStore('auth', {
             this.error = null;
         } catch (error) {
             this.error = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Error while logout: ${this.error}`);
+            toast.error(this.error ?? 'Unknown error');
         } finally {
             this.loading = false;
         }

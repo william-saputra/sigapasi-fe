@@ -273,14 +273,25 @@ onMounted(async () => {
           {{ isEditMode ? 'Edit Akun' : 'Tambah Akun Baru' }}
         </h1>
 
-        <button
-          class="save-button"
-          type="submit"
-          form="account-form"
-          :disabled="isSubmitting || isLoadingDetail"
-        >
-          {{ isSubmitting ? 'Menyimpan...' : isEditMode ? 'Update' : 'Simpan' }}
-        </button>
+        <div class="header-actions">
+          <button
+            class="cancel-button"
+            type="button"
+            @click="goBack"
+            :disabled="isSubmitting"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="save-button"
+            type="submit"
+            form="account-form"
+            :disabled="isSubmitting || isLoadingDetail"
+          >
+            {{ isSubmitting ? 'Menyimpan...' : isEditMode ? 'Update' : 'Simpan' }}
+          </button>
+        </div>
       </div>
 
       <div class="form-card">
@@ -494,6 +505,37 @@ onMounted(async () => {
 
 .back-button:hover {
   color: #334155;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.cancel-button {
+  padding: 12px 24px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.cancel-button:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.18);
+}
+
+.cancel-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .page-header {
@@ -726,4 +768,5 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
+
 </style>
