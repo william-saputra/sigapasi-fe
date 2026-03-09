@@ -9,7 +9,7 @@ import type {
     SlotTypeEnum,
     UISlot,
     AcademicYearSemesterResponseDTO,
-    GradeLevelEnum,
+    SchoolLevelResponseDTO,
     CreateAcademicYearRequestDTO,
     CreateSemesterRequestDTO,
 } from '@/interfaces/schedules/timeSlot.types'
@@ -61,8 +61,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
     const academicYears = ref<AcademicYearSemesterResponseDTO[]>([])
     const activeAcademicYearId = ref<string>('')
     const activeSemesterId = ref<string>('')
-    const activeGrade = ref<GradeLevelEnum>('SD')
-    const availableGrades = ref<GradeLevelEnum[]>(['SD', 'SMP', 'SMA'])
+    const activeSchoolLevelId = ref<string>('')
+    const schoolLevels = ref<SchoolLevelResponseDTO[]>([])
 
     // --- Computed & Getters ---
     const currentSchedule = computed(() => schedules.value[currentDay.value])
@@ -77,7 +77,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         end_time: string
         duration: number
         sessionLabel: string
-        slots: Partial<Record<GradeLevelEnum, UISlot>>
+        slots: Partial<Record<string, UISlot>>
     }
 
     const masterGridData = computed(() => {
@@ -96,11 +96,11 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 const slotsAtTime = daySlots.filter(s => s.start_time === startTime)
                 const representative = slotsAtTime[0]
 
-                // Build slot-map: grade_level -> UISlot
-                const slotsByGrade: Partial<Record<GradeLevelEnum, UISlot>> = {}
+                // Build slot-map: school_level_id -> UISlot
+                const slotsByLevel: Partial<Record<string, UISlot>> = {}
                 for (const sl of slotsAtTime) {
-                    if (sl.grade_level !== undefined) {
-                        slotsByGrade[sl.grade_level] = sl
+                    if (sl.school_level_id !== undefined) {
+                        slotsByLevel[sl.school_level_id] = sl
                     }
                 }
 
@@ -123,12 +123,29 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                     timeLabel: `${startTime}${representative?.end_time ? ' – ' + representative.end_time : ''}`,
                     duration: representative?.duration ?? 0,
                     sessionLabel,
-                    slots: slotsByGrade,
+                    slots: slotsByLevel,
                 } as MasterGridRow
             })
         }
 
         return result as Record<string, MasterGridRow[]>
+    })
+
+    /**
+     * Flattened semesters for the integrated semester dropdown UI
+     */
+    const flattenedSemesters = computed(() => {
+        const result: { id: string; academic_year_id: string; display_name: string }[] = []
+        for (const ay of academicYears.value) {
+            for (const sem of ay.listSemesters) {
+                result.push({
+                    id: sem.id,
+                    academic_year_id: ay.id,
+                    display_name: `${sem.name} ${ay.year_start ?? ay.yearStart}/${ay.year_end ?? ay.yearEnd}`,
+                })
+            }
+        }
+        return result
     })
 
     // --- Store Local Utilities ---
@@ -175,6 +192,29 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
 
     function setCurrentDay(day: DayOfWeekEnum): void {
         currentDay.value = day
+    }
+
+    /** Fetch all School Levels from the backend */
+    async function fetchSchoolLevels(): Promise<void> {
+        error.value = null
+        try {
+            const data = await apiService.get<SchoolLevelResponseDTO[]>('/school-levels')
+            // Deduplicate school levels on save
+            const uniqueMap = new Map<string, SchoolLevelResponseDTO>()
+            data.forEach((level) => {
+                if (!uniqueMap.has(level.id)) {
+                    uniqueMap.set(level.id, level)
+                }
+            })
+            schoolLevels.value = Array.from(uniqueMap.values())
+
+            if (schoolLevels.value.length > 0 && !activeSchoolLevelId.value) {
+                const firstData = schoolLevels.value[0]
+                if (firstData) activeSchoolLevelId.value = firstData.id
+            }
+        } catch (err: any) {
+            error.value = err.response?.data?.message || err.message || 'Gagal mengambil data jenjang pendidikan.'
+        }
     }
 
     /** Fetch all Academic Years and their semesters from the backend */
@@ -271,7 +311,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 const slotType = dto.slotType || dto.slot_type
                 const isLocked = dto.isLocked !== undefined ? dto.isLocked : dto.is_locked
                 const lockedLabel = dto.lockedLabel !== undefined ? dto.lockedLabel : dto.locked_label
-                const gradeLevel = dto.gradeLevel !== undefined ? dto.gradeLevel : dto.grade_level
+                const schoolLevelId = dto.schoolLevelId !== undefined ? dto.schoolLevelId : dto.school_level_id
+                const schoolLevelName = dto.schoolLevelName !== undefined ? dto.schoolLevelName : dto.school_level_name
 
                 const startHHmm = parseIsoTime(startStr)
                 const endHHmm = parseIsoTime(endStr)
@@ -285,7 +326,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                     is_locked: !!isLocked,
                     locked_label: lockedLabel,
                     duration: calcDuration(startHHmm, endHHmm),
-                    grade_level: gradeLevel,
+                    school_level_id: schoolLevelId,
+                    school_level_name: schoolLevelName,
                 }
 
                 if (schedules.value[day]) {
@@ -310,8 +352,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
 
     /** Fetch all slot structures from the backend and populate schedules */
     async function fetchSlotStructure(): Promise<void> {
-        // Guard: only fetch when both semester and grade are selected
-        if (!activeSemesterId.value || activeGrade.value === null) {
+        // Guard: only fetch when both semester and level are selected
+        if (!activeSemesterId.value || !activeSchoolLevelId.value) {
             schedules.value = emptySchedules()
             return
         }
@@ -322,7 +364,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             const data = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
                 params: {
                     semester_id: activeSemesterId.value,
-                    grade_level: activeGrade.value,
+                    school_level_id: activeSchoolLevelId.value,
                 },
             })
 
@@ -342,7 +384,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 const slotType = dto.slotType || dto.slot_type
                 const isLocked = dto.isLocked !== undefined ? dto.isLocked : dto.is_locked
                 const lockedLabel = dto.lockedLabel !== undefined ? dto.lockedLabel : dto.locked_label
-                const gradeLevel = dto.gradeLevel !== undefined ? dto.gradeLevel : dto.grade_level
+                const schoolLevelId = dto.schoolLevelId !== undefined ? dto.schoolLevelId : dto.school_level_id
+                const schoolLevelName = dto.schoolLevelName !== undefined ? dto.schoolLevelName : dto.school_level_name
 
                 const startHHmm = parseIsoTime(startStr)
                 const endHHmm = parseIsoTime(endStr)
@@ -356,7 +399,8 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                     is_locked: !!isLocked,
                     locked_label: lockedLabel,
                     duration: calcDuration(startHHmm, endHHmm),
-                    grade_level: gradeLevel,
+                    school_level_id: schoolLevelId,
+                    school_level_name: schoolLevelName,
                 }
 
                 if (schedules.value[day]) {
@@ -385,7 +429,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         day: DayOfWeekEnum,
         slotsToSave: UISlot[],
         semesterId: string,
-        applyToAllGrades: boolean,
+        applyToAllLevels: boolean,
     ): Promise<void> {
         isSaving.value = true
         error.value = null
@@ -423,12 +467,12 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 }
             }
 
-            if (applyToAllGrades) {
-                for (const targetGrade of availableGrades.value) {
+            if (applyToAllLevels) {
+                for (const level of schoolLevels.value) {
                     const payload: any = {
                         semester_id: semesterId,
                         day_of_week: day,
-                        grade_level: targetGrade,
+                        school_level_id: level.id,
                         slots,
                     }
                     const response = await apiService.post<any>('/slot/structure', payload)
@@ -443,7 +487,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                         const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
                             params: {
                                 semester_id: semesterId,
-                                grade_level: targetGrade,
+                                school_level_id: level.id,
                             },
                         })
                         await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
@@ -453,7 +497,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 const payload: any = {
                     semester_id: semesterId,
                     day_of_week: day,
-                    grade_level: activeGrade.value,
+                    school_level_id: activeSchoolLevelId.value,
                     slots,
                 }
                 const response = await apiService.post<any>('/slot/structure', payload)
@@ -466,7 +510,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                     const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
                         params: {
                             semester_id: semesterId,
-                            grade_level: activeGrade.value,
+                            school_level_id: activeSchoolLevelId.value,
                         },
                     })
                     await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
@@ -612,12 +656,14 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         academicYears,
         activeAcademicYearId,
         activeSemesterId,
-        activeGrade,
-        availableGrades,
+        activeSchoolLevelId,
+        schoolLevels,
         // Getters
         currentSchedule,
         masterGridData,
+        flattenedSemesters,
         // API Actions
+        fetchSchoolLevels,
         fetchAcademicYears,
         createAcademicYear,
         createSemester,

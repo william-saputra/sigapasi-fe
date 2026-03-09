@@ -1,7 +1,10 @@
 // --- Enum Types ---
 export type DayOfWeekEnum = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN'
 export type SlotTypeEnum = 'LESSON' | 'BREAK'
-export type GradeLevelEnum = 'SD' | 'SMP' | 'SMA'
+export interface SchoolLevelResponseDTO {
+    id: string
+    name: string
+}
 
 // Backward compatible aliases used by existing components
 export type DayOfWeek = DayOfWeekEnum
@@ -49,7 +52,8 @@ export interface TimeSlotResponseDTO {
     is_locked: boolean
     locked_label: string | null
     slot_type: SlotTypeEnum
-    grade_level: GradeLevelEnum // Changed to string enum
+    school_level_id: string
+    school_level_name: string
 }
 
 // --- Backend Request Interfaces ---
@@ -63,7 +67,7 @@ export interface SlotRequestDTO {
 export interface SlotStructureRequestDTO {
     semester_id: string
     day_of_week: DayOfWeekEnum
-    grade_level: GradeLevelEnum // Changed to string enum
+    school_level_id: string
     slots: SlotRequestDTO[]
 }
 
@@ -81,7 +85,8 @@ export interface UISlot {
     is_locked: boolean
     locked_label: string | null
     duration: number   // Computed elapsed minutes for rendering
-    grade_level?: GradeLevelEnum // Changed to string enum or undefined
+    school_level_id?: string
+    school_level_name?: string
 }
 
 // --- Legacy Compatibility ---

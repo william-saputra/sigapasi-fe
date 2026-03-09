@@ -16,7 +16,7 @@ const sessionCount = ref(8)
 
 // Checkbox states
 const selectedDays = ref<DayOfWeekEnum[]>([])
-const applyToAllGrades = ref(false)
+const applyToAllLevels = ref(false)
 
 // Toast state
 const showToast = ref(false)
@@ -66,7 +66,7 @@ function onStartTimeChange() {
 
 /** Persists current day's slot configuration to the backend for selected grades */
 async function onSave() {
-  if (!store.activeGrade && !applyToAllGrades.value) {
+  if (!store.activeSchoolLevelId && !applyToAllLevels.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -75,11 +75,11 @@ async function onSave() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      applyToAllGrades.value,
+      applyToAllLevels.value,
     )
-    const gradeLabel = applyToAllGrades.value
+    const gradeLabel = applyToAllLevels.value
       ? 'semua tingkatan'
-      : `Jenjang ${store.activeGrade}`
+      : `Jenjang Terpilih`
     showNotification(`Struktur slot berhasil disimpan untuk ${gradeLabel}!`, 'success')
   } catch {
     showNotification(store.error || 'Gagal menyimpan struktur slot.', 'error')
@@ -103,7 +103,7 @@ async function confirmApply() {
   store.copyScheduleToDays(selectedDays.value)
   showApplyModal.value = false
 
-  if (!store.activeGrade && !applyToAllGrades.value) {
+  if (!store.activeSchoolLevelId && !applyToAllLevels.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -118,14 +118,14 @@ async function confirmApply() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      applyToAllGrades.value,
+      applyToAllLevels.value,
     )
     for (const payload of payloads) {
       await store.saveSlotStructure(
         payload.day,
         payload.slots,
         activeSemesterId.value,
-        applyToAllGrades.value,
+        applyToAllLevels.value,
       )
     }
     showNotification('Pengaturan berhasil disimpan dan disalin!', 'success')
@@ -238,12 +238,12 @@ function confirmClearAll() {
     <!-- Save Configuration Segment -->
     <label class="mb-4 flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
       <input
-        v-model="applyToAllGrades"
+        v-model="applyToAllLevels"
         type="checkbox"
         class="h-4 w-4 scale-110 accent-blue-600"
       />
       <span class="text-sm text-blue-800">
-        Terapkan konfigurasi ini ke <strong>semua jenjang pendidikan</strong>
+        Terapkan konfigurasi hari ini ke seluruh jenjang
       </span>
     </label>
 

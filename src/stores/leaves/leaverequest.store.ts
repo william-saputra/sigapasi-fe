@@ -17,9 +17,7 @@ const getAuthHeaders = () => {
 // Helper KHUSUS request Multipart (File Upload)
 const getMultipartAuthHeaders = () => {
   const token = getAuthToken()
-  return {
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-  }
+  return (token ? { 'Authorization': `Bearer ${token}` } : {})
 }
 
 export const useLeaveStore = defineStore('leave', () => {
