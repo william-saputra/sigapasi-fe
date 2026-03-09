@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
-import type { DayOfWeekEnum, UISlot } from '@/interfaces/schedules/timeSlot.types'
+import type { DayOfWeekEnum, UISlot, GradeLevelEnum } from '@/interfaces/schedules/timeSlot.types'
 
 // --- Storage & Routing ---
 const router = useRouter()
@@ -11,16 +11,14 @@ const store = useTimeSlotStore()
 
 // --- State ---
 // Filter dropdown state
-const selectedGrade = ref<'ALL' | string>('ALL')
+const selectedGrade = ref<'ALL' | GradeLevelEnum>('ALL')
 
 // --- Computed ---
 // Evaluation to check if all grades view is selected
 const isAllGrades = computed(() => selectedGrade.value === 'ALL')
 
-// Returns the array of available grades sorted in ascending order
-const visibleGrades = computed<number[]>(() =>
-  [...store.availableGrades].sort((a, b) => a - b)
-)
+// Returns the array of available grades
+const visibleGrades = computed<GradeLevelEnum[]>(() => store.availableGrades)
 
 // Condition to check if there are any slots across all available days
 const hasData = computed(() =>
@@ -34,11 +32,8 @@ async function loadData() {
   if (isAllGrades.value) {
     await store.fetchSlotStructureForAll()
   } else {
-    const parsed = parseInt(selectedGrade.value, 10)
-    if (!isNaN(parsed)) {
-      store.activeGrade = parsed
-      await store.fetchSlotStructure()
-    }
+    store.activeGrade = selectedGrade.value as GradeLevelEnum
+    await store.fetchSlotStructure()
   }
 }
 
@@ -75,7 +70,7 @@ function slotBadgeClass(slot: UISlot): string {
 }
 
 /** Filters and returns slots for a specific day and a specific grade level */
-function getGradeDaySlots(day: DayOfWeekEnum, grade: number): UISlot[] {
+function getGradeDaySlots(day: DayOfWeekEnum, grade: GradeLevelEnum): UISlot[] {
   return (store.schedules[day] ?? []).filter(s => s.grade_level === grade)
 }
 
@@ -136,9 +131,9 @@ onMounted(async () => {
               class="w-44 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-all focus:border-emerald-700 focus:bg-white focus:ring-2 focus:ring-emerald-700/10 focus:outline-none"
               @change="onGradeChange"
             >
-              <option value="ALL">Semua Tingkatan</option>
-              <option v-for="grade in store.availableGrades" :key="grade" :value="String(grade)">
-                Tingkatan {{ grade }}
+              <option value="ALL">Semua</option>
+              <option v-for="grade in store.availableGrades" :key="grade" :value="grade">
+                {{ grade }}
               </option>
             </select>
           </div>
@@ -235,7 +230,7 @@ onMounted(async () => {
                 :key="grade"
                 class="border border-emerald-700 px-4 py-3 text-center whitespace-nowrap min-w-[180px]"
               >
-                Tingkatan {{ grade }}
+                {{ grade }}
               </th>
             </tr>
           </thead>
