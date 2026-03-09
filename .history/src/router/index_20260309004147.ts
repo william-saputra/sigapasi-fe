@@ -5,7 +5,9 @@ function getRoleFromToken(): string | null {
   try {
     const token = localStorage.getItem('token')
     if (!token) return null
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    const part = token.split('.')[1]
+    if (!part) return null
+    const payload = JSON.parse(atob(part))
     return payload.role ?? null
   } catch {
     return null
@@ -38,14 +40,14 @@ const router = createRouter({
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
     },
     {
-      path: "/leaves/history",
-      name: "leaves-history",
+      path: '/leaves/history',
+      name: 'leaves-history',
       component: LeavesHistoryView,
     },
     {
-      path: "/leaves/request",
-      name: "leave-request",
-      component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
+      path: '/leaves/request',
+      name: 'leave-request',
+      component: () => import('@/views/leaves/LeaveRequestView.vue'),
     },
     {
       path: '/reviews/periods',
