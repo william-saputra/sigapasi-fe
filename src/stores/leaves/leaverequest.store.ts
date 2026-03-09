@@ -21,17 +21,14 @@ const getMultipartAuthHeaders = () => {
 }
 
 export const useLeaveStore = defineStore('leave', () => {
-  // State - reactive leave data
   const leaves = ref<LeaveRequestResponseDTO[]>([])
   const currentLeave = ref<LeaveRequestResponseDTO | null>(null)
 
-  // TAMBAHAN: State untuk kuota cuti
   const leaveQuota = ref<number>(0)
 
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  // Getters - computed properties
   const sortedLeaves = computed(() => {
     return [...leaves.value].sort((a, b) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -82,13 +79,11 @@ export const useLeaveStore = defineStore('leave', () => {
     }
   }
 
-  // Create new leave request (Pakai FormData karena ada file upload)
   const createLeaveRequest = async (payload: CreateLeaveRequestDTO) => {
     try {
       isLoading.value = true
       error.value = null
 
-      // Susun FormData
       const formData = new FormData()
       formData.append('type', payload.type)
       formData.append('category', payload.category)
