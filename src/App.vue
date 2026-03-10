@@ -1,11 +1,29 @@
-<script setup lang="ts"></script>
-
 <template>
-  <h1>You did it!</h1>
-  <p>
-    Visit <a href="https://vuejs.org/" target="_blank" rel="noopener">vuejs.org</a> to read the
-    documentation
-  </p>
+  <Toaster position="top-center" richColors />
+  <GlobalNavbar />
+  <main class="app-content">
+    <RouterView />
+  </main>
 </template>
 
-<style scoped></style>
+<script setup lang="ts">
+import { RouterView } from 'vue-router'
+import { Toaster } from 'vue-sonner'
+import GlobalNavbar from '@/components/common/GlobalNavbar.vue'
+</script>
+
+<style scoped>
+.app-root {
+  min-height: 100vh;
+  background: var(--bg-light);
+}
+
+.app-main {
+  padding: 24px 0 32px;
+}
+
+.app-content {
+  padding-top: 72px;
+  min-height: 100vh;
+}
+</style>
