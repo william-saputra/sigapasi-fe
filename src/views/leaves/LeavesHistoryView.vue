@@ -24,7 +24,7 @@ const columns = [
   { key: "detail", label: "DETAIL IZIN", thStyle: "width: 20%;" },
   { key: "period", label: "WAKTU PELAKSANAAN", thStyle: "width: 24%;" },
   { key: "status", label: "STATUS", thStyle: "width: 14%;" },
-  { key: "note", label: "CATATAN / ALASAN", thStyle: "width: 26%;" },
+  { key: "note", label: "APPROVAL / REJECTION NOTE", thStyle: "width: 26%;" },
 ];
 
 function onNewLeave() {

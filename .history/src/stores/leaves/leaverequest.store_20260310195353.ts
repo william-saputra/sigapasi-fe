@@ -1,10 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { getAuthToken, handleApiResponse } from '@/lib/auth'
-import type {
-  CreateLeaveRequestDTO,
-  LeaveRequestResponseDTO,
-} from '@/interfaces/leaves/leaverequest.interface'
+import type { CreateLeaveRequestDTO, LeaveRequestResponseDTO } from '@/interfaces/leaves/leaverequest.interface'
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api') + '/leaves'
 
@@ -13,14 +10,14 @@ const getAuthHeaders = () => {
   const token = getAuthToken()
   return {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   }
 }
 
 // Helper KHUSUS request Multipart (File Upload)
 const getMultipartAuthHeaders = (): Record<string, string> => {
   const token = getAuthToken()
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  return (token ? { 'Authorization': `Bearer ${token}` } : {})
 }
 
 export const useLeaveStore = defineStore('leave', () => {
@@ -43,11 +40,12 @@ export const useLeaveStore = defineStore('leave', () => {
   const fetchLeaveQuota = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/quota`, {
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders()
       })
 
       const result = await handleApiResponse(response)
       leaveQuota.value = result.data || 0
+
     } catch (err) {
       console.error('Error fetching quota:', err)
       leaveQuota.value = 0 // Default ke 0 kalau ada error
@@ -65,18 +63,16 @@ export const useLeaveStore = defineStore('leave', () => {
 
       const url = `${API_BASE_URL}/requests/history${params.toString() ? '?' + params.toString() : ''}`
       const response = await fetch(url, {
-        headers: getAuthHeaders(),
+        headers: getAuthHeaders()
       })
 
       const result = await handleApiResponse(response)
       leaves.value = result.data || []
+
     } catch (err) {
       console.error('Error fetching leaves:', err)
 
-      error.value =
-        err instanceof Error
-          ? err.message
-          : 'Failed to load leave requests. Please try again later.'
+      error.value = err instanceof Error ? err.message : 'Failed to load leave requests. Please try again later.'
       leaves.value = []
     } finally {
       isLoading.value = false
@@ -102,7 +98,7 @@ export const useLeaveStore = defineStore('leave', () => {
       const response = await fetch(`${API_BASE_URL}/requests/create`, {
         method: 'POST',
         headers: getMultipartAuthHeaders(),
-        body: formData,
+        body: formData
       })
 
       const result = await handleApiResponse(response)
@@ -110,11 +106,11 @@ export const useLeaveStore = defineStore('leave', () => {
       await fetchAllLeaves()
 
       return result.data
+
     } catch (err) {
       console.error('Error creating leave request:', err)
 
-      error.value =
-        err instanceof Error ? err.message : 'Failed to create leave request. Please try again.'
+      error.value = err instanceof Error ? err.message : 'Failed to create leave request. Please try again.'
       throw err
     } finally {
       isLoading.value = false
@@ -135,6 +131,6 @@ export const useLeaveStore = defineStore('leave', () => {
     // Actions
     fetchLeaveQuota,
     fetchAllLeaves,
-    createLeaveRequest,
+    createLeaveRequest
   }
 })
