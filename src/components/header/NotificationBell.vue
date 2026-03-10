@@ -1,7 +1,7 @@
 <template>
   <div class="notification-wrapper" ref="wrapper">
     <div class="notification-bell" @click.stop="toggle">
-      🔔
+      <i class="fa-solid fa-bell"></i>
       <div v-if="hasUnread" class="notification-dot" />
     </div>
 

@@ -2,6 +2,7 @@
 import './styles/tokens.css'
 import './styles/base.css'
 import 'vue-toastification/dist/index.css'
+import '@fortawesome/fontawesome-free/css/all.min.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

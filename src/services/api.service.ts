@@ -9,10 +9,19 @@ const apiClient = axios.create({
 
 // Intercept setiap request: sisipkan JWT token dari localStorage jika tersedia
 apiClient.interceptors.request.use((config: import('axios').InternalAxiosRequestConfig) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const rawToken = localStorage.getItem('token')
+  
+  if (rawToken) {
+    try {
+      // Jika token diawali kutip, parse akan mengubahnya jadi string murni
+      const token = rawToken.startsWith('"') ? JSON.parse(rawToken) : rawToken
+      config.headers.Authorization = `Bearer ${token}`
+    } catch (e) {
+      // Fallback jika parse gagal
+      config.headers.Authorization = `Bearer ${rawToken}`
+    }
   }
+  
   return config
 })
 

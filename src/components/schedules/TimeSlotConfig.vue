@@ -16,7 +16,7 @@ const sessionCount = ref(8)
 
 // Checkbox states
 const selectedDays = ref<DayOfWeekEnum[]>([])
-const applyToAllGrades = ref(false)
+const applyToAllLevels = ref(false)
 
 // Toast state
 const showToast = ref(false)
@@ -42,13 +42,7 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
   }, 4000)
 }
 
-/** Determines target grades based on 'apply to all grades' checkbox */
-function resolveTargetGrades(): number[] {
-  if (applyToAllGrades.value) {
-    return store.availableGrades
-  }
-  return store.activeGrade !== null ? [store.activeGrade] : []
-}
+
 
 /** Triggers grid slot generation with configured time, duration, and count */
 function onGenerate() {
@@ -72,8 +66,7 @@ function onStartTimeChange() {
 
 /** Persists current day's slot configuration to the backend for selected grades */
 async function onSave() {
-  const targetGrades = resolveTargetGrades()
-  if (targetGrades.length === 0) {
+  if (!store.activeSchoolLevelId && !applyToAllLevels.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -82,11 +75,11 @@ async function onSave() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      targetGrades,
+      applyToAllLevels.value,
     )
-    const gradeLabel = applyToAllGrades.value
+    const gradeLabel = applyToAllLevels.value
       ? 'semua tingkatan'
-      : `Kelas ${store.activeGrade}`
+      : `Jenjang Terpilih`
     showNotification(`Struktur slot berhasil disimpan untuk ${gradeLabel}!`, 'success')
   } catch {
     showNotification(store.error || 'Gagal menyimpan struktur slot.', 'error')
@@ -110,8 +103,7 @@ async function confirmApply() {
   store.copyScheduleToDays(selectedDays.value)
   showApplyModal.value = false
 
-  const targetGrades = resolveTargetGrades()
-  if (targetGrades.length === 0) {
+  if (!store.activeSchoolLevelId && !applyToAllLevels.value) {
     showNotification('Pilih tingkatan kelas terlebih dahulu.', 'error')
     return
   }
@@ -126,14 +118,14 @@ async function confirmApply() {
       store.currentDay,
       store.currentSchedule,
       activeSemesterId.value,
-      targetGrades,
+      applyToAllLevels.value,
     )
     for (const payload of payloads) {
       await store.saveSlotStructure(
         payload.day,
         payload.slots,
         activeSemesterId.value,
-        targetGrades,
+        applyToAllLevels.value,
       )
     }
     showNotification('Pengaturan berhasil disimpan dan disalin!', 'success')
@@ -209,7 +201,7 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
       @click="onGenerate"
     >
-      <span>⚡ Generate Grid</span>
+      <span>⚡ Generate</span>
     </button>
 
     <hr class="my-5 border-t border-gray-200" />
@@ -246,12 +238,12 @@ function confirmClearAll() {
     <!-- Save Configuration Segment -->
     <label class="mb-4 flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
       <input
-        v-model="applyToAllGrades"
+        v-model="applyToAllLevels"
         type="checkbox"
         class="h-4 w-4 scale-110 accent-blue-600"
       />
       <span class="text-sm text-blue-800">
-        Terapkan konfigurasi ini ke <strong>semua tingkatan kelas</strong>
+        Terapkan konfigurasi hari ini ke seluruh jenjang
       </span>
     </label>
 

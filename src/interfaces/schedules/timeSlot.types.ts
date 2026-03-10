@@ -1,6 +1,10 @@
 // --- Enum Types ---
 export type DayOfWeekEnum = 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN'
 export type SlotTypeEnum = 'LESSON' | 'BREAK'
+export interface SchoolLevelResponseDTO {
+    id: string
+    name: string
+}
 
 // Backward compatible aliases used by existing components
 export type DayOfWeek = DayOfWeekEnum
@@ -10,50 +14,65 @@ export type SlotType = SlotTypeEnum
 export interface SemesterResponseDTO {
     id: string
     name: string
-    startDate: string
-    endDate: string
-    isActive: boolean
+    start_date: string
+    end_date: string
+    is_active: boolean
+    isActive?: boolean // fallback
 }
 
 export interface AcademicYearSemesterResponseDTO {
     id: string
-    yearStart: string
-    yearEnd: string
-    isActive: boolean
+    year_start: string
+    year_end: string
+    is_active: boolean
+    yearStart?: string // fallback
+    yearEnd?: string   // fallback
+    isActive?: boolean // fallback
     listSemesters: SemesterResponseDTO[]
+}
+
+export interface CreateAcademicYearRequestDTO {
+    year_start: string
+    year_end: string
+}
+
+export interface CreateSemesterRequestDTO {
+    academic_year_id: string
+    name: string
 }
 
 // --- Backend Response Interfaces ---
 export interface TimeSlotResponseDTO {
     id: string
-    semesterId: string
-    dayOfWeek: DayOfWeekEnum
-    sessionNumber: number
-    startTime: string // Formatted ISO local date time string
-    endTime: string   // Formatted ISO local date time string
-    isLocked: boolean
-    lockedLabel: string | null
-    slotType: SlotTypeEnum
-    gradeLevel: number // Added for grade differentiation
+    semester_id: string
+    day_of_week: DayOfWeekEnum
+    session_number: number
+    start_time: string // Formatted ISO local date time string
+    end_time: string   // Formatted ISO local date time string
+    is_locked: boolean
+    locked_label: string | null
+    slot_type: SlotTypeEnum
+    school_level_id: string
+    school_level_name: string
 }
 
 // --- Backend Request Interfaces ---
 export interface SlotRequestDTO {
-    sessionNumber: number
-    startTime: string // Formatted time string
-    endTime: string   // Formatted time string
-    slotType: SlotTypeEnum
+    session_number: number
+    start_time: string // Formatted time string
+    end_time: string   // Formatted time string
+    slot_type: SlotTypeEnum
 }
 
 export interface SlotStructureRequestDTO {
-    semesterId: string
-    dayOfWeek: DayOfWeekEnum
-    gradeLevel: number // Added for grade differentiation
+    semester_id: string
+    day_of_week: DayOfWeekEnum
+    school_level_id: string
     slots: SlotRequestDTO[]
 }
 
 export interface LockSlotRequestDTO {
-    lockedLabel: string
+    locked_label: string
 }
 
 // --- Component User Interface Models ---
@@ -66,7 +85,8 @@ export interface UISlot {
     is_locked: boolean
     locked_label: string | null
     duration: number   // Computed elapsed minutes for rendering
-    grade_level?: number // Added for grade differentiation
+    school_level_id?: string
+    school_level_name?: string
 }
 
 // --- Legacy Compatibility ---
