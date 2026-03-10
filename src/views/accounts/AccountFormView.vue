@@ -2,7 +2,7 @@
 import { computed, ref, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAccountStore } from '@/stores/accounts/account.store'
-import { getAuthToken, getCurrentUser } from '@/lib/auth'
+import { getCurrentUser } from '@/lib/auth'
 
 interface SubjectOption {
   id: string
@@ -10,14 +10,20 @@ interface SubjectOption {
   schoolLevel: string
 }
 
-interface AuthPayload {
-  id?: string
-  role?: string
-}
-
 function formatDateInput(value: string | Date | null | undefined): string {
   if (!value) return ''
   return new Date(value).toISOString().split('T')[0] || ''
+}
+
+function normalizeEmploymentType(value: string | null | undefined): string {
+  if (!value) return ''
+
+  const normalized = String(value).trim().toUpperCase().replace(/\s+/g, '_')
+
+  if (normalized === 'FULL_TIME') return 'FULL_TIME'
+  if (normalized === 'PART_TIME') return 'PART_TIME'
+
+  return ''
 }
 
 const route = useRoute()
@@ -154,7 +160,9 @@ async function loadAccountDetail() {
     if (result.role === 'TEACHER' && result.teacher) {
       await loadSubjects()
 
-      form.value.teacher.employmentType = result.teacher.employmentType ?? ''
+      form.value.teacher.employmentType = normalizeEmploymentType(
+        result.teacher.employmentType,
+      )
       form.value.teacher.maxWeeklyHours = result.teacher.maxWeeklyHours ?? null
       form.value.teacher.schoolLevel = result.teacher.schoolLevel ?? ''
 
@@ -210,8 +218,10 @@ async function handleSubmit() {
 
       const result = await accountStore.updateProfile(payload)
 
-      if (result) {
+      if (result && isAdmin.value) {
         router.push('/accounts')
+      } else if (result && isOwner.value) {
+        await router.push(`/account/${form.value.id}`)
       }
 
       return
@@ -239,11 +249,6 @@ async function handleSubmit() {
     }
 
     const result = await accountStore.createProfile(payload)
-    console.log('authUser:', authUser)
-console.log('isAdmin:', isAdmin.value)
-console.log('isOwner:', isOwner.value)
-console.log('form.id:', form.value.id)
-console.log('update payload:', payload)
 
     if (result) {
       router.push('/accounts')
@@ -401,8 +406,8 @@ onMounted(async () => {
                     required
                   >
                     <option value="" disabled>Pilih employment type</option>
-                    <option value="Full Time">Full Time</option>
-                    <option value="Contract">Contract</option>
+                    <option value="FULL_TIME">FULL TIME</option>
+                    <option value="PART_TIME">PART TIME</option>
                   </select>
                 </div>
 
@@ -454,6 +459,7 @@ onMounted(async () => {
                       v-for="subject in filteredSubjects"
                       :key="subject.id"
                       class="subject-item"
+                      :class="{ disabled: isTeacherFieldDisabled }"
                     >
                       <input
                         v-model="form.teacher.subjectIds"
@@ -713,6 +719,23 @@ onMounted(async () => {
   accent-color: #4a8f5f;
 }
 
+.subject-item.disabled {
+  cursor: not-allowed;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  opacity: 0.75;
+}
+
+.subject-item.disabled:hover {
+  border-color: #e2e8f0;
+  background: #f8fafc;
+}
+
+.subject-item.disabled input,
+.subject-item.disabled span {
+  pointer-events: none;
+}
+
 .password-field {
   position: relative;
   width: 100%;
@@ -768,5 +791,4 @@ onMounted(async () => {
     grid-template-columns: 1fr;
   }
 }
-
 </style>
