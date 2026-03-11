@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted} from "vue";
 import { useRouter } from "vue-router";
-import { useLeaveStore } from "@/stores/leaves/leaverequest.store"; // Sesuaikan path jika beda
-import type { CreateLeaveRequestDTO } from "@/interfaces/leaves/leaverequest.interface"; // Sesuaikan path jika beda
+import { useLeaveStore } from "@/stores/leaves/leaverequest.store";
+import type { CreateLeaveRequestDTO } from "@/interfaces/leaves/leaverequest.interface";
 
 const router = useRouter();
 const leaveStore = useLeaveStore();
@@ -44,47 +44,20 @@ const isHarian = computed(() => form.leaveType === "FULL_DAY");
 const isSakit = computed(() => form.category === "SAKIT");
 
 const isFormInvalid = computed(() => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   // 1. Validasi Field Wajib Dasar
   if (!form.category || !form.reason.trim()) return true;
 
-  // 2. Validasi Dokumen (Wajib jika Sakit)
+  // 2. Validasi Dokumen (Wajib kalau Sakit)
   if (isSakit.value && !uploadedFile.value) return true;
 
-  // 3. Validasi Berdasarkan Tipe Cuti
+  // 3. Cek form berdasarkan tipe cuti (cuma ngecek KOSONG atau NGGAK)
   if (isHarian.value) {
-    // Check field kosong
     if (!form.startDate || !form.endDate) return true;
-
-    const start = toDateOnly(form.startDate);
-    const end = toDateOnly(form.endDate);
-
-    // Check Logic: Tanggal Selesai < Mulai
-    if (end < start) return true;
-
-    // Check Logic: Backdate (jika bukan sakit)
-    if (!isSakit.value && (start < today || end < today)) return true;
-
-    // Check Logic: Quota (jika bukan sakit)
-    const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-    if (!isSakit.value && totalDays > leaveStore.leaveQuota) return true;
-
   } else {
-    // Parsial: Check field kosong
+    // Parsial
     if (!form.singleDate || !form.startTime || !form.endTime) return true;
-
-    const single = toDateOnly(form.singleDate);
-
-    // Check Logic: Backdate (jika bukan sakit)
-    if (!isSakit.value && single < today) return true;
-
-    // Check Logic: Jam Selesai <= Jam Mulai
-    if (form.endTime <= form.startTime) return true;
   }
 
-  // Jika semua lolos, tombol aktif (isFormInvalid = false)
   return false;
 });
 
@@ -93,7 +66,7 @@ function resetErrors() {
     errors[key as keyof typeof errors] = false;
   });
   showSuccess.value = false;
-  leaveStore.error = null; // Reset error dari backend juga
+  leaveStore.error = null;
 }
 
 function handleFileChange(event: Event) {
@@ -140,13 +113,15 @@ function validateForm() {
         hasError = true;
       }
 
+      // Validasi Backdate (Hanya SAKIT yang boleh mundur)
       if (!isSakit.value && (start < today || end < today)) {
         errors.pastDate = true;
         hasError = true;
       }
 
+      // Validasi Kuota HANYA untuk IZIN_PRIBADI
       const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-      if (totalDays > leaveStore.leaveQuota && !isSakit.value) {
+      if (form.category === 'IZIN_PRIBADI' && totalDays > leaveStore.leaveQuota) {
         errors.quota = true;
         hasError = true;
       }
@@ -200,33 +175,25 @@ function validateForm() {
 async function submitForm() {
   if (!validateForm()) return;
 
-  // Susun Payload sesuai DTO Java
   const payload: CreateLeaveRequestDTO = {
     type: form.leaveType,
     category: form.category,
     reason: form.reason,
     attachment: uploadedFile.value,
-    // Jika Harian ambil startDate/endDate, jika Parsial ambil dari singleDate
     startDate: isHarian.value ? form.startDate : form.singleDate,
     endDate: isHarian.value ? form.endDate : form.singleDate,
-    // Kirim null kalau harian
     startTime: isHarian.value ? null : form.startTime,
     endTime: isHarian.value ? null : form.endTime,
   };
 
   try {
-    // Tembak API lewat store
     await leaveStore.createLeaveRequest(payload);
-
-    // Kalau sukses, tampilkan notif lalu pindah halaman
     showSuccess.value = true;
     setTimeout(() => {
-      router.push({ name: "leaves-history" }); // Pastikan nama route ini benar di router kamu
+      router.push({ name: "leaves-history" });
     }, 1500);
-
   } catch (error) {
     console.error("Gagal submit form:", error);
-    // Error handling sudah di-set di dalam store (leaveStore.error)
   }
 }
 
