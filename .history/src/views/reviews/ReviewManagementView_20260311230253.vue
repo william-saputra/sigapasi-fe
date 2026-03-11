@@ -194,20 +194,7 @@ function formatDate(dateStr: string): string {
   const year = parts[0] ?? ''
   const month = parts[1] ?? '1'
   const day = parts[2] ?? '1'
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
-  ]
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
   return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`
 }
 
@@ -263,9 +250,7 @@ function getProgressPercent(row: ReviewPeriodRow): number {
             <span class="period-icon">📅</span>
             <div class="period-name-info">
               <span style="font-weight: 600">{{ row.semesterName }}</span>
-              <span class="period-date-range"
-                >{{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}</span
-              >
+              <span class="period-date-range">{{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}</span>
             </div>
           </div>
         </template>
