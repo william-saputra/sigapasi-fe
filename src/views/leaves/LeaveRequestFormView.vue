@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted} from "vue";
 import { useRouter } from "vue-router";
-import { useLeaveStore } from "@/stores/leaves/leaverequest.store"; // Sesuaikan path jika beda
-import type { CreateLeaveRequestDTO } from "@/interfaces/leaves/leaverequest.interface"; // Sesuaikan path jika beda
+import { useLeaveStore } from "@/stores/leaves/leaverequest.store";
+import type { CreateLeaveRequestDTO } from "@/interfaces/leaves/leaverequest.interface";
 
 const router = useRouter();
 const leaveStore = useLeaveStore();
@@ -66,7 +66,7 @@ function resetErrors() {
     errors[key as keyof typeof errors] = false;
   });
   showSuccess.value = false;
-  leaveStore.error = null; // Reset error dari backend juga
+  leaveStore.error = null;
 }
 
 function handleFileChange(event: Event) {
@@ -113,13 +113,15 @@ function validateForm() {
         hasError = true;
       }
 
+      // Validasi Backdate (Hanya SAKIT yang boleh mundur)
       if (!isSakit.value && (start < today || end < today)) {
         errors.pastDate = true;
         hasError = true;
       }
 
+      // Validasi Kuota HANYA untuk IZIN_PRIBADI
       const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-      if (totalDays > leaveStore.leaveQuota && !isSakit.value) {
+      if (form.category === 'IZIN_PRIBADI' && totalDays > leaveStore.leaveQuota) {
         errors.quota = true;
         hasError = true;
       }
@@ -173,33 +175,25 @@ function validateForm() {
 async function submitForm() {
   if (!validateForm()) return;
 
-  // Susun Payload sesuai DTO Java
   const payload: CreateLeaveRequestDTO = {
     type: form.leaveType,
     category: form.category,
     reason: form.reason,
     attachment: uploadedFile.value,
-    // Jika Harian ambil startDate/endDate, jika Parsial ambil dari singleDate
     startDate: isHarian.value ? form.startDate : form.singleDate,
     endDate: isHarian.value ? form.endDate : form.singleDate,
-    // Kirim null kalau harian
     startTime: isHarian.value ? null : form.startTime,
     endTime: isHarian.value ? null : form.endTime,
   };
 
   try {
-    // Tembak API lewat store
     await leaveStore.createLeaveRequest(payload);
-
-    // Kalau sukses, tampilkan notif lalu pindah halaman
     showSuccess.value = true;
     setTimeout(() => {
-      router.push({ name: "leaves-history" }); // Pastikan nama route ini benar di router kamu
+      router.push({ name: "leaves-history" });
     }, 1500);
-
   } catch (error) {
     console.error("Gagal submit form:", error);
-    // Error handling sudah di-set di dalam store (leaveStore.error)
   }
 }
 
