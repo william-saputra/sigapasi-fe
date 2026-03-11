@@ -44,47 +44,20 @@ const isHarian = computed(() => form.leaveType === "FULL_DAY");
 const isSakit = computed(() => form.category === "SAKIT");
 
 const isFormInvalid = computed(() => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
   // 1. Validasi Field Wajib Dasar
   if (!form.category || !form.reason.trim()) return true;
 
-  // 2. Validasi Dokumen (Wajib jika Sakit)
+  // 2. Validasi Dokumen (Wajib kalau Sakit)
   if (isSakit.value && !uploadedFile.value) return true;
 
-  // 3. Validasi Berdasarkan Tipe Cuti
+  // 3. Cek form berdasarkan tipe cuti (cuma ngecek KOSONG atau NGGAK)
   if (isHarian.value) {
-    // Check field kosong
     if (!form.startDate || !form.endDate) return true;
-
-    const start = toDateOnly(form.startDate);
-    const end = toDateOnly(form.endDate);
-
-    // Check Logic: Tanggal Selesai < Mulai
-    if (end < start) return true;
-
-    // Check Logic: Backdate (jika bukan sakit)
-    if (!isSakit.value && (start < today || end < today)) return true;
-
-    // Check Logic: Quota (jika bukan sakit)
-    const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-    if (!isSakit.value && totalDays > leaveStore.leaveQuota) return true;
-
   } else {
-    // Parsial: Check field kosong
+    // Parsial
     if (!form.singleDate || !form.startTime || !form.endTime) return true;
-
-    const single = toDateOnly(form.singleDate);
-
-    // Check Logic: Backdate (jika bukan sakit)
-    if (!isSakit.value && single < today) return true;
-
-    // Check Logic: Jam Selesai <= Jam Mulai
-    if (form.endTime <= form.startTime) return true;
   }
 
-  // Jika semua lolos, tombol aktif (isFormInvalid = false)
   return false;
 });
 
