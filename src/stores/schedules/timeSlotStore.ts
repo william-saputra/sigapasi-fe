@@ -432,6 +432,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         slotsToSave: UISlot[],
         semesterId: string,
         applyToAllLevels: boolean,
+        skipFetch: boolean = false,
     ): Promise<void> {
         isSaving.value = true
         error.value = null
@@ -535,7 +536,9 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             }
 
             // Final refresh to sync lock state
-            await fetchSlotStructure()
+            if (!skipFetch) {
+                await fetchSlotStructure()
+            }
 
         } catch (err: any) {
             if (err.response) {
