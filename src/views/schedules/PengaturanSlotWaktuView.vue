@@ -75,6 +75,14 @@ async function confirmSetup() {
       setupError.value = 'Tahun mulai dan tahun selesai harus diisi.'
       return
     }
+    if (newYearStart.value <= 0 || newYearEnd.value <= 0) {
+      setupError.value = 'Tahun ajaran tidak boleh 0 atau minus.'
+      return
+    }
+    if (newYearEnd.value <= newYearStart.value) {
+      setupError.value = 'Tahun selesai harus lebih besar dari tahun mulai.'
+      return
+    }
   } else {
       if (!selectedYearId.value) {
           setupError.value = 'Pilih Tahun Ajaran terlebih dahulu.'
