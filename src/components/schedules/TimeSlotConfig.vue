@@ -11,8 +11,8 @@ const store = useTimeSlotStore()
 // --- State ---
 // Form state
 const startTime = ref('07:00')
-const stdDuration = ref(45)
-const sessionCount = ref(8)
+const stdDuration = ref<number | ''>(45)
+const sessionCount = ref<number | ''>(8)
 
 // Checkbox states
 const selectedDays = ref<DayOfWeekEnum[]>([])
@@ -42,10 +42,36 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
   }, 4000)
 }
 
-
+function validateInput(field: 'duration' | 'session') {
+  if (field === 'duration') {
+    if (typeof stdDuration.value === 'number' && stdDuration.value <= 0) {
+      showNotification('Durasi JP tidak boleh 0 atau minus', 'error')
+      stdDuration.value = 1
+    }
+  } else if (field === 'session') {
+    if (typeof sessionCount.value === 'number' && sessionCount.value <= 0) {
+      showNotification('Jumlah Sesi tidak boleh 0 atau minus', 'error')
+      sessionCount.value = 1
+    }
+  }
+}
 
 /** Triggers grid slot generation with configured time, duration, and count */
 function onGenerate() {
+  if (typeof sessionCount.value !== 'number' || typeof stdDuration.value !== 'number') {
+    showNotification('Durasi dan Jumlah Sesi harus diisi angka yang valid', 'error')
+    return
+  }
+  if (stdDuration.value <= 0) {
+    showNotification('Durasi JP tidak boleh 0 atau minus', 'error')
+    stdDuration.value = 1
+    return
+  }
+  if (sessionCount.value <= 0) {
+    showNotification('Jumlah Sesi tidak boleh 0 atau minus', 'error')
+    sessionCount.value = 1
+    return
+  }
   store.generateSlots(sessionCount.value, stdDuration.value, startTime.value)
 }
 
@@ -119,13 +145,18 @@ async function confirmApply() {
       store.currentSchedule,
       activeSemesterId.value,
       applyToAllLevels.value,
+      true 
     )
-    for (const payload of payloads) {
+    for (let i = 0; i < payloads.length; i++) {
+      const payload = payloads[i]
+      if (!payload) continue
+      const isLast = i === payloads.length - 1
       await store.saveSlotStructure(
         payload.day,
         payload.slots,
         activeSemesterId.value,
         applyToAllLevels.value,
+        !isLast // disable fetch unless it's the last iteration
       )
     }
     showNotification('Pengaturan berhasil disimpan dan disalin!', 'success')
@@ -181,6 +212,7 @@ function confirmClearAll() {
         v-model.number="stdDuration"
         type="number"
         min="1"
+        @input="validateInput('duration')"
         class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
       />
     </div>
@@ -192,6 +224,7 @@ function confirmClearAll() {
         v-model.number="sessionCount"
         type="number"
         min="1"
+        @input="validateInput('session')"
         class="w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm transition-all focus:border-emerald-800 focus:bg-white focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
       />
     </div>

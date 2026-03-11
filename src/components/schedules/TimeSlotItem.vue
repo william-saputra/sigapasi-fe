@@ -9,6 +9,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update-duration': [index: number, duration: number]
+  'show-notification': [message: string, type: 'success' | 'error']
   'toggle-lock': [index: number]
   delete: [index: number]
   'drag-start': [index: number, event: DragEvent]
@@ -22,7 +23,10 @@ const emit = defineEmits<{
 function onDurationChange(e: Event) {
   const target = e.target as HTMLInputElement
   const val = parseInt(target.value, 10)
-  if (!isNaN(val) && val > 0) {
+  if (isNaN(val) || val <= 0) {
+    emit('show-notification', 'Durasi per slot tidak boleh 0 atau minus', 'error')
+    target.value = props.slot.duration.toString()
+  } else {
     emit('update-duration', props.index, val)
   }
 }
