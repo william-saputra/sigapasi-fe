@@ -53,7 +53,7 @@ const statsMap: Record<Role, { label: string; value: string; note: string; icon:
 const menusMap: Record<Role, { title: string; desc: string; to: string; icon: string }[]> = {
   ADMIN: [
     { title: 'Kelola Jadwal', desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/cuti', icon: 'fa-solid fa-file-circle-check' },
+    { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/leaves', icon: 'fa-solid fa-file-circle-check' },
     { title: 'Guru Pengganti', desc: 'Cari dan tetapkan guru pengganti kelas kosong.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
     { title: '360 Review', desc: 'Pantau progres dan hasil evaluasi guru.', to: '/review', icon: 'fa-solid fa-chart-line' },
     { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/accounts', icon: 'fa-solid fa-users-gear' },
@@ -61,19 +61,19 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
   ],
   STAFF: [
     { title: 'Jadwal Hari Ini', desc: 'Cek dan perbarui jadwal pelajaran harian.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Proses Cuti', desc: 'Bantu proses administrasi pengajuan cuti.', to: '/cuti', icon: 'fa-solid fa-file-lines' },
+    { title: 'Proses Cuti', desc: 'Bantu proses administrasi pengajuan cuti.', to: '/leaves', icon: 'fa-solid fa-file-lines' },
     { title: 'Guru Pengganti', desc: 'Koordinasi penugasan guru pengganti.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
     { title: 'Data Guru', desc: 'Lihat dan perbarui data profil guru.', to: '/guru', icon: 'fa-solid fa-chalkboard-user' },
   ],
   HEAD: [
     { title: 'Dashboard Kinerja', desc: 'Pantau KPI dan kinerja keseluruhan sekolah.', to: '/kinerja', icon: 'fa-solid fa-chart-line' },
-    { title: 'Approval Cuti', desc: 'Setujui atau tolak pengajuan cuti guru.', to: '/cuti', icon: 'fa-solid fa-file-circle-check' },
+    { title: 'Approval Cuti', desc: 'Setujui atau tolak pengajuan cuti guru.', to: '/leaves', icon: 'fa-solid fa-file-circle-check' },
     { title: 'Hasil Review', desc: 'Lihat rekap evaluasi 360 derajat guru.', to: '/review', icon: 'fa-solid fa-star-half-stroke' },
     { title: 'Jadwal Sekolah', desc: 'Pantau jadwal dan kehadiran kelas.', to: '/jadwal', icon: 'fa-solid fa-school' },
   ],
   TEACHER: [
     { title: 'Jadwal Mengajar', desc: 'Lihat jadwal kelas dan ruanganmu hari ini.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/cuti/ajukan', icon: 'fa-solid fa-umbrella-beach' },
+    { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/leaves/history', icon: 'fa-solid fa-umbrella-beach' },
     { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/review/saya', icon: 'fa-solid fa-star' },
     { title: 'Kelas Pengganti', desc: 'Cek jadwal penggantian yang ditugaskan.', to: '/guru-pengganti', icon: 'fa-solid fa-person-chalkboard' },
   ],
