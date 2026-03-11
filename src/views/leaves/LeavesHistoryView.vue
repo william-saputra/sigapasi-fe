@@ -9,25 +9,22 @@ import AppCard from "@/components/common/AppCard.vue";
 import AppBadge from "@/components/common/AppBadge.vue";
 import DataTable from "@/components/table/DataTable.vue";
 
-// Import Store dan Interfaces yang sudah kita buat
-import { useLeaveStore } from "@/stores/leaves/leaverequest.store"; // Sesuaikan path-nya jika berbeda
-import type { LeaveRequestResponseDTO } from "@/interfaces/leaves/leaverequest.interface"; // Sesuaikan path-nya
+import { useLeaveStore } from "@/stores/leaves/leaverequest.store";
+import type { LeaveRequestResponseDTO } from "@/interfaces/leaves/leaverequest.interface";
 
 const router = useRouter();
 const leaveStore = useLeaveStore();
 
-// Fetch data dari backend saat halaman dimuat
 onMounted(() => {
   leaveStore.fetchAllLeaves();
 });
 
-// Update key menjadi camelCase menyesuaikan response backend
 const columns = [
   { key: "createdAt", label: "TGL DIAJUKAN", thStyle: "width: 16%;" },
   { key: "detail", label: "DETAIL IZIN", thStyle: "width: 20%;" },
   { key: "period", label: "WAKTU PELAKSANAAN", thStyle: "width: 24%;" },
   { key: "status", label: "STATUS", thStyle: "width: 14%;" },
-  { key: "note", label: "CATATAN / ALASAN", thStyle: "width: 26%;" },
+  { key: "note", label: "ALASAN / REJECTION NOTE", thStyle: "width: 26%;" },
 ];
 
 function onNewLeave() {

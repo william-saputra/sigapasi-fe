@@ -18,6 +18,11 @@ const lockTargetIndex = ref<number | null>(null)
 const lockLabel = ref('')
 const isUnlocking = ref(false)
 
+// Toast state
+const showToast = ref(false)
+const toastMessage = ref('')
+const toastType = ref<'success' | 'error'>('success')
+
 // --- Functions ---
 /** Records the starting index when a drag operation begins */
 function onDragStart(index: number, _event: DragEvent) {
@@ -71,6 +76,16 @@ function confirmLock() {
   lockTargetIndex.value = null
   lockLabel.value = ''
 }
+
+/** Displays a toast notification with message and type */
+function showNotification(message: string, type: 'success' | 'error' = 'success') {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
+  setTimeout(() => {
+    showToast.value = false
+  }, 4000)
+}
 </script>
 
 <template>
@@ -98,6 +113,7 @@ function confirmLock() {
         :slot="slotItem"
         :index="index"
         @update-duration="(i, d) => store.updateSlotDuration(i, d)"
+        @show-notification="showNotification"
         @toggle-lock="openLockModal"
         @delete="(i) => store.removeSlot(i)"
         @drag-start="onDragStart"
@@ -160,5 +176,33 @@ function confirmLock() {
         </div>
       </template>
     </BaseModal>
+
+    <!-- Toast Notification -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div
+          v-if="showToast"
+          :class="[
+            'fixed right-6 bottom-6 z-50 flex items-center gap-3 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg',
+            toastType === 'success' ? 'bg-emerald-700' : 'bg-red-600',
+          ]"
+        >
+          <span>{{ toastType === 'success' ? '✅' : '❌' }}</span>
+          <span>{{ toastMessage }}</span>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
+
+<style scoped>
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+.toast-enter-from,
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
+</style>

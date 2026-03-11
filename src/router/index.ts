@@ -36,6 +36,14 @@ function adminStaffOnly() {
   }
 }
 
+function teacherOnly() {
+  const role = getRoleFromToken()
+  // Kita gunakan toUpperCase agar lebih aman terhadap perbedaan case dari backend
+  if (role?.toUpperCase() !== 'TEACHER') {
+    return { path: '/' } // Tendang ke home kalau bukan teacher
+  }
+}
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -105,6 +113,7 @@ const router = createRouter({
       path: "/leaves/request",
       name: "leave-request",
       component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
+      beforeEnter: teacherOnly,
     },
     {
       path: '/reviews/periods',
@@ -131,7 +140,6 @@ const router = createRouter({
       meta: { requiresTeacher: true }
     },
     {
-      // INI HALAMAN BARU (Ringkasan)
       path: '/ketersediaan-mengajar/ringkasan',
       name: 'ketersediaan-ringkasan',
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
