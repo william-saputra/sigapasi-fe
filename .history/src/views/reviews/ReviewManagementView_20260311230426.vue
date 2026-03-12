@@ -58,8 +58,8 @@ onMounted(fetchPeriods)
 // ─── Table Columns ────────────────────────────────────────────────────────────
 
 const columns = [
-  { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 25%;' },
-  { key: 'dateRange', label: 'Periode Review', thStyle: 'width: 25%;' },
+  { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 35%;' },
+  { key: 'status', label: 'Status', thStyle: 'width: 15%;' },
   { key: 'progress', label: 'Progress Pengisian', thStyle: 'width: 30%;' },
   { key: 'aksi', label: 'Aksi', thStyle: 'width: 20%;' },
 ]
@@ -270,9 +270,11 @@ function getProgressPercent(row: ReviewPeriodRow): number {
           </div>
         </template>
 
-        <!-- Periode Review -->
-        <template #cell:dateRange="{ row }">
-          {{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}
+        <!-- Status -->
+        <template #cell:status="{ row }">
+          <span :class="['status-badge', row.isActive ? 'status-aktif' : 'status-selesai']">
+            {{ row.isActive ? 'Aktif' : 'Selesai' }}
+          </span>
         </template>
 
         <!-- Progress -->

@@ -58,8 +58,8 @@ onMounted(fetchPeriods)
 // ─── Table Columns ────────────────────────────────────────────────────────────
 
 const columns = [
-  { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 25%;' },
-  { key: 'dateRange', label: 'Periode Review', thStyle: 'width: 25%;' },
+  { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 35%;' },
+  { key: 'status', label: 'Status', thStyle: 'width: 15%;' },
   { key: 'progress', label: 'Progress Pengisian', thStyle: 'width: 30%;' },
   { key: 'aksi', label: 'Aksi', thStyle: 'width: 20%;' },
 ]
@@ -190,24 +190,8 @@ async function submitModal() {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatDate(dateStr: string): string {
-  const parts = dateStr.split('-')
-  const year = parts[0] ?? ''
-  const month = parts[1] ?? '1'
-  const day = parts[2] ?? '1'
-  const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
-  ]
+  const [year, month, day] = dateStr.split('-')
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
   return `${parseInt(day)} ${months[parseInt(month) - 1]} ${year}`
 }
 
@@ -263,16 +247,16 @@ function getProgressPercent(row: ReviewPeriodRow): number {
             <span class="period-icon">📅</span>
             <div class="period-name-info">
               <span style="font-weight: 600">{{ row.semesterName }}</span>
-              <span class="period-date-range"
-                >{{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}</span
-              >
+              <span class="period-date-range">{{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}</span>
             </div>
           </div>
         </template>
 
-        <!-- Periode Review -->
-        <template #cell:dateRange="{ row }">
-          {{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}
+        <!-- Status -->
+        <template #cell:status="{ row }">
+          <span :class="['status-badge', row.isActive ? 'status-aktif' : 'status-selesai']">
+            {{ row.isActive ? 'Aktif' : 'Selesai' }}
+          </span>
         </template>
 
         <!-- Progress -->
