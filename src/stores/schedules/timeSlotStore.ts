@@ -141,7 +141,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                 result.push({
                     id: sem.id,
                     academic_year_id: ay.id,
-                    display_name: `${sem.name} ${ay.year_start ?? ay.yearStart}/${ay.year_end ?? ay.yearEnd}`,
+                    display_name: `${sem.name}`,
                 })
             }
         }
@@ -264,6 +264,7 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
             await apiService.post('/academic-setup/academic-years', payload)
             await fetchAcademicYears()
         } catch (err: any) {
+            console.log(err.response.data.message)
             error.value = err.response?.data?.message || 'Gagal membuat tahun ajaran baru.'
             throw err
         }

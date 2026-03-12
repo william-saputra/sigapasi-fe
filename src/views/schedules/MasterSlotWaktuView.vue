@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
@@ -73,6 +73,17 @@ function slotBadgeClass(slot: UISlot): string {
 function getLevelDaySlots(day: DayOfWeekEnum, levelId: string): UISlot[] {
   return (store.schedules[day] ?? []).filter(s => s.school_level_id === levelId)
 }
+
+// --- Auto-hide Errors ---
+let errorTimeout: number | undefined;
+watch(() => store.error, (newVal) => {
+  if (newVal) {
+    clearTimeout(errorTimeout);
+    errorTimeout = window.setTimeout(() => {
+      if (store.error === newVal) store.clearError();
+    }, 5000);
+  }
+});
 
 // --- Lifecycle ---
 /** Initializes components by fetching academic years and slot structures if needed */
