@@ -272,9 +272,11 @@ function getProgressPercent(row: ReviewPeriodRow): number {
           </div>
         </template>
 
-        <!-- Periode Review (update) -->
-        <template #cell:dateRange="{ row }">
-          {{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}
+        <!-- Status -->
+        <template #cell:status="{ row }">
+          <span :class="['status-badge', row.isActive ? 'status-aktif' : 'status-selesai']">
+            {{ row.isActive ? 'Aktif' : 'Selesai' }}
+          </span>
         </template>
 
         <!-- Progress -->

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
@@ -98,6 +98,7 @@ async function confirmSetup() {
   try {
     store.isLoading = true; // Use store loading state or local if preferred
     let targetAcademicYearId = selectedYearId.value;
+    let academicYearLabel = '';
 
     if (setupMode.value === 'NEW_YEAR') {
       await store.createAcademicYear({
@@ -112,14 +113,22 @@ async function confirmSetup() {
       )
       if (newlyCreated) {
           targetAcademicYearId = newlyCreated.id
+          academicYearLabel = `${newlyCreated.year_start ?? newlyCreated.yearStart}/${newlyCreated.year_end ?? newlyCreated.yearEnd}`
       } else {
           throw new Error("Gagal menemukan tahun ajaran yang baru dibuat.")
       }
+    } else {
+      const selectedAy = store.academicYears.find(ay => ay.id === targetAcademicYearId)
+      if (selectedAy) {
+        academicYearLabel = `${selectedAy.year_start ?? selectedAy.yearStart}/${selectedAy.year_end ?? selectedAy.yearEnd}`
+      }
     }
+
+    const finalSemesterName = `${newSemesterName.value.trim()} ${academicYearLabel}`.trim()
 
     await store.createSemester({
       academic_year_id: targetAcademicYearId,
-      name: newSemesterName.value.trim()
+      name: finalSemesterName
     })
     
     showSetupModal.value = false
@@ -142,6 +151,27 @@ async function confirmSetup() {
       store.isLoading = false;
   }
 }
+
+// --- Auto-hide Errors ---
+let errorTimeout: number | undefined;
+watch(() => store.error, (newVal) => {
+  if (newVal) {
+    clearTimeout(errorTimeout);
+    errorTimeout = window.setTimeout(() => {
+      if (store.error === newVal) store.clearError();
+    }, 5000);
+  }
+});
+
+let setupErrorTimeout: number | undefined;
+watch(setupError, (newVal) => {
+  if (newVal) {
+    clearTimeout(setupErrorTimeout);
+    setupErrorTimeout = window.setTimeout(() => {
+      if (setupError.value === newVal) setupError.value = '';
+    }, 5000);
+  }
+});
 
 // --- Lifecycle ---
 /** Initializes components by fetching school levels and academic years which automatically fetches slots based on active selections */

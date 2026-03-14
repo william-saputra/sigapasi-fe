@@ -38,26 +38,21 @@ const errors = reactive({
   timeRange: false,
   pastDate: false,
   quota: false,
+  maxHours: false, // [BARU] State error untuk maksimal 4 jam
 });
 
 const isHarian = computed(() => form.leaveType === "FULL_DAY");
 const isSakit = computed(() => form.category === "SAKIT");
 
 const isFormInvalid = computed(() => {
-  // 1. Validasi Field Wajib Dasar
   if (!form.category || !form.reason.trim()) return true;
-
-  // 2. Validasi Dokumen (Wajib kalau Sakit)
   if (isSakit.value && !uploadedFile.value) return true;
 
-  // 3. Cek form berdasarkan tipe cuti (cuma ngecek KOSONG atau NGGAK)
   if (isHarian.value) {
     if (!form.startDate || !form.endDate) return true;
   } else {
-    // Parsial
     if (!form.singleDate || !form.startTime || !form.endTime) return true;
   }
-
   return false;
 });
 
@@ -94,16 +89,10 @@ function validateForm() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  if (isHarian.value) {
-    if (!form.startDate) {
-      errors.startDate = true;
-      hasError = true;
-    }
-    if (!form.endDate) {
-      errors.endDate = true;
-      hasError = true;
-    }
+  const maxBackdateAllowed = new Date(today);
+  maxBackdateAllowed.setDate(maxBackdateAllowed.getDate() - 7);
 
+  if (isHarian.value) {
     if (form.startDate && form.endDate) {
       const start = toDateOnly(form.startDate);
       const end = toDateOnly(form.endDate);
@@ -113,60 +102,62 @@ function validateForm() {
         hasError = true;
       }
 
-      // Validasi Backdate (Hanya SAKIT yang boleh mundur)
-      if (!isSakit.value && (start < today || end < today)) {
-        errors.pastDate = true;
-        hasError = true;
+      if (!isSakit.value) {
+        // Kalau bukan sakit, tidak boleh ada past date sama sekali
+        if (start < today || end < today) {
+          errors.pastDate = true;
+          hasError = true;
+        }
+      } else {
+        // Kalau sakit, cek apakah melebihi 7 hari ke belakang
+        if (start < maxBackdateAllowed) {
+          errors.pastDate = true;
+          hasError = true;
+        }
       }
 
-      // Validasi Kuota HANYA untuk IZIN_PRIBADI
-      const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-      if (form.category === 'IZIN_PRIBADI' && totalDays > leaveStore.leaveQuota) {
-        errors.quota = true;
-        hasError = true;
+      if (form.category === 'IZIN_PRIBADI') {
+        const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
+        if (totalDays > leaveStore.leaveQuota) {
+          errors.quota = true;
+          hasError = true;
+        }
       }
     }
   } else {
-    if (!form.singleDate) {
-      errors.singleDate = true;
-      hasError = true;
-    }
-    if (!form.startTime) {
-      errors.startTime = true;
-      hasError = true;
-    }
-    if (!form.endTime) {
-      errors.endTime = true;
-      hasError = true;
-    }
-
+    // UNTUK PARSIAL
     if (form.singleDate) {
       const single = toDateOnly(form.singleDate);
-      if (!isSakit.value && single < today) {
-        errors.pastDate = true;
-        hasError = true;
+
+      // [UPDATE] Logika Backdate
+      if (!isSakit.value) {
+        if (single < today) {
+          errors.pastDate = true;
+          hasError = true;
+        }
+      } else {
+        if (single < maxBackdateAllowed) {
+          errors.pastDate = true;
+          hasError = true;
+        }
       }
     }
 
-    if (form.startTime && form.endTime && form.endTime <= form.startTime) {
-      errors.timeRange = true;
-      hasError = true;
+    if (form.startTime && form.endTime) {
+      if (form.endTime <= form.startTime) {
+        errors.timeRange = true;
+        hasError = true;
+      } else {
+        const [startH, startM] = form.startTime.split(':').map(Number);
+        const [endH, endM] = form.endTime.split(':').map(Number);
+        const diffHours = (endH + endM / 60) - (startH + startM / 60);
+
+        if (diffHours > 4) {
+          errors.maxHours = true;
+          hasError = true;
+        }
+      }
     }
-  }
-
-  if (!form.category) {
-    errors.category = true;
-    hasError = true;
-  }
-
-  if (!form.reason.trim()) {
-    errors.reason = true;
-    hasError = true;
-  }
-
-  if (isSakit.value && !uploadedFile.value) {
-    errors.document = true;
-    hasError = true;
   }
 
   return !hasError;
@@ -207,7 +198,7 @@ function goBack() {
     <div class="request-card">
       <div class="request-card__header">
         <h2>Pengajuan Cuti Guru</h2>
-        <div class="quota-badge">
+        <div v-if="isHarian" class="quota-badge">
           Sisa Jatah Cuti: <span>{{ leaveStore.leaveQuota }}</span> Hari
         </div>
       </div>
@@ -270,7 +261,7 @@ function goBack() {
                 Tanggal selesai tidak boleh lebih awal dari tanggal mulai.
               </div>
               <div v-if="errors.pastDate" class="error-message show">
-                Tidak dapat mengajukan cuti pada tanggal yang sudah lewat (Kecuali kategori Sakit).
+                Cuti tidak dapat diajukan untuk tanggal yang sudah lewat. Khusus kategori Sakit, maksimal pengajuan adalah 7 hari ke belakang.
               </div>
               <div v-if="errors.quota" class="error-message show">
                 Jatah cuti Anda tidak mencukupi untuk jumlah hari yang diajukan.
@@ -308,7 +299,7 @@ function goBack() {
                     v-model="form.startTime"
                     type="time"
                     class="form-control"
-                    :class="{ 'is-invalid': errors.startTime || errors.timeRange }"
+                    :class="{ 'is-invalid': errors.startTime || errors.timeRange || errors.maxHours }"
                   />
                 </div>
 
@@ -320,7 +311,7 @@ function goBack() {
                     v-model="form.endTime"
                     type="time"
                     class="form-control"
-                    :class="{ 'is-invalid': errors.endTime || errors.timeRange }"
+                    :class="{ 'is-invalid': errors.endTime || errors.timeRange || errors.maxHours }"
                   />
                 </div>
               </div>
@@ -328,7 +319,10 @@ function goBack() {
               <div v-if="errors.timeRange" class="error-message show">
                 Jam selesai harus lebih besar dari jam mulai.
               </div>
-              <div class="note">Contoh: 08:00 - 10:00.</div>
+              <div v-if="errors.maxHours" class="error-message show">
+                Izin parsial maksimal 4 jam. Jika lebih, silakan ubah tipe izin menjadi Cuti Harian (Full Day).
+              </div>
+              <div class="note">Contoh: 08:00 - 10:00. Maksimal izin adalah 4 Jam.</div>
             </div>
           </div>
 
@@ -406,7 +400,6 @@ function goBack() {
 </template>
 
 <style scoped>
-/* SEMUA CSS KAMU TETAP SAMA, DITAMBAH 1 CLASS BARU DI BAWAH */
 .container {
   max-width: 1000px;
   margin: 0 auto;
