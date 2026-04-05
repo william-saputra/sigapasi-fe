@@ -8,6 +8,7 @@ export interface AvailabilityDetailResponseDTO {
 }
 
 export interface TeacherAvailabilityResponseDTO {
+    schoolLevelId: any
     deadlineDate: string
     Editable: boolean
     schedules: AvailabilityDetailResponseDTO[]

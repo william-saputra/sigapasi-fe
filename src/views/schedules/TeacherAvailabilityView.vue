@@ -23,8 +23,15 @@ const openSlotId = ref<string | null>(null)
 const selectedDay = ref<DayOfWeekEnum>('MON')
 
 // Computed
+// Computed
 const slotsForSelectedDay = computed(() => {
-    return timeSlotStore.schedules[selectedDay.value] || []
+    const rawSlots = timeSlotStore.schedules[selectedDay.value] || [];
+    
+    if (timeSlotStore.activeSchoolLevelId) {
+        return rawSlots.filter(slot => slot.school_level_id === timeSlotStore.activeSchoolLevelId);
+    }
+    
+    return rawSlots;
 })
 
 // STATISTIK
@@ -52,6 +59,10 @@ const loadAvailabilityData = async () => {
         isEditable.value = (response as any).editable !== undefined ? (response as any).editable : response.Editable
         deadlineDate.value = response.deadlineDate
         hasExistingData.value = response.schedules && response.schedules.length > 0
+
+        if (response.schoolLevelId) {
+            timeSlotStore.activeSchoolLevelId = response.schoolLevelId;
+        }
         
         const newMap: Record<string, boolean> = {}
         response.schedules.forEach(slot => newMap[slot.timeSlotId] = slot.isAvailable)
@@ -69,8 +80,10 @@ onMounted(async () => {
 })
 
 watch(() => timeSlotStore.activeSemesterId, async (newId) => {
-    if (newId) await timeSlotStore.fetchSlotStructure()
-})
+    if (newId) {
+        await timeSlotStore.fetchSlotStructure()
+    }
+}, { immediate: true })
 
 const toggleSelection = (id: string | undefined) => {
     if (!id) return
