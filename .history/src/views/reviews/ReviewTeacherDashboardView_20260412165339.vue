@@ -98,9 +98,7 @@ onMounted(fetchReviewTasks)
     <section class="task-section">
       <div class="task-section-head">
         <h3 class="task-section-title">Daftar Tugas Evaluasi</h3>
-        <p class="task-section-subtitle">
-          Pilih tugas untuk mengisi evaluasi atau melihat jawaban.
-        </p>
+        <p class="task-section-subtitle">Pilih tugas untuk mengisi evaluasi atau melihat jawaban.</p>
       </div>
 
       <AppCard v-if="isLoading">

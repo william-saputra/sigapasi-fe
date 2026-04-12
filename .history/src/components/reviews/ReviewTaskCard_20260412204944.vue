@@ -18,6 +18,7 @@ const statusLabel = computed(() => (isCompleted.value ? 'Selesai' : 'Belum Diisi
 const statusVariant = computed<'success' | 'pending'>(() =>
   isCompleted.value ? 'success' : 'pending',
 )
+const actionLabel = computed(() => (isCompleted.value ? 'Lihat Jawaban' : 'Isi Sekarang'))
 
 const typeLabel = computed(() => {
   const rawType = props.task.type ?? ''
@@ -116,14 +117,15 @@ function openTaskForm() {
       </p>
     </div>
 
-    <button v-if="!isCompleted" type="button" class="task-action" @click="openTaskForm">
-      Isi Sekarang
+    <button
+      type="button"
+      class="task-action"
+      :class="{ 'task-action--completed': isCompleted }"
+      @click="openTaskForm"
+    >
+      {{ actionLabel }}
       <span class="task-action-icon">›</span>
     </button>
-    <div v-else class="task-completed-status">
-      <span class="completed-icon">✓</span>
-      Selesai
-    </div>
   </article>
 </template>
 
@@ -264,26 +266,20 @@ function openTaskForm() {
   outline-offset: 2px;
 }
 
+.task-action--completed {
+  background: var(--white);
+  color: var(--text-dark);
+  border-color: #d1d5db;
+}
+
+.task-action--completed:hover {
+  background: #f1f5f9;
+  transform: none;
+}
+
 .task-action-icon {
   font-size: 16px;
   line-height: 1;
-}
-
-.task-completed-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #047857;
-  background: #d1fae5;
-  border-radius: 10px;
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.completed-icon {
-  font-weight: 900;
 }
 
 @media (max-width: 768px) {
@@ -292,8 +288,7 @@ function openTaskForm() {
     align-items: stretch;
   }
 
-  .task-action,
-  .task-completed-status {
+  .task-action {
     justify-content: center;
     width: 100%;
   }

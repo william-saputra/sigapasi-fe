@@ -18,6 +18,7 @@ const statusLabel = computed(() => (isCompleted.value ? 'Selesai' : 'Belum Diisi
 const statusVariant = computed<'success' | 'pending'>(() =>
   isCompleted.value ? 'success' : 'pending',
 )
+const actionLabel = computed(() => (isCompleted.value ? 'Lihat Jawaban' : 'Isi Sekarang'))
 
 const typeLabel = computed(() => {
   const rawType = props.task.type ?? ''
@@ -61,7 +62,7 @@ const deadlineData = computed(() => {
   if (diffDays < 0) {
     return { isWarn: false, isError: true, hint: `(Terlewat ${Math.abs(diffDays)} hari)` }
   }
-
+  
   if (diffDays === 0) {
     return { isWarn: true, isError: false, hint: '(Hari ini)' }
   }
@@ -73,15 +74,6 @@ const deadlineData = computed(() => {
   return { isWarn: false, isError: false, hint: '' }
 })
 
-const typeClasses = computed(() => {
-  const t = typeLabel.value
-  return {
-    'task-type--self': t === 'Self Review',
-    'task-type--peer': t === 'Peer Review',
-    'task-type--sup': t === 'Superior Review',
-  }
-})
-
 function openTaskForm() {
   emit('open', {
     taskId: props.task.taskId,
@@ -91,39 +83,27 @@ function openTaskForm() {
 </script>
 
 <template>
-  <article class="task-card" :class="{ 'task-card--completed': isCompleted }">
+  <article class="task-card">
     <div class="task-info">
       <div class="task-meta">
         <AppBadge :variant="statusVariant">{{ statusLabel }}</AppBadge>
         <span class="meta-divider">•</span>
-        <span class="task-type" :class="typeClasses">{{ typeLabel }}</span>
+        <span class="task-type">{{ typeLabel }}</span>
       </div>
 
       <h4 class="task-target">{{ task.targetName }}</h4>
-
-      <p class="task-deadline">
-        Batas waktu: <span class="deadline-date">{{ deadlineLabel }}</span>
-        <span
-          v-if="deadlineData.hint"
-          class="deadline-hint"
-          :class="{
-            'deadline-hint--warn': deadlineData.isWarn,
-            'deadline-hint--error': deadlineData.isError,
-          }"
-        >
-          {{ deadlineData.hint }}
-        </span>
-      </p>
+      <p class="task-deadline">Batas waktu: {{ deadlineLabel }}</p>
     </div>
 
-    <button v-if="!isCompleted" type="button" class="task-action" @click="openTaskForm">
-      Isi Sekarang
+    <button
+      type="button"
+      class="task-action"
+      :class="{ 'task-action--completed': isCompleted }"
+      @click="openTaskForm"
+    >
+      {{ actionLabel }}
       <span class="task-action-icon">›</span>
     </button>
-    <div v-else class="task-completed-status">
-      <span class="completed-icon">✓</span>
-      Selesai
-    </div>
   </article>
 </template>
 
@@ -132,28 +112,11 @@ function openTaskForm() {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--white);
-  padding: 18px 20px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  transition:
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.task-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-color: #cbd5e1;
-}
-
-.task-card--completed {
-  background: #f8fafc;
-}
-
-.task-card--completed:hover {
-  box-shadow: none;
-  border-color: var(--border);
 }
 
 .task-info {
@@ -165,7 +128,6 @@ function openTaskForm() {
   align-items: center;
   gap: 8px;
   margin-bottom: 8px;
-  flex-wrap: wrap;
 }
 
 .meta-divider {
@@ -175,62 +137,23 @@ function openTaskForm() {
 
 .task-type {
   font-size: 13px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--bg-light);
-  color: #475569;
-}
-
-.task-type--self {
-  background: #e0e7ff;
-  color: #047857;
-}
-
-.task-type--peer {
-  background: #ede9fe;
-  color: #4338ca;
-}
-
-.task-type--sup {
-  background: #ffedd5;
-  color: #c2410c;
+  color: var(--text-grey);
+  font-weight: 600;
 }
 
 .task-target {
   margin: 0;
   color: var(--text-dark);
-  font-size: 20px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
   line-height: 1.2;
 }
 
 .task-deadline {
-  margin: 6px 0 0;
+  margin: 4px 0 0;
   color: var(--text-grey);
   font-size: 13px;
   font-weight: 500;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.deadline-date {
-  font-weight: 700;
-}
-
-.deadline-hint {
-  font-weight: 700;
-  font-size: 12px;
-}
-
-.deadline-hint--warn {
-  color: #ea580c;
-}
-
-.deadline-hint--error {
-  color: #dc2626;
 }
 
 .task-action {
@@ -238,7 +161,7 @@ function openTaskForm() {
   background: var(--primary);
   color: var(--white);
   border-radius: 10px;
-  padding: 10px 18px;
+  padding: 10px 14px;
   font-size: 14px;
   font-weight: 700;
   line-height: 1;
@@ -250,40 +173,26 @@ function openTaskForm() {
   transition:
     background 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.1s ease;
+    border-color 0.15s ease;
 }
 
 .task-action:hover {
   background: var(--primary-hover);
-  transform: translateY(-1px);
 }
 
-.task-action:focus-visible {
-  outline: 2px solid #86efac;
-  outline-offset: 2px;
+.task-action--completed {
+  background: var(--white);
+  color: var(--text-dark);
+  border-color: #d1d5db;
+}
+
+.task-action--completed:hover {
+  background: #f9fafb;
 }
 
 .task-action-icon {
   font-size: 16px;
   line-height: 1;
-}
-
-.task-completed-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #047857;
-  background: #d1fae5;
-  border-radius: 10px;
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.completed-icon {
-  font-weight: 900;
 }
 
 @media (max-width: 768px) {
@@ -292,14 +201,9 @@ function openTaskForm() {
     align-items: stretch;
   }
 
-  .task-action,
-  .task-completed-status {
+  .task-action {
     justify-content: center;
     width: 100%;
-  }
-
-  .task-target {
-    font-size: 18px;
   }
 }
 </style>

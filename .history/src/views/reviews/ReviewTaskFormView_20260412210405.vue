@@ -121,10 +121,14 @@ const QUESTION_GROUPS: QuestionGroup[] = [
 function buildQuestionList(): QuantitativeQuestion[] {
   const result: QuantitativeQuestion[] = []
   let number = 1
+
   for (const group of QUESTION_GROUPS) {
     for (let i = 0; i < group.questions.length; i += 1) {
       const questionText = group.questions[i]
-      if (!questionText) continue
+      if (!questionText) {
+        continue
+      }
+
       result.push({
         id: `${group.aspect}-${i + 1}`,
         number,
@@ -135,50 +139,66 @@ function buildQuestionList(): QuantitativeQuestion[] {
       number += 1
     }
   }
+
   return result
 }
 
 const quantitativeQuestions = buildQuestionList()
 
-// Default 0 = belum dipilih
 const questionScores = reactive<Record<string, number>>(
   quantitativeQuestions.reduce(
     (acc, item) => {
-      acc[item.id] = 0
+      acc[item.id] = 3
       return acc
     },
     {} as Record<string, number>,
   ),
 )
 
-const form = reactive({ comment: '' })
+const questionTouched = reactive<Record<string, boolean>>(
+  quantitativeQuestions.reduce(
+    (acc, item) => {
+      acc[item.id] = false
+      return acc
+    },
+    {} as Record<string, boolean>,
+  ),
+)
+
+const form = reactive({
+  comment: '',
+})
+
 const MIN_COMMENT_LENGTH = 30
+
 const isSubmitting = ref(false)
 const submitError = ref<string | null>(null)
 
 const taskId = computed(() => String(route.params.taskId ?? ''))
 const isReadOnly = computed(() => route.query.mode === 'readonly')
 
-const groupedQuestions = computed(() =>
-  QUESTION_GROUPS.map((group) => ({
+const groupedQuestions = computed(() => {
+  return QUESTION_GROUPS.map((group) => ({
     sectionTitle: group.sectionTitle,
     sectionShort: group.sectionShort,
     aspect: group.aspect,
     questions: quantitativeQuestions.filter((q) => q.aspect === group.aspect),
-  })),
-)
+  }))
+})
 
-const answeredQuestionCount = computed(() =>
-  quantitativeQuestions.reduce((sum, q) => sum + ((questionScores[q.id!] || 0) > 0 ? 1 : 0), 0),
+const touchedQuestionCount = computed(() =>
+  quantitativeQuestions.reduce((sum, question) => sum + (questionTouched[question.id] ? 1 : 0), 0),
 )
 
 const completionPercent = computed(() => {
   if (quantitativeQuestions.length === 0) return 0
-  return Math.round((answeredQuestionCount.value / quantitativeQuestions.length) * 100)
+  return Math.round((touchedQuestionCount.value / quantitativeQuestions.length) * 100)
 })
 
 const qualitativeFilled = computed(() => form.comment.trim().length >= MIN_COMMENT_LENGTH)
+
 const commentCharCount = computed(() => form.comment.length)
+
 const commentProgress = computed(() =>
   Math.min(100, Math.round((form.comment.trim().length / MIN_COMMENT_LENGTH) * 100)),
 )
@@ -188,41 +208,43 @@ const submitHelperText = computed(() => {
     const remaining = MIN_COMMENT_LENGTH - form.comment.trim().length
     return `Masukan kualitatif perlu ${remaining} karakter lagi.`
   }
-  if (answeredQuestionCount.value < quantitativeQuestions.length) {
-    const remaining = quantitativeQuestions.length - answeredQuestionCount.value
-    return `${remaining} pertanyaan belum dijawab.`
+
+  if (touchedQuestionCount.value === 0) {
+    return 'Nilai default adalah 3 (Cukup). Geser slider jika ingin menyesuaikan.'
   }
-  return 'Semua pertanyaan telah dijawab. Siap dikirim.'
+
+  return `${touchedQuestionCount.value} dari ${quantitativeQuestions.length} pertanyaan disesuaikan.`
 })
 
-const canSubmit = computed(
-  () => qualitativeFilled.value && answeredQuestionCount.value === quantitativeQuestions.length,
-)
-
-function setScore(questionId: string, score: number) {
-  if (isReadOnly.value || isSubmitting.value) return
-  questionScores[questionId] = score
+function markQuestionTouched(questionId: string) {
+  questionTouched[questionId] = true
 }
 
-function getGroupAnsweredCount(aspect: AspectKey): number {
-  return quantitativeQuestions.reduce((sum, q) => {
-    if (q.aspect !== aspect) return sum
-    return sum + ((questionScores[q.id!] || 0) > 0 ? 1 : 0)
+function getGroupTouchedCount(aspect: AspectKey): number {
+  return quantitativeQuestions.reduce((sum, question) => {
+    if (question.aspect !== aspect) return sum
+    return sum + (questionTouched[question.id] ? 1 : 0)
   }, 0)
 }
 
 function getAspectScore(aspect: AspectKey): number {
   const aspectQuestions = quantitativeQuestions.filter((q) => q.aspect === aspect)
-  if (aspectQuestions.length === 0) return 3
-  const answered = aspectQuestions.filter((q) => (questionScores[q.id!] || 0) > 0)
-  if (answered.length === 0) return 3
-  const total = answered.reduce((sum, q) => sum + (questionScores[q.id!] || 0), 0)
-  return Math.min(5, Math.max(1, Math.round(total / answered.length)))
+
+  if (aspectQuestions.length === 0) {
+    return 3
+  }
+
+  const total = aspectQuestions.reduce((sum, q) => sum + (questionScores[q.id] ?? 3), 0)
+  const average = total / aspectQuestions.length
+
+  return Math.min(5, Math.max(1, Math.round(average)))
 }
 
-function scrollToSection(aspect: string) {
+function scrollToSection(aspect: AspectKey) {
   const el = document.getElementById(`section-${aspect}`)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 }
 
 function buildPayload(): ReviewSubmitRequest {
@@ -239,45 +261,50 @@ function buildPayload(): ReviewSubmitRequest {
 
 function validateForm(): boolean {
   submitError.value = null
+
   if (!taskId.value) {
     submitError.value = 'Task ID tidak valid.'
     return false
   }
+
   if (!form.comment.trim()) {
     submitError.value = 'Masukan kualitatif wajib diisi.'
     return false
   }
+
   if (form.comment.trim().length < MIN_COMMENT_LENGTH) {
     submitError.value = `Masukan kualitatif minimal ${MIN_COMMENT_LENGTH} karakter.`
     return false
   }
-  const unanswered = quantitativeQuestions.filter((q) => (questionScores[q.id!] || 0) === 0)
-  if (unanswered.length > 0) {
-    submitError.value = `${unanswered.length} pertanyaan belum dijawab.`
-    return false
-  }
+
   return true
 }
 
 async function submitReview() {
   if (isReadOnly.value) return
   if (!validateForm()) return
+
   isSubmitting.value = true
   submitError.value = null
+
   try {
     await apiService.post<void>('/reviews/submit', buildPayload())
     toast.success('Penilaian berhasil dikirim.')
     router.push({ name: 'reviews-home' })
   } catch (err) {
     const status = (err as { response?: { status?: number } })?.response?.status
-    if (status === 400)
+
+    if (status === 400) {
       submitError.value =
         'Data penilaian tidak valid. Pastikan semua nilai sesuai rentang 1 sampai 5.'
-    else if (status === 403)
+    } else if (status === 403) {
       submitError.value =
         'Anda tidak memiliki akses untuk mengirim tugas ini atau tugas sudah completed.'
-    else if (status === 404) submitError.value = 'Tugas review tidak ditemukan.'
-    else submitError.value = 'Gagal mengirim penilaian. Silakan coba lagi.'
+    } else if (status === 404) {
+      submitError.value = 'Tugas review tidak ditemukan.'
+    } else {
+      submitError.value = 'Gagal mengirim penilaian. Silakan coba lagi.'
+    }
   } finally {
     isSubmitting.value = false
   }
@@ -299,7 +326,6 @@ async function submitReview() {
 
     <AppCard>
       <div class="card-inner">
-        <!-- Header -->
         <div class="form-head">
           <h3 class="form-title">Task ID: {{ taskId }}</h3>
           <span class="mode-chip" :class="{ 'mode-chip--readonly': isReadOnly }">
@@ -308,9 +334,8 @@ async function submitReview() {
         </div>
 
         <p class="form-note">
-          Petunjuk: Klik nilai untuk setiap pertanyaan dari skala
-          <strong>1 (Sangat Kurang)</strong> sampai <strong>5 (Sangat Baik)</strong>. Semua
-          pertanyaan wajib dijawab sebelum submit.
+          Petunjuk: Berikan penilaian objektif dari skala 1 (Sangat Kurang) sampai 5 (Sangat Baik).
+          Nilai default semua pertanyaan adalah <strong>3 — Cukup</strong>.
         </p>
 
         <!-- Score legend -->
@@ -321,21 +346,20 @@ async function submitReview() {
           </span>
         </div>
 
-        <!-- Progress -->
         <div class="form-progress">
           <div class="form-progress-head">
-            <strong class="progress-title">Progress Pengisian</strong>
-            <span class="progress-metric">
-              {{ answeredQuestionCount }}/{{ quantitativeQuestions.length }} ({{
+            <strong class="progress-title">Progress Penyesuaian Pertanyaan</strong>
+            <span class="progress-metric"
+              >{{ touchedQuestionCount }}/{{ quantitativeQuestions.length }} ({{
                 completionPercent
-              }}%)
-            </span>
+              }}%)</span
+            >
           </div>
           <div class="form-progress-track">
             <div class="form-progress-fill" :style="{ width: `${completionPercent}%` }" />
           </div>
           <p class="form-progress-note">
-            Klik salah satu angka di setiap pertanyaan untuk memberikan nilai.
+            Geser poin yang ingin Anda sesuaikan — pertanyaan yang belum disentuh tetap di nilai 3.
           </p>
         </div>
 
@@ -348,14 +372,14 @@ async function submitReview() {
             class="section-nav-btn"
             :class="{
               'section-nav-btn--done':
-                getGroupAnsweredCount(group.aspect) === group.questions.length,
+                getGroupTouchedCount(group.aspect) === group.questions.length,
             }"
             type="button"
             @click="scrollToSection(group.aspect)"
           >
             {{ group.sectionShort }}
-            <span v-if="getGroupAnsweredCount(group.aspect) > 0" class="section-nav-count">
-              {{ getGroupAnsweredCount(group.aspect) }}/{{ group.questions.length }}
+            <span v-if="getGroupTouchedCount(group.aspect) > 0" class="section-nav-count">
+              {{ getGroupTouchedCount(group.aspect) }}/{{ group.questions.length }}
             </span>
           </button>
           <button class="section-nav-btn" type="button" @click="scrollToSection('qualitative')">
@@ -366,7 +390,6 @@ async function submitReview() {
           </button>
         </div>
 
-        <!-- Questions A–E -->
         <div class="form-section">
           <h4 class="section-title">
             A–E. Penilaian Kompetensi ({{ quantitativeQuestions.length }} Pertanyaan)
@@ -380,77 +403,52 @@ async function submitReview() {
           >
             <div class="group-head">
               <h5 class="group-title">{{ group.sectionTitle }}</h5>
-              <span
-                class="group-progress"
-                :class="{
-                  'group-progress--done':
-                    getGroupAnsweredCount(group.aspect) === group.questions.length,
-                }"
+              <span class="group-progress"
+                >{{ getGroupTouchedCount(group.aspect) }}/{{
+                  group.questions.length
+                }}
+                disesuaikan</span
               >
-                <span
-                  v-if="getGroupAnsweredCount(group.aspect) === group.questions.length"
-                  class="group-progress-check"
-                  >✓</span
-                >
-                {{ getGroupAnsweredCount(group.aspect) }}/{{ group.questions.length }} dijawab
-              </span>
             </div>
 
-            <div
-              v-for="question in group.questions"
-              :key="question.id"
-              class="question-card"
-              :class="{ 'question-card--answered': (questionScores[question.id!] || 0) > 0 }"
-            >
-              <!-- Indicator circle (number → checkmark when answered) -->
-              <div class="question-left">
-                <div
-                  class="question-indicator"
-                  :class="{ 'question-indicator--done': (questionScores[question.id!] || 0) > 0 }"
-                >
-                  <span v-if="(questionScores[question.id!] || 0) > 0" class="indicator-check"
-                    >✓</span
-                  >
-                  <span v-else class="indicator-num">{{ question.number }}</span>
-                </div>
+            <div v-for="question in group.questions" :key="question.id" class="slider-group">
+              <div class="slider-head">
+                <label class="slider-label" :for="`slider-${question.id}`">
+                  {{ question.number }}. {{ question.text }}
+                </label>
+                <span class="slider-value-block">
+                  <span class="slider-value">{{ questionScores[question.id] }}</span>
+                  <span class="slider-value-label">{{
+                    SCORE_LABELS[questionScores[question.id]]
+                  }}</span>
+                </span>
               </div>
 
-              <!-- Question text + rating buttons -->
-              <div class="question-right">
-                <p class="question-text">{{ question.text }}</p>
+              <div class="slider-row">
+                <span class="slider-bound">1</span>
+                <input
+                  :id="`slider-${question.id}`"
+                  v-model.number="questionScores[question.id]"
+                  type="range"
+                  min="1"
+                  max="5"
+                  step="1"
+                  :disabled="isReadOnly || isSubmitting"
+                  class="slider-input"
+                  :class="{ 'slider-input--touched': questionTouched[question.id] }"
+                  :aria-label="`${question.number}. ${question.text} (skala 1-5, sekarang ${questionScores[question.id]})`"
+                  @input="markQuestionTouched(question.id)"
+                />
+                <span class="slider-bound">5</span>
+              </div>
 
-                <div class="rating-row">
-                  <button
-                    v-for="score in [1, 2, 3, 4, 5]"
-                    :key="score"
-                    type="button"
-                    class="rating-btn"
-                    :class="{
-                      'rating-btn--selected': (questionScores[question.id!] || 0) === score,
-                      'rating-btn--disabled': isReadOnly || isSubmitting,
-                    }"
-                    :aria-label="`Nilai ${score} — ${SCORE_LABELS[score]}`"
-                    :aria-pressed="(questionScores[question.id!] || 0) === score"
-                    :disabled="isReadOnly || isSubmitting"
-                    @click="setScore(question.id, score)"
-                  >
-                    <span class="rating-num">{{ score }}</span>
-                    <span class="rating-label">{{ SCORE_LABELS[score] }}</span>
-                  </button>
-                </div>
-
-                <p
-                  v-if="(questionScores[question.id!] || 0) === 0 && !isReadOnly"
-                  class="question-hint"
-                >
-                  Pilih nilai untuk pertanyaan ini
-                </p>
+              <div v-if="!questionTouched[question.id] && !isReadOnly" class="slider-hint">
+                Belum disesuaikan — nilai default 3 (Cukup)
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Qualitative -->
         <div id="section-qualitative" class="form-section">
           <h4 class="section-title">F. Masukan Kualitatif</h4>
           <label class="textarea-label" for="qualitative-comment">
@@ -466,9 +464,9 @@ async function submitReview() {
               }"
             >
               {{ commentCharCount }} karakter
-              <span v-if="!qualitativeFilled && commentCharCount > 0"
-                >(min. {{ MIN_COMMENT_LENGTH }})</span
-              >
+              <span v-if="!qualitativeFilled && commentCharCount > 0">
+                (min. {{ MIN_COMMENT_LENGTH }})
+              </span>
               <span v-if="qualitativeFilled"> ✓</span>
             </span>
           </label>
@@ -496,16 +494,14 @@ async function submitReview() {
         <div v-if="submitError" class="note-box danger form-error">{{ submitError }}</div>
 
         <div v-if="!isReadOnly" class="form-actions">
-          <p class="submit-meta" :class="{ 'submit-meta--warn': !canSubmit }">
+          <p class="submit-meta" :class="{ 'submit-meta--warn': !qualitativeFilled }">
             {{ submitHelperText }}
           </p>
           <button
             type="button"
             class="btn-submit"
-            :disabled="isSubmitting || !canSubmit"
-            :title="
-              !canSubmit ? 'Jawab semua pertanyaan dan isi masukan kualitatif terlebih dahulu' : ''
-            "
+            :disabled="isSubmitting || !qualitativeFilled"
+            :title="!qualitativeFilled ? 'Lengkapi masukan kualitatif terlebih dahulu' : ''"
             @click="submitReview"
           >
             {{ isSubmitting ? 'Mengirim...' : 'Submit Penilaian' }}
@@ -518,25 +514,23 @@ async function submitReview() {
 </template>
 
 <style scoped>
-/* ─── Card wrapper ─── */
 .card-inner {
-  padding: 28px 32px;
+  padding: 24px 28px;
 }
 
-/* ─── Back nav ─── */
 .back-nav {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .btn-back {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 16px;
+  padding: 8px 14px;
   background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-dark);
   cursor: pointer;
@@ -546,12 +540,12 @@ async function submitReview() {
 .btn-back:hover {
   background: var(--bg-light);
 }
+
 .btn-back:focus-visible {
   outline: 2px solid #bbf7d0;
   outline-offset: 2px;
 }
 
-/* ─── Form header ─── */
 .form-head {
   display: flex;
   align-items: center;
@@ -561,7 +555,7 @@ async function submitReview() {
 
 .form-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--text-dark);
 }
@@ -573,9 +567,9 @@ async function submitReview() {
   border: 1px solid #d1fae5;
   background: #ecfdf5;
   color: #047857;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 5px 12px;
+  padding: 4px 10px;
 }
 
 .mode-chip--readonly {
@@ -584,19 +578,17 @@ async function submitReview() {
   color: #92400e;
 }
 
-/* ─── Form note ─── */
 .form-note {
   margin: 20px 0 0;
   color: var(--text-grey);
-  font-size: 15px;
+  font-size: 14px;
   background: #ecfdf5;
   border: 1px solid #d1fae5;
   border-radius: 10px;
-  padding: 14px 16px;
-  line-height: 1.6;
+  padding: 12px 16px;
 }
 
-/* ─── Score legend ─── */
+/* Score legend */
 .score-legend {
   margin-top: 16px;
   display: flex;
@@ -608,7 +600,7 @@ async function submitReview() {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--white);
@@ -618,29 +610,28 @@ async function submitReview() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 999px;
   background: var(--primary);
   color: var(--white);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
 }
 
 .legend-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-grey);
   font-weight: 500;
 }
 
-/* ─── Progress ─── */
 .form-progress {
   margin-top: 20px;
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #f8fafc;
-  padding: 16px 20px;
+  padding: 16px;
 }
 
 .form-progress-head {
@@ -651,12 +642,12 @@ async function submitReview() {
 }
 
 .progress-title {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-dark);
 }
 
 .progress-metric {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-grey);
 }
@@ -664,7 +655,7 @@ async function submitReview() {
 .form-progress-track {
   margin-top: 10px;
   width: 100%;
-  height: 8px;
+  height: 7px;
   background: #e2e8f0;
   border-radius: 999px;
   overflow: hidden;
@@ -674,16 +665,16 @@ async function submitReview() {
   height: 100%;
   background: linear-gradient(90deg, #166534, #22c55e);
   border-radius: inherit;
-  transition: width 0.3s ease;
+  transition: width 0.2s ease;
 }
 
 .form-progress-note {
   margin: 10px 0 0;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-grey);
 }
 
-/* ─── Section nav ─── */
+/* Section jump nav */
 .section-nav {
   margin-top: 20px;
   display: flex;
@@ -697,7 +688,7 @@ async function submitReview() {
 }
 
 .section-nav-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-grey);
   margin-right: 4px;
@@ -707,11 +698,11 @@ async function submitReview() {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--white);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--text-dark);
   cursor: pointer;
@@ -737,12 +728,12 @@ async function submitReview() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: #047857;
   background: #bbf7d0;
   border-radius: 999px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   line-height: 1;
 }
 
@@ -751,19 +742,16 @@ async function submitReview() {
   color: #fff;
 }
 
-/* ─── Form sections ─── */
 .form-section {
   margin-top: 40px;
 }
 
 .section-title {
   margin: 0 0 20px;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
   color: var(--text-dark);
 }
 
-/* ─── Group block ─── */
 .group-block {
   margin-top: 24px;
   border: 1px solid var(--border);
@@ -786,182 +774,105 @@ async function submitReview() {
 .group-title {
   margin: 0;
   color: var(--text-dark);
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 18px;
 }
 
 .group-progress {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  border: 1px solid #d1d5db;
-  background: #f3f4f6;
-  color: var(--text-grey);
-  border-radius: 999px;
-  padding: 5px 14px;
-  font-size: 13px;
-  font-weight: 700;
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    color 0.2s;
-}
-
-.group-progress--done {
-  border-color: #bbf7d0;
+  border: 1px solid #bbf7d0;
   background: #ecfdf5;
   color: #047857;
-}
-
-.group-progress-check {
-  font-size: 12px;
-}
-
-/* ─── Question card ─── */
-.question-card {
-  display: flex;
-  gap: 16px;
-  padding: 18px 20px;
-  border: 2px solid #e5e7eb;
-  background: var(--white);
-  border-radius: 12px;
-  margin-top: 10px;
-  transition: border-color 0.2s;
-}
-
-.question-card--answered {
-  border-color: #6ee7b7;
-}
-
-/* Left column: indicator circle */
-.question-left {
-  flex-shrink: 0;
-  padding-top: 2px;
-}
-
-.question-indicator {
-  width: 38px;
-  height: 38px;
   border-radius: 999px;
-  border: 2px solid #d1d5db;
-  background: #f9fafb;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.slider-group {
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  background: var(--white);
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.slider-head {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  gap: 16px;
+}
+
+.slider-label {
+  font-size: 14px;
+  color: var(--text-dark);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* Grouped score badge + label */
+.slider-value-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.slider-value {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition:
-    background 0.25s,
-    border-color 0.25s;
-}
-
-.question-indicator--done {
-  border-color: #047857;
-  background: #047857;
-}
-
-.indicator-check {
-  color: #fff;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.indicator-num {
-  color: #9ca3af;
+  border-radius: 999px;
   font-size: 13px;
+  color: var(--white);
+  background: var(--primary);
   font-weight: 700;
+  flex-shrink: 0;
 }
 
-/* Right column */
-.question-right {
-  flex: 1;
-  min-width: 0;
-}
-
-.question-text {
-  margin: 0 0 16px;
-  font-size: 15px;
+.slider-value-label {
+  font-size: 11px;
   font-weight: 600;
-  color: var(--text-dark);
-  line-height: 1.55;
+  color: var(--text-grey);
+  white-space: nowrap;
 }
 
-/* ─── Rating buttons ─── */
-.rating-row {
+.slider-row {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.rating-btn {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  padding: 10px 0;
-  width: 84px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  background: #f8fafc;
-  cursor: pointer;
-  font-family: var(--font);
-  transition:
-    border-color 0.15s,
-    background 0.15s,
-    transform 0.1s;
+  gap: 8px;
 }
 
-.rating-btn:hover:not(.rating-btn--disabled) {
-  border-color: #6ee7b7;
-  background: #f0fdf4;
-}
-
-.rating-btn:active:not(.rating-btn--disabled) {
-  transform: scale(0.96);
-}
-
-.rating-btn--selected {
-  border-color: var(--primary);
-  background: #ecfdf5;
-}
-
-.rating-btn--disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.rating-num {
-  font-size: 22px;
-  font-weight: 700;
-  color: #94a3b8;
-  line-height: 1;
-  transition: color 0.15s;
-}
-
-.rating-btn--selected .rating-num {
-  color: var(--primary);
-}
-
-.rating-label {
-  font-size: 10px;
-  font-weight: 600;
-  color: #94a3b8;
-  text-align: center;
-  line-height: 1.3;
-  transition: color 0.15s;
-}
-
-.rating-btn--selected .rating-label {
-  color: #047857;
-}
-
-.question-hint {
-  margin: 10px 0 0;
+.slider-bound {
+  color: var(--text-grey);
   font-size: 12px;
-  color: #94a3b8;
+  font-weight: 600;
+}
+
+.slider-input {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.slider-input:focus-visible {
+  outline: 2px solid #bbf7d0;
+  outline-offset: 2px;
+}
+
+/* Subtle indicator for untouched sliders */
+.slider-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-grey);
+  opacity: 0.7;
   font-style: italic;
 }
 
-/* ─── Qualitative section ─── */
+/* Qualitative section */
 #section-qualitative {
   scroll-margin-top: 80px;
 }
@@ -977,22 +888,22 @@ async function submitReview() {
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-dark);
 }
 
 .textarea-count {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-grey);
   font-weight: 500;
   transition: color 0.2s;
-  white-space: nowrap;
 }
 
 .textarea-count--warn {
   color: #b45309;
 }
+
 .textarea-count--ok {
   color: #047857;
   font-weight: 700;
@@ -1002,14 +913,13 @@ async function submitReview() {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 14px 16px;
-  font-size: 15px;
+  padding: 12px 14px;
+  font-size: 14px;
   font-family: var(--font);
   color: var(--text-dark);
   resize: vertical;
   min-height: 140px;
   transition: border-color 0.2s;
-  line-height: 1.6;
 }
 
 .textarea-input:focus {
@@ -1021,6 +931,7 @@ async function submitReview() {
   border-color: #22c55e;
 }
 
+/* Comment minimum-length progress */
 .comment-progress-track {
   margin-top: 8px;
   width: 100%;
@@ -1037,10 +948,9 @@ async function submitReview() {
   transition: width 0.2s ease;
 }
 
-/* ─── Bottom ─── */
 .readonly-note {
   margin: 24px 0 0;
-  font-size: 14px;
+  font-size: 13px;
   color: #92400e;
   background: #fffbeb;
   border: 1px solid #fde68a;
@@ -1057,7 +967,7 @@ async function submitReview() {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 14px;
   position: sticky;
   bottom: 0;
   background: linear-gradient(to top, var(--white) 75%, rgba(255, 255, 255, 0));
@@ -1067,7 +977,7 @@ async function submitReview() {
 
 .submit-meta {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-grey);
   text-align: right;
 }
@@ -1081,16 +991,16 @@ async function submitReview() {
   background: var(--primary);
   color: var(--white);
   border-radius: 10px;
-  padding: 12px 24px;
-  font-size: 15px;
+  padding: 11px 20px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  white-space: nowrap;
 }
 
 .btn-submit:hover:not(:disabled) {
   background: var(--primary-hover);
 }
+
 .btn-submit:focus-visible {
   outline: 2px solid #86efac;
   outline-offset: 2px;
@@ -1103,65 +1013,63 @@ async function submitReview() {
   border-color: var(--text-grey);
 }
 
-/* ─── Mobile ─── */
 @media (max-width: 768px) {
   .card-inner {
     padding: 16px;
   }
+
   .form-head {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .form-progress-head {
     flex-direction: column;
     align-items: flex-start;
   }
+
   .section-title {
-    font-size: 19px;
+    font-size: 20px;
   }
+
   .group-block {
     padding: 16px;
   }
+
   .group-head {
     flex-direction: column;
     align-items: flex-start;
   }
-  .question-card {
+
+  .slider-head {
     flex-direction: column;
-    gap: 12px;
-  }
-  .question-indicator {
-    width: 32px;
-    height: 32px;
-  }
-  .rating-row {
+    align-items: flex-start;
     gap: 6px;
   }
-  .rating-btn {
-    width: 60px;
-    padding: 8px 0;
+
+  .slider-value-block {
+    flex-direction: row;
   }
-  .rating-num {
-    font-size: 18px;
-  }
-  .rating-label {
-    font-size: 9px;
-  }
+
   .score-legend {
     gap: 4px;
   }
+
   .form-actions {
     position: static;
     flex-direction: column;
     align-items: stretch;
     padding-bottom: 0;
   }
+
   .submit-meta {
     text-align: left;
   }
+
   .btn-submit {
     width: 100%;
   }
+
   .section-nav {
     gap: 4px;
   }

@@ -120,10 +120,6 @@ function openTaskForm() {
       Isi Sekarang
       <span class="task-action-icon">›</span>
     </button>
-    <div v-else class="task-completed-status">
-      <span class="completed-icon">✓</span>
-      Selesai
-    </div>
   </article>
 </template>
 
@@ -269,31 +265,13 @@ function openTaskForm() {
   line-height: 1;
 }
 
-.task-completed-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #047857;
-  background: #d1fae5;
-  border-radius: 10px;
-  padding: 10px 18px;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.completed-icon {
-  font-weight: 900;
-}
-
 @media (max-width: 768px) {
   .task-card {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .task-action,
-  .task-completed-status {
+  .task-action {
     justify-content: center;
     width: 100%;
   }

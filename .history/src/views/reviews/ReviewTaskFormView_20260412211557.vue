@@ -169,7 +169,7 @@ const groupedQuestions = computed(() =>
 )
 
 const answeredQuestionCount = computed(() =>
-  quantitativeQuestions.reduce((sum, q) => sum + ((questionScores[q.id!] || 0) > 0 ? 1 : 0), 0),
+  quantitativeQuestions.reduce((sum, q) => sum + (questionScores[q.id!] > 0 ? 1 : 0), 0),
 )
 
 const completionPercent = computed(() => {
@@ -207,16 +207,16 @@ function setScore(questionId: string, score: number) {
 function getGroupAnsweredCount(aspect: AspectKey): number {
   return quantitativeQuestions.reduce((sum, q) => {
     if (q.aspect !== aspect) return sum
-    return sum + ((questionScores[q.id!] || 0) > 0 ? 1 : 0)
+    return sum + (questionScores[q.id!] > 0 ? 1 : 0)
   }, 0)
 }
 
 function getAspectScore(aspect: AspectKey): number {
   const aspectQuestions = quantitativeQuestions.filter((q) => q.aspect === aspect)
   if (aspectQuestions.length === 0) return 3
-  const answered = aspectQuestions.filter((q) => (questionScores[q.id!] || 0) > 0)
+  const answered = aspectQuestions.filter((q) => questionScores[q.id!] > 0)
   if (answered.length === 0) return 3
-  const total = answered.reduce((sum, q) => sum + (questionScores[q.id!] || 0), 0)
+  const total = answered.reduce((sum, q) => sum + questionScores[q.id!], 0)
   return Math.min(5, Math.max(1, Math.round(total / answered.length)))
 }
 
@@ -251,7 +251,7 @@ function validateForm(): boolean {
     submitError.value = `Masukan kualitatif minimal ${MIN_COMMENT_LENGTH} karakter.`
     return false
   }
-  const unanswered = quantitativeQuestions.filter((q) => (questionScores[q.id!] || 0) === 0)
+  const unanswered = quantitativeQuestions.filter((q) => questionScores[q.id] === 0)
   if (unanswered.length > 0) {
     submitError.value = `${unanswered.length} pertanyaan belum dijawab.`
     return false
@@ -400,17 +400,15 @@ async function submitReview() {
               v-for="question in group.questions"
               :key="question.id"
               class="question-card"
-              :class="{ 'question-card--answered': (questionScores[question.id!] || 0) > 0 }"
+              :class="{ 'question-card--answered': questionScores[question.id] > 0 }"
             >
               <!-- Indicator circle (number → checkmark when answered) -->
               <div class="question-left">
                 <div
                   class="question-indicator"
-                  :class="{ 'question-indicator--done': (questionScores[question.id!] || 0) > 0 }"
+                  :class="{ 'question-indicator--done': questionScores[question.id] > 0 }"
                 >
-                  <span v-if="(questionScores[question.id!] || 0) > 0" class="indicator-check"
-                    >✓</span
-                  >
+                  <span v-if="questionScores[question.id] > 0" class="indicator-check">✓</span>
                   <span v-else class="indicator-num">{{ question.number }}</span>
                 </div>
               </div>
@@ -426,11 +424,11 @@ async function submitReview() {
                     type="button"
                     class="rating-btn"
                     :class="{
-                      'rating-btn--selected': (questionScores[question.id!] || 0) === score,
+                      'rating-btn--selected': questionScores[question.id] === score,
                       'rating-btn--disabled': isReadOnly || isSubmitting,
                     }"
                     :aria-label="`Nilai ${score} — ${SCORE_LABELS[score]}`"
-                    :aria-pressed="(questionScores[question.id!] || 0) === score"
+                    :aria-pressed="questionScores[question.id] === score"
                     :disabled="isReadOnly || isSubmitting"
                     @click="setScore(question.id, score)"
                   >
@@ -439,10 +437,7 @@ async function submitReview() {
                   </button>
                 </div>
 
-                <p
-                  v-if="(questionScores[question.id!] || 0) === 0 && !isReadOnly"
-                  class="question-hint"
-                >
+                <p v-if="questionScores[question.id] === 0 && !isReadOnly" class="question-hint">
                   Pilih nilai untuk pertanyaan ini
                 </p>
               </div>
