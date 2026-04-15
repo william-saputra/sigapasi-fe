@@ -110,9 +110,9 @@ onMounted(async () => {
           <!-- Back Action -->
           <button
             class="mb-2 inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm transition hover:bg-gray-100"
-            @click="router.push('/pengaturan-slot-waktu')"
+            @click="router.back()"
           >
-            ← Kembali ke Pengaturan
+            ← Kembali
           </button>
           <h2 class="text-3xl font-bold text-emerald-800">Master Slot Waktu</h2>
           <p class="mt-0.5 text-sm text-gray-500">Tampilan jadwal gabungan seluruh tingkatan kelas</p>

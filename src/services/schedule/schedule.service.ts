@@ -38,8 +38,13 @@ export const scheduleService = {
     bulkAssign: (scheduleId: string, payload: BulkAssignRequestDTO) => 
         apiService.post<BulkAssignResultDTO>(`${BASE}/${scheduleId}/bulk-assign`, payload),
 
-    deleteEntry: (entryId: string) => 
-        apiService.delete<DeleteEntryResultDTO>(`${BASE}/entries/${entryId}`),
+    deleteEntry: (entryId: string) => {
+        if (!entryId) {
+            console.error('Gagal menghapus: entryId tidak valid atau kosong!')
+            return Promise.reject(new Error('Silakan tunggu data tersinkronisasi'))
+        }
+        return apiService.delete<DeleteEntryResultDTO>(`${BASE}/entries/${entryId}`)
+    },
 
     clearClass: (scheduleId: string, classId: string) => 
         apiService.delete<any>(`${BASE}/${scheduleId}/classes/${classId}/clear`),
