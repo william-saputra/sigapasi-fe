@@ -74,7 +74,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
   TEACHER: [
     { title: 'Jadwal Mengajar', desc: 'Lihat jadwal kelas dan ruanganmu hari ini.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
     { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/leaves/history', icon: 'fa-solid fa-umbrella-beach' },
-    { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/review/saya', icon: 'fa-solid fa-star' },
+    { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/reviews', icon: 'fa-solid fa-star' },
     { title: 'Kelas Pengganti', desc: 'Cek jadwal penggantian yang ditugaskan.', to: '/guru-pengganti', icon: 'fa-solid fa-person-chalkboard' },
   ],
 }
@@ -117,12 +117,7 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
     <section class="stats-section">
       <div class="inner">
         <div class="stats-grid">
-          <div
-            v-for="(s, i) in stats"
-            :key="s.label"
-            class="stat-card"
-            :style="`--i:${i}`"
-          >
+          <div v-for="(s, i) in stats" :key="s.label" class="stat-card" :style="`--i:${i}`">
             <div class="stat-icon">
               <i :class="s.icon"></i>
             </div>
@@ -147,12 +142,7 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
           </div>
 
           <div class="menus-grid">
-            <RouterLink
-              v-for="menu in menus"
-              :key="menu.title"
-              :to="menu.to"
-              class="menu-item"
-            >
+            <RouterLink v-for="menu in menus" :key="menu.title" :to="menu.to" class="menu-item">
               <div class="menu-icon-box">
                 <i :class="menu.icon"></i>
               </div>

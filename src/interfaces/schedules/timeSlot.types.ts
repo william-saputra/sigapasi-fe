@@ -52,8 +52,8 @@ export interface TimeSlotResponseDTO {
     is_locked: boolean
     locked_label: string | null
     slot_type: SlotTypeEnum
-    school_level_id: string
-    school_level_name: string
+    schoolLevelId: string
+    schoolLevelName: string
 }
 
 // --- Backend Request Interfaces ---

@@ -494,22 +494,30 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                         school_level_id: level.id,
                         slots,
                     }
-                    const response = await apiService.post<any>('/slot/structure', payload)
-                    
-                    // If response is an array, apply locks immediately using its elements
-                    if (response && Array.isArray(response)) {
-                        await applyLocks(response)
-                    } else if (response && response.data && Array.isArray(response.data)) {
-                        await applyLocks(response.data)
-                    } else {
-                        // Fallback to GET
-                        const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
-                            params: {
-                                semester_id: semesterId,
-                                school_level_id: level.id,
-                            },
-                        })
-                        await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                    try {
+                        const response = await apiService.post<any>('/slot/structure', payload)
+                        
+                        // If response is an array, apply locks immediately using its elements
+                        if (response && Array.isArray(response)) {
+                            await applyLocks(response)
+                        } else if (response && response.data && Array.isArray(response.data)) {
+                            await applyLocks(response.data)
+                        } else {
+                            // Fallback to GET
+                            const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
+                                params: {
+                                    semester_id: semesterId,
+                                    school_level_id: level.id,
+                                },
+                            })
+                            await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                        }
+                    } catch (err: any) {
+                        if (err.response?.status === 409) {
+                            console.warn(`Pengaturan slot waktu pada semester dan tingkat ${level.id} ini sudah ada (409 Conflict).`)
+                        } else {
+                            throw err
+                        }
                     }
                 }
             } else {
@@ -519,20 +527,29 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
                     school_level_id: activeSchoolLevelId.value,
                     slots,
                 }
-                const response = await apiService.post<any>('/slot/structure', payload)
-                
-                if (response && Array.isArray(response)) {
-                    await applyLocks(response)
-                } else if (response && response.data && Array.isArray(response.data)) {
-                    await applyLocks(response.data)
-                } else {
-                    const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
-                        params: {
-                            semester_id: semesterId,
-                            school_level_id: activeSchoolLevelId.value,
-                        },
-                    })
-                    await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                try {
+                    const response = await apiService.post<any>('/slot/structure', payload)
+                    
+                    if (response && Array.isArray(response)) {
+                        await applyLocks(response)
+                    } else if (response && response.data && Array.isArray(response.data)) {
+                        await applyLocks(response.data)
+                    } else {
+                        const gradeData = await apiService.get<TimeSlotResponseDTO[]>('/slot/structure', {
+                            params: {
+                                semester_id: semesterId,
+                                school_level_id: activeSchoolLevelId.value,
+                            },
+                        })
+                        await applyLocks(Array.isArray(gradeData) ? gradeData : (gradeData as any).data || [])
+                    }
+                } catch (err: any) {
+                    if (err.response?.status === 409) {
+                        console.warn('Pengaturan slot waktu pada semester dan tingkat ini sudah ada (409 Conflict).')
+                        // You could add an error message store here if TimeSlotConfig uses it.
+                    } else {
+                        throw err
+                    }
                 }
             }
 
