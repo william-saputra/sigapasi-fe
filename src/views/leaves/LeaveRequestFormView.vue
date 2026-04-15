@@ -38,7 +38,8 @@ const errors = reactive({
   timeRange: false,
   pastDate: false,
   quota: false,
-  maxHours: false, // [BARU] State error untuk maksimal 4 jam
+  maxHours: false,
+  onlyWeekend: false, // [BARU] State error jika cuti jatuh sepenuhnya di hari libur
 });
 
 const isHarian = computed(() => form.leaveType === "FULL_DAY");
@@ -75,11 +76,23 @@ function toDateOnly(dateStr: string) {
   return d;
 }
 
-function calculateDaysInclusive(start: string, end: string) {
-  const startDate = toDateOnly(start);
-  const endDate = toDateOnly(end);
-  const diff = endDate.getTime() - startDate.getTime();
-  return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+// [BARU] Fungsi menghitung hari kerja efektif (skip Sabtu-Minggu)
+function calculateWorkingDays(startStr: string, endStr: string) {
+  if (!startStr || !endStr) return 0;
+
+  let current = toDateOnly(startStr);
+  const end = toDateOnly(endStr);
+  let count = 0;
+
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Bukan Minggu (0) dan Sabtu (6)
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return count;
 }
 
 function validateForm() {
@@ -103,22 +116,26 @@ function validateForm() {
       }
 
       if (!isSakit.value) {
-        // Kalau bukan sakit, tidak boleh ada past date sama sekali
         if (start < today || end < today) {
           errors.pastDate = true;
           hasError = true;
         }
       } else {
-        // Kalau sakit, cek apakah melebihi 7 hari ke belakang
         if (start < maxBackdateAllowed) {
           errors.pastDate = true;
           hasError = true;
         }
       }
 
-      if (form.category === 'IZIN_PRIBADI') {
-        const totalDays = calculateDaysInclusive(form.startDate, form.endDate);
-        if (totalDays > leaveStore.leaveQuota) {
+      const workingDays = calculateWorkingDays(form.startDate, form.endDate);
+
+      if (workingDays === 0) {
+        // Jika 0, berarti rentang tanggal full kena Sabtu/Minggu
+        errors.onlyWeekend = true;
+        hasError = true;
+      } else if (form.category === 'IZIN_PRIBADI') {
+        // Validasi sisa kuota menggunakan workingDays
+        if (workingDays > leaveStore.leaveQuota) {
           errors.quota = true;
           hasError = true;
         }
@@ -129,7 +146,6 @@ function validateForm() {
     if (form.singleDate) {
       const single = toDateOnly(form.singleDate);
 
-      // [UPDATE] Logika Backdate
       if (!isSakit.value) {
         if (single < today) {
           errors.pastDate = true;
@@ -140,6 +156,12 @@ function validateForm() {
           errors.pastDate = true;
           hasError = true;
         }
+      }
+
+      const workingDays = calculateWorkingDays(form.singleDate, form.singleDate);
+      if (workingDays === 0) {
+        errors.onlyWeekend = true;
+        hasError = true;
       }
     }
 
@@ -240,7 +262,7 @@ function goBack() {
                     v-model="form.startDate"
                     type="date"
                     class="form-control"
-                    :class="{ 'is-invalid': errors.startDate || errors.dateRange || errors.pastDate || errors.quota }"
+                    :class="{ 'is-invalid': errors.startDate || errors.dateRange || errors.pastDate || errors.quota || errors.onlyWeekend }"
                   />
                 </div>
 
@@ -252,7 +274,7 @@ function goBack() {
                     v-model="form.endDate"
                     type="date"
                     class="form-control"
-                    :class="{ 'is-invalid': errors.endDate || errors.dateRange || errors.pastDate || errors.quota }"
+                    :class="{ 'is-invalid': errors.endDate || errors.dateRange || errors.pastDate || errors.quota || errors.onlyWeekend }"
                   />
                 </div>
               </div>
@@ -266,9 +288,12 @@ function goBack() {
               <div v-if="errors.quota" class="error-message show">
                 Jatah cuti Anda tidak mencukupi untuk jumlah hari yang diajukan.
               </div>
+              <div v-if="errors.onlyWeekend" class="error-message show">
+                Pengajuan ditolak: Tanggal yang Anda pilih jatuh sepenuhnya pada hari libur (Sabtu/Minggu).
+              </div>
 
               <div class="note">
-                Pilih tanggal yang sama jika hanya cuti 1 hari full.
+                Pilih tanggal yang sama jika hanya cuti 1 hari full. (Hari libur tidak memotong jatah cuti).
               </div>
             </div>
           </div>
@@ -282,10 +307,13 @@ function goBack() {
                 v-model="form.singleDate"
                 type="date"
                 class="form-control"
-                :class="{ 'is-invalid': errors.singleDate || errors.pastDate }"
+                :class="{ 'is-invalid': errors.singleDate || errors.pastDate || errors.onlyWeekend }"
               />
               <div v-if="errors.pastDate" class="error-message show">
                 Tidak dapat mengajukan izin parsial pada tanggal yang sudah lewat (Kecuali kategori Sakit).
+              </div>
+              <div v-if="errors.onlyWeekend" class="error-message show">
+                Pengajuan ditolak: Anda tidak dapat mengajukan izin parsial di hari libur.
               </div>
             </div>
 
@@ -564,7 +592,6 @@ function goBack() {
   font-weight: 500;
 }
 
-/* TAMBAHAN ALERT ERROR UNTUK BACKEND */
 .alert-error {
   background-color: #fef2f2;
   border: 1px solid #dc2626;

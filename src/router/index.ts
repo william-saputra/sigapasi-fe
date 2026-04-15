@@ -124,7 +124,7 @@ const router = createRouter({
     },
     {
       path: "/leaves/approvals",
-      name: "leave-request",
+      name: "leave-approvals",
       component: () => import("@/views/leaves/LeavesApprovalsView.vue"),
       beforeEnter: headAdminStaffOnly,
     },

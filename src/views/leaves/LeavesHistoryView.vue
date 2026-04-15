@@ -41,10 +41,21 @@ function formatCategory(category: string): string {
   return map[category] || category;
 }
 
+function getCategoryClass(category: string): string {
+  const map: Record<string, string> = {
+    SAKIT: "cat-sakit",
+    IZIN_PRIBADI: "cat-izin",
+    DINAS_LUAR: "cat-dinas",
+    MELAHIRKAN: "cat-lahir",
+  };
+  return map[category] || "cat-izin";
+}
+
 function formatType(type: string): string {
   const map: Record<string, string> = {
     FULL_DAY: "Cuti Harian",
     PARTIAL: "Parsial (Jam Tertentu)",
+    DAILY: "Harian",
   };
   return map[type] || type;
 }
@@ -106,7 +117,7 @@ function formatTimeOnly(time: string | null): string {
   return time.slice(0, 5); // Mengambil HH:mm dari format HH:mm:ss
 }
 
-function calculateDayCount(startDate: string, endDate: string): number {
+function calculateWorkingDays(startDate: string, endDate: string): number {
   if (!startDate || !endDate) return 0;
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -114,10 +125,18 @@ function calculateDayCount(startDate: string, endDate: string): number {
   start.setHours(0, 0, 0, 0);
   end.setHours(0, 0, 0, 0);
 
-  const diffMs = end.getTime() - start.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+  let count = 0;
+  let current = new Date(start);
 
-  return diffDays;
+  while (current <= end) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  return count;
 }
 
 function getPeriodDisplay(row: LeaveRequestResponseDTO): { label: string; meta: string } {
@@ -131,7 +150,7 @@ function getPeriodDisplay(row: LeaveRequestResponseDTO): { label: string; meta: 
     };
   }
 
-  const days = calculateDayCount(row.startDate, row.endDate);
+  const days = calculateWorkingDays(row.startDate, row.endDate);
 
   return {
     label: row.startDate === row.endDate ? startLabel : `${startLabel} - ${endLabel}`,
@@ -173,7 +192,10 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
         </template>
 
         <template #cell:detail="{ row }">
-          <div style="font-weight: 600">{{ formatCategory(row.category) }}</div>
+          <span :class="['cat-badge', getCategoryClass(row.category)]">
+            <span class="dot"></span>
+            {{ formatCategory(row.category) }}
+          </span>
           <div class="meta-text">{{ formatType(row.type) }}</div>
         </template>
 
@@ -215,3 +237,59 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
     </AppCard>
   </AppLayout>
 </template>
+
+<style scoped>
+.meta-text {
+  font-size: 13px;
+  color: var(--text-grey, #6b7280);
+  margin-top: 2px;
+}
+
+/* Category badges */
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.cat-badge .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cat-sakit  { background: #FCEBEB; border-color: #F09595; color: #791F1F; }
+.cat-sakit .dot  { background: #E24B4A; }
+
+.cat-izin   { background: #FAEEDA; border-color: #FAC775; color: #633806; }
+.cat-izin .dot   { background: #BA7517; }
+
+.cat-dinas  { background: #E6F1FB; border-color: #85B7EB; color: #0C447C; }
+.cat-dinas .dot  { background: #378ADD; }
+
+.cat-lahir  { background: #FBEAF0; border-color: #ED93B1; color: #72243E; }
+.cat-lahir .dot  { background: #D4537E; }
+
+/* Note boxes */
+.note-box {
+  background: #f9fafb;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  border: 1px solid #e5e7eb;
+  line-height: 1.5;
+  color: var(--text-dark, #1f2937);
+}
+
+.note-box.danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+</style>
