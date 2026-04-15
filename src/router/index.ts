@@ -36,6 +36,13 @@ function adminStaffOnly() {
   }
 }
 
+function headAdminStaffOnly() {
+  const role = getRoleFromToken()
+  if (role !== 'HEAD' && role !== 'ADMIN' && role !== 'STAFF') {
+    return { path: '/' }
+  }
+}
+
 function teacherOnly() {
   const role = getRoleFromToken()
   // Kita gunakan toUpperCase agar lebih aman terhadap perbedaan case dari backend
@@ -114,6 +121,12 @@ const router = createRouter({
       name: 'leave-request',
       component: () => import('@/views/leaves/LeaveRequestFormView.vue'),
       beforeEnter: teacherOnly,
+    },
+    {
+      path: "/leaves/approvals",
+      name: "leave-approvals",
+      component: () => import("@/views/leaves/LeavesApprovalsView.vue"),
+      beforeEnter: headAdminStaffOnly,
     },
     {
       path: '/reviews/periods',
