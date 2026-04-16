@@ -145,6 +145,11 @@ const router = createRouter({
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
       meta: { requiresTeacher: true }
     },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/notifications/ListNotificationView.vue'),
+    },
   ],
 }
 )
