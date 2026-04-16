@@ -67,10 +67,11 @@ export const useNotificationStore = defineStore('notification', {
 
       this.notifications.unshift(notification)
 
-      // toast(notification.title, {
-      //   description: notification.message || undefined,
-      //   duration: 5000,
-      // })
+      toast(notification.title, {
+        description: notification.message || undefined,
+        duration: 5000,
+        closeButton: true,
+      })
     },
 
     disconnectNotificationStream() {

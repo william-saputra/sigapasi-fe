@@ -1,6 +1,5 @@
 <template>
   <div class="notif-page">
-    <!-- Page Header -->
     <div class="page-header">
       <div class="page-header-left">
         <button class="back-btn" @click="router.back()">
@@ -9,14 +8,39 @@
         <div>
           <h1 class="page-title">Notifikasi</h1>
           <p class="page-subtitle">
-            {{ totalUnread > 0 ? `${totalUnread} belum dibaca` : 'Semua sudah dibaca' }}
+            {{ isSelectionMode ? `${selectedIds.length} dipilih` : (totalUnread > 0 ? `${totalUnread} belum dibaca` : 'Semua sudah dibaca') }}
           </p>
         </div>
       </div>
 
       <div class="page-header-actions">
+        <template v-if="filteredItems.length > 0">
+          <button 
+            v-if="!isSelectionMode" 
+            class="btn btn-ghost" 
+            @click="isSelectionMode = true"
+          >
+            Pilih
+          </button>
+          
+          <template v-else>
+            <button class="btn btn-ghost" @click="toggleSelectAll">
+              {{ isAllSelected ? 'Batal Semua' : 'Pilih Semua' }}
+            </button>
+            <button 
+              class="btn btn-danger" 
+              :disabled="selectedIds.length === 0 || loading"
+              @click="handleDeleteSelected"
+            >
+              <i class="fa-solid fa-trash-can"></i>
+              Hapus ({{ selectedIds.length }})
+            </button>
+            <button class="btn btn-text" @click="exitSelectionMode">Batal</button>
+          </template>
+        </template>
+
         <button
-          v-if="hasUnread"
+          v-if="hasUnread && !isSelectionMode"
           class="btn btn-ghost"
           :disabled="loading"
           @click="handleMarkAllAsRead"
@@ -27,23 +51,20 @@
       </div>
     </div>
 
-    <!-- Filter Tabs -->
     <div class="filter-tabs">
       <button
         v-for="tab in tabs"
         :key="tab.value"
         class="tab-btn"
         :class="{ active: activeTab === tab.value }"
-        @click="activeTab = tab.value"
+        @click="changeTab(tab.value)"
       >
         {{ tab.label }}
         <span v-if="tab.count > 0" class="tab-badge">{{ tab.count }}</span>
       </button>
     </div>
 
-    <!-- Content -->
     <div class="notif-list-container">
-      <!-- Loading skeleton -->
       <template v-if="loading && filteredItems.length === 0">
         <div v-for="i in 5" :key="i" class="notif-card skeleton">
           <div class="skeleton-icon"></div>
@@ -55,7 +76,6 @@
         </div>
       </template>
 
-      <!-- Empty state -->
       <div v-else-if="filteredItems.length === 0" class="empty-state">
         <div class="empty-icon-wrap">
           <i class="fa-regular fa-bell-slash"></i>
@@ -70,7 +90,6 @@
         </p>
       </div>
 
-      <!-- Grouped list -->
       <template v-else>
         <div
           v-for="(group, groupKey) in groupedItems"
@@ -83,9 +102,17 @@
             v-for="item in group"
             :key="item.id"
             class="notif-card"
-            :class="{ unread: !item.read }"
+            :class="{ unread: !item.read, selected: selectedIds.includes(item.id) }"
             @click="handleItemClick(item)"
           >
+            <div v-if="isSelectionMode" class="card-checkbox" @click.stop>
+              <input 
+                type="checkbox" 
+                :value="item.id" 
+                v-model="selectedIds"
+              />
+            </div>
+
             <div class="card-icon-wrap" :class="getIconClass(item)">
               <i :class="getIcon(item)"></i>
             </div>
@@ -98,7 +125,7 @@
               <p v-if="item.message" class="card-message">{{ item.message }}</p>
             </div>
 
-            <div class="card-actions">
+            <div v-if="!isSelectionMode" class="card-actions">
               <div v-if="!item.read" class="unread-badge">Baru</div>
             </div>
           </div>
@@ -121,8 +148,12 @@ const router = useRouter()
 const notificationStore = useNotificationStore()
 const { notifications, loading } = storeToRefs(notificationStore)
 
+// --- State ---
 const activeTab = ref<TabValue>('all')
+const isSelectionMode = ref(false)
+const selectedIds = ref<string[]>([])
 
+// --- Computed ---
 const items = computed<Notifications[]>(() => notifications.value ?? [])
 const hasUnread = computed(() => items.value.some((n) => !n.read))
 const totalUnread = computed(() => items.value.filter((n) => !n.read).length)
@@ -137,23 +168,24 @@ const filteredItems = computed<Notifications[]>(() => {
   return items.value
 })
 
-// Group by date (Hari ini / Kemarin / Minggu ini / Lebih lama)
+const isAllSelected = computed(() => {
+  return filteredItems.value.length > 0 && selectedIds.value.length === filteredItems.value.length
+})
+
 const groupedItems = computed(() => {
   const groups: Record<string, Notifications[]> = {}
-
   for (const item of filteredItems.value) {
     const label = getDateGroupLabel(item.createdAt)
     if (!groups[label]) groups[label] = []
     groups[label].push(item)
   }
-
   return groups
 })
 
+// --- Logic Functions ---
 function getDateGroupLabel(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
-
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const startOfYesterday = new Date(startOfToday)
   startOfYesterday.setDate(startOfYesterday.getDate() - 1)
@@ -166,7 +198,6 @@ function getDateGroupLabel(dateString: string): string {
   return 'Lebih lama'
 }
 
-// ─── Icon helpers ─────────────────────────────────────────────────────────────
 type IconVariant = 'info' | 'success' | 'warning' | 'error' | 'default'
 
 function resolveVariant(item: Notifications): IconVariant {
@@ -193,8 +224,36 @@ function getIconClass(item: Notifications) {
   return `card-icon-${resolveVariant(item)}`
 }
 
-// ─── Actions ─────────────────────────────────────────────────────────────────
+// --- Actions ---
+function exitSelectionMode() {
+  isSelectionMode.value = false
+  selectedIds.value = []
+}
+
+function toggleSelectAll() {
+  if (isAllSelected.value) {
+    selectedIds.value = []
+  } else {
+    selectedIds.value = filteredItems.value.map(item => item.id)
+  }
+}
+
+function changeTab(tab: TabValue) {
+  activeTab.value = tab
+  exitSelectionMode()
+}
+
 async function handleItemClick(item: Notifications) {
+  if (isSelectionMode.value) {
+    const index = selectedIds.value.indexOf(item.id)
+    if (index > -1) {
+      selectedIds.value.splice(index, 1)
+    } else {
+      selectedIds.value.push(item.id)
+    }
+    return
+  }
+
   if (!item.read) {
     await notificationStore.markAsRead(item.id)
   }
@@ -204,7 +263,14 @@ async function handleMarkAllAsRead() {
   await notificationStore.markAllAsRead()
 }
 
-// ─── Time formatting ──────────────────────────────────────────────────────────
+async function handleDeleteSelected() {
+  if (selectedIds.value.length === 0) return
+  if (confirm(`Hapus ${selectedIds.value.length} notifikasi terpilih?`)) {
+    await notificationStore.deleteNotification({ notificationIds: selectedIds.value })
+    exitSelectionMode()
+  }
+}
+
 function formatRelativeTime(dateString: string) {
   const date = new Date(dateString)
   const now = new Date()
@@ -227,21 +293,20 @@ function formatRelativeTime(dateString: string) {
   })
 }
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await notificationStore.getMyNotification()
 })
 </script>
 
 <style scoped>
-/* ── Page layout ── */
+/* --- Page layout --- */
 .notif-page {
   max-width: 720px;
   margin: 0 auto;
   padding: 24px 16px 48px;
 }
 
-/* ── Header ── */
+/* --- Header --- */
 .page-header {
   display: flex;
   align-items: center;
@@ -285,9 +350,9 @@ onMounted(async () => {
   color: var(--text-grey);
 }
 
-.page-header-actions { display: flex; gap: 8px; }
+.page-header-actions { display: flex; gap: 8px; align-items: center; }
 
-/* ── Buttons ── */
+/* --- Buttons --- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -299,6 +364,7 @@ onMounted(async () => {
   cursor: pointer;
   border: none;
   transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
 }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-ghost {
@@ -308,13 +374,24 @@ onMounted(async () => {
 }
 .btn-ghost:hover:not(:disabled) { background: var(--bg-light); }
 
-/* ── Filter tabs ── */
+.btn-danger {
+  background: #FEF2F2;
+  color: #EF4444;
+  border: 1px solid #FCA5A5;
+}
+.btn-danger:hover:not(:disabled) { background: #FEE2E2; }
+
+.btn-text {
+  background: transparent;
+  color: var(--text-grey);
+}
+
+/* --- Filter tabs --- */
 .filter-tabs {
   display: flex;
   gap: 4px;
   margin-bottom: 20px;
   border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
 }
 .tab-btn {
   padding: 10px 16px;
@@ -347,14 +424,7 @@ onMounted(async () => {
   line-height: 1.6;
 }
 
-/* ── List container ── */
-.notif-list-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* ── Group label ── */
+/* --- Group label --- */
 .notif-group { margin-bottom: 24px; }
 .group-label {
   font-size: 11px;
@@ -362,11 +432,11 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-grey);
-  margin-bottom: 8px;
+  margin: 16px 0 8px 4px;
   padding: 0 4px;
 }
 
-/* ── Notification card ── */
+/* --- Notification card --- */
 .notif-card {
   display: flex;
   align-items: flex-start;
@@ -377,7 +447,8 @@ onMounted(async () => {
   border-radius: 10px;
   margin-bottom: 8px;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition: all 0.15s ease;
+  position: relative;
 }
 .notif-card:hover {
   background: #F9FAFB;
@@ -387,9 +458,26 @@ onMounted(async () => {
   background: var(--success-bg, #ECFDF5);
   border-color: #A7F3D0;
 }
-.notif-card.unread:hover { background: #D1FAE5; }
+.notif-card.selected {
+  border-color: var(--primary, #6366F1);
+  background: #F5F7FF;
+}
 
-/* ── Card icon ── */
+/* --- Checkbox --- */
+.card-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10px;
+}
+.card-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary, #6366F1);
+}
+
+/* --- Card icon --- */
 .card-icon-wrap {
   flex-shrink: 0;
   width: 40px;
@@ -406,7 +494,7 @@ onMounted(async () => {
 .card-icon-warning  { background: #FFFBEB; color: #F59E0B; }
 .card-icon-info     { background: #EFF6FF; color: #3B82F6; }
 
-/* ── Card body ── */
+/* --- Card body --- */
 .card-body { flex: 1; min-width: 0; }
 .card-top {
   display: flex;
@@ -423,11 +511,10 @@ onMounted(async () => {
   line-height: 1.4;
 }
 .card-time {
-  flex-shrink: 0;
   font-size: 11px;
   color: var(--text-grey);
-  font-weight: 500;
   white-space: nowrap;
+  font-weight: 500;
   margin-top: 2px;
 }
 .card-message {
@@ -437,12 +524,6 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-/* ── Card actions ── */
-.card-actions {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-}
 .unread-badge {
   background: var(--primary, #6366F1);
   color: #fff;
@@ -452,7 +533,7 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-/* ── Skeleton ── */
+/* --- Skeleton & Shimmer --- */
 .notif-card.skeleton {
   pointer-events: none;
   cursor: default;
@@ -483,7 +564,7 @@ onMounted(async () => {
   100% { background-position: -200% 0; }
 }
 
-/* ── Empty state ── */
+/* --- Empty state --- */
 .empty-state {
   text-align: center;
   padding: 64px 24px;
@@ -512,11 +593,8 @@ onMounted(async () => {
   font-size: 14px;
 }
 
-/* ── Responsive ── */
-@media (max-width: 480px) {
-  .notif-page { padding: 16px 12px 32px; }
-  .page-header { gap: 8px; }
+@media (max-width: 600px) {
+  .page-header-actions { width: 100%; overflow-x: auto; padding-bottom: 4px; }
   .page-title { font-size: 18px; }
-  .notif-card { padding: 12px; }
 }
 </style>

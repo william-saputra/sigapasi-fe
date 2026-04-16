@@ -66,11 +66,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useNotificationStore } from '@/stores/notifications/notification.store'
 import type { Notifications } from '@/interfaces/notifications/notification.interface'
-import { toast } from 'vue-sonner'
 
 const MAX_VISIBLE = 5
 
@@ -83,9 +82,6 @@ const { notifications, loading } = storeToRefs(notificationStore)
 const items = computed<Notifications[]>(() => notifications.value ?? [])
 const latestItems = computed(() => items.value.slice(0, MAX_VISIBLE))
 const hasUnread = computed(() => items.value.some((item) => !item.read))
-
-// Untuk mencegah toast muncul dobel dari komponen ini
-const lastToastedId = ref<number | string | null>(null)
 
 type IconVariant = 'info' | 'success' | 'warning' | 'error' | 'default'
 
@@ -163,59 +159,6 @@ function formatRelativeTime(dateString: string) {
     minute: '2-digit',
   })
 }
-
-// Function to trigger vue-sonner toast based on notification variant
-function triggerToast(item: Notifications) {
-  const variant = resolveVariant(item)
-  const title = item.title ?? 'Notifikasi Baru'
-  
-  // Tambahkan closeButton: true untuk memunculkan X
-  const options = {
-    description: item.message,
-    duration: 4000,
-    closeButton: true
-  }
-
-  switch (variant) {
-    case 'success':
-      toast.success(title, options)
-      break
-    case 'error':
-      toast.error(title, options)
-      break
-    case 'warning':
-      toast.warning(title, options)
-      break
-    case 'info':
-      toast.info(title, options)
-      break
-    default:
-      toast(title, options)
-  }
-}
-
-// Watch for incoming real-time notifications
-watch(
-  () => items.value,
-  (newItems, oldItems) => {
-    // Abaikan data awal saat baru dimuat
-    if (!oldItems || oldItems.length === 0) {
-      if (newItems.length > 0) {
-        lastToastedId.value = newItems[0]?.id ?? null;
-      }
-      return
-    }
-
-    const latestItem = newItems[0]
-
-    // Pastikan kita belum memunculkan toast untuk ID ini
-    if (latestItem && latestItem.id !== lastToastedId.value) {
-      lastToastedId.value = latestItem.id // Catat ID agar tidak dipanggil dua kali
-      triggerToast(latestItem)
-    }
-  },
-  { deep: true }
-)
 
 onMounted(async () => {
   window.addEventListener('click', onWindowClick)
