@@ -1,16 +1,3 @@
-<!-- <template>
-  <header class="global-navbar">
-    <div class="global-navbar__inner">
-      <img class="global-navbar__logo" :src="logoSrc" alt="Logo" />
-
-      <div class="global-navbar__right">
-        <NotificationBell v-model="notifications" />
-        <UserProfile initials="EV" name="Evelyn Depthios" role="Guru Tetap" />
-      </div>
-    </div>
-  </header>
-</template> -->
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
