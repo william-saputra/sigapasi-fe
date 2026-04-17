@@ -313,7 +313,6 @@ async function finalizeReject() {
       </div>
 
       <div v-else-if="displayedRequests.length === 0" style="text-align: center; padding: 60px 20px; color: var(--text-grey);">
-        <h3 style="margin-bottom: 8px;">Tidak Ditemukan</h3>
         <p v-if="searchQuery">Tidak ada hasil yang cocok dengan kata kunci "<b>{{ searchQuery }}</b>".</p>
         <p v-else>Tidak ada pengajuan cuti dengan status {{ formatStatus(selectedStatus) }}.</p>
       </div>

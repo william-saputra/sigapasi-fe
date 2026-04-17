@@ -184,7 +184,9 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
       <div v-else-if="leaveStore.error" style="color: red; text-align: center; padding: 20px;">
         {{ leaveStore.error }}
       </div>
-
+      <div v-else-if="leaveStore.sortedLeaves.length === 0" style="color: black; text-align: center; padding: 20px;">
+        Belum ada pengajuan cuti.
+      </div>
       <DataTable v-else :columns="columns" :rows="leaveStore.sortedLeaves">
         <template #cell:createdAt="{ row }">
           <div style="font-weight: 600">{{ formatCreatedDate(row.createdAt) }}</div>

@@ -68,10 +68,32 @@ export const useLeaveStore = defineStore('leave', () => {
         headers: getAuthHeaders(),
       })
 
+      if (response.status === 404) {
+        leaves.value = []
+        error.value = null
+        return
+      }
+
       const result = await handleApiResponse(response)
       leaves.value = result.data || []
     } catch (err) {
       console.error('Error fetching leaves:', err)
+
+      const message =
+        err instanceof Error
+          ? err.message.toLowerCase()
+          : ''
+
+      if (
+        message.includes('not found') ||
+        message.includes('tidak ditemukan') ||
+        message.includes('no leave') ||
+        message.includes('belum ada')
+      ) {
+        leaves.value = []
+        error.value = null
+        return
+      }
 
       error.value =
         err instanceof Error

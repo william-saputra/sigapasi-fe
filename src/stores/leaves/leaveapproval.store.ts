@@ -45,12 +45,33 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
         headers: getAuthHeaders(),
       })
 
+      if (response.status === 404) {
+        pendingRequests.value = []
+        error.value = null
+        return
+      }
+
       const result = await handleApiResponse(response)
       pendingRequests.value = result.data || []
-
+      error.value = null
     } catch (err) {
       console.error('Error fetching pending requests:', err)
-      error.value = err instanceof Error ? err.message : 'Gagal mengambil data antrean cuti.'
+
+      const message =
+        err instanceof Error ? err.message.toLowerCase() : ''
+
+      if (
+        message.includes('not found') ||
+        message.includes('tidak ditemukan') ||
+        message.includes('belum ada')
+      ) {
+        pendingRequests.value = []
+        error.value = null
+        return
+      }
+
+      error.value =
+        err instanceof Error ? err.message : 'Gagal mengambil data antrean cuti.'
       pendingRequests.value = []
     } finally {
       isLoading.value = false
