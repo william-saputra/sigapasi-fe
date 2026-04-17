@@ -234,7 +234,7 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
       @click="onGenerate"
     >
-      <span>⚡ Generate</span>
+      <span>Generate</span>
     </button>
 
     <hr class="my-5 border-t border-gray-200" />
@@ -263,7 +263,7 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-red-300 bg-red-50 px-4 py-2.5 font-bold text-red-600 transition-colors hover:bg-red-100"
       @click="onClearAll"
     >
-      🗑️ Kosongkan Jadwal
+      Kosongkan Jadwal
     </button>
 
     <hr class="my-5 border-t border-gray-200" />
@@ -295,7 +295,7 @@ function confirmClearAll() {
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
       </svg>
-      {{ store.isSaving ? 'Menyimpan...' : '💾 Simpan Hari Ini' }}
+      {{ store.isSaving ? 'Menyimpan...' : 'Simpan' }}
     </button>
 
     <!-- Copy Settings Section -->
@@ -334,7 +334,7 @@ function confirmClearAll() {
         ]"
         @click="triggerApply"
       >
-        Simpan & Terapkan
+        Salin Pengaturan
       </button>
     </div>
 

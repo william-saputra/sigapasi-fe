@@ -95,6 +95,18 @@ const router = createRouter({
       component: () => import('@/views/schedules/JadwalMainView.vue'),
     },
     {
+      path: '/jadwal/kelola-kelas',
+      name: 'kelola-kelas',
+      component: () => import('@/views/schedules/ClassManagementView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
+      path: '/jadwal/mata-pelajaran',
+      name: 'kelola-mata-pelajaran',
+      component: () => import('@/views/schedules/SubjectManagementView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
       component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),

@@ -202,6 +202,15 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
             // STEP 3d: Update classSummaries
             await fetchClassesSummary()
 
+            // Lakukan sinkronisasi grid di background tanpa loader agar entryId terisi
+            if (activeDraft.value && activeClassId.value) {
+                scheduleService.getEntries(activeDraft.value.scheduleId, activeClassId.value)
+                    .then(data => {
+                        gridEntries.value = Array.isArray(data) ? data : (data as any)?.data ?? []
+                    })
+                    .catch(err => console.error('Gagal sinkronisasi background:', err))
+            }
+
             // STEP 3e: Kembalikan warning jika ada
             if (result.status === 'WARNING') {
                 return { warning: result?.message }
@@ -226,6 +235,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
 
     /** Hapus satu entry dari grid */
     async function deleteEntry(entryId: string): Promise<{ success?: string, error?: string }> {
+        if (!entryId) return { error: 'Jadwal belum tersimpan di database. Silakan tunggu sebentar.' }
         try {
             const response: any = await scheduleService.deleteEntry(entryId)
             const result = response.data

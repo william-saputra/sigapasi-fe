@@ -235,6 +235,7 @@ function cellClass(day: DayOfWeek, rowIndex: number): string {
                   </div>
                   <!-- Delete button -->
                   <button
+                    v-if="workspaceStore.entryBySlotId[getSlotAt(day, rowIndex - 1)!.id!]?.entryId"
                     class="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] text-white group-hover:flex"
                     @click.stop="onRemoveEntry(workspaceStore.entryBySlotId[getSlotAt(day, rowIndex - 1)!.id!]!.entryId)"
                   >

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
 import type { DayOfWeekEnum } from '@/interfaces/schedules/timeSlot.types'
@@ -8,8 +8,9 @@ import TimeSlotConfig from '@/components/schedules/TimeSlotConfig.vue'
 import TimeSlotGrid from '@/components/schedules/TimeSlotGrid.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 
-// --- Store ---
+// --- Store & Router ---
 const store = useTimeSlotStore()
+const router = useRouter()
 
 // --- State ---
 // Integrated Setup Modal State
@@ -186,6 +187,20 @@ onMounted(async () => {
   <div class="min-h-screen bg-gray-50 font-sans">
     <div class="mx-auto max-w-[1100px] px-5 py-8">
       
+      <!-- Back Button -->
+      <div class="mb-4">
+        <button
+          @click="router.push('/jadwal')"
+          class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-emerald-800"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m12 19-7-7 7-7"/>
+            <path d="M19 12H5"/>
+          </svg>
+          Kembali ke Dashboard
+        </button>
+      </div>
+
       <!-- Header Section -->
       <div class="mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b-2 border-gray-200 pb-4">
         <div>
@@ -201,7 +216,7 @@ onMounted(async () => {
             to="/slot-waktu"
             class="inline-flex items-center gap-2 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 hover:border-emerald-800"
           >
-            📋 Lihat Master Jadwal
+            Lihat Master Jadwal
           </RouterLink>
 
           <!-- Dropdowns Container -->

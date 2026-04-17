@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useScheduleDraftStore } from '@/stores/schedules/scheduleDraftStore'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
 
 // ─── Stores ──────────────────────────────────────────────────────────────────
+const router = useRouter()
 const draftStore = useScheduleDraftStore()
 const timeSlotStore = useTimeSlotStore()
 
@@ -129,6 +131,18 @@ function statusLabel(status: string) {
     </div>
 
     <!-- ─── Header ────────────────────────────────────────────────────────── -->
+    <div class="mb-4">
+      <button
+        @click="router.push('/jadwal')"
+        class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-emerald-800"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m12 19-7-7 7-7"/>
+          <path d="M19 12H5"/>
+        </svg>
+        Kembali ke Dashboard
+      </button>
+    </div>
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <h2 class="mb-1 text-2xl font-bold text-emerald-800">Daftar Draft Jadwal</h2>
