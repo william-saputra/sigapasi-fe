@@ -185,4 +185,36 @@ const router = createRouter({
   ],
 })
 
+import { useAcademicSetupStore } from '@/stores/academicSetupStore'
+
+router.beforeEach(async (to, from, next) => {
+  const schedulingRoutes = [
+    'jadwal-dashboard',
+    'kelola-kelas',
+    'kelola-mata-pelajaran',
+    'pengaturan-slot-waktu',
+    'penyusunan-jadwal',
+    'MasterSlotWaktu',
+    'ketersediaan-mengajar',
+    'ketersediaan-ringkasan'
+  ]
+
+  if (to.name && schedulingRoutes.includes(to.name as string)) {
+    const academicSetupStore = useAcademicSetupStore()
+
+    if (!academicSetupStore.isLoaded) {
+      await academicSetupStore.fetchActiveSetup()
+    }
+
+    if (!academicSetupStore.activeSemester) {
+      if (to.path !== '/setup-academic') {
+        // Peringatkan user atau redirect
+        return next({ path: '/setup-academic' })
+      }
+    }
+  }
+
+  next()
+})
+
 export default router

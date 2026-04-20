@@ -1,57 +1,70 @@
 import apiService from '../api.service'
 import type {
-    ScheduleDraftDTO,
-    CreateScheduleDraftRequestDTO,
-    ClassSummaryDTO,
-    SidebarItemDTO,
-    ScheduleEntryDTO,
-    BulkAssignRequestDTO,
-    BulkAssignResultDTO,
-    DeleteEntryResultDTO,
-    ClassValidationResultDTO,
+  ScheduleDraftDTO,
+  CreateScheduleDraftRequestDTO,
+  ClassSummaryDTO,
+  SidebarItemDTO,
+  ScheduleEntryDTO,
+  BulkAssignRequestDTO,
+  BulkAssignResultDTO,
+  DeleteEntryResultDTO,
+  ClassValidationResultDTO,
 } from '@/interfaces/schedules/schedule.types'
 
 const BASE = '/schedules'
 
 export const scheduleService = {
-    // ─── Grup A: Manajemen Draf ────────────────────────────────────────────
-    getDrafts: (semesterId: string) =>
-        apiService.get<ScheduleDraftDTO[]>(`${BASE}`, { params: { semesterId } }),
+  // ─── Grup A: Manajemen Draf ────────────────────────────────────────────
+  getDrafts: (semesterId: string) =>
+    apiService.get<ScheduleDraftDTO[]>(`${BASE}`, { params: { semesterId } }),
 
-    createDraft: (payload: CreateScheduleDraftRequestDTO) =>
-        apiService.post<ScheduleDraftDTO>(`${BASE}`, payload),
+  createDraft: (payload: CreateScheduleDraftRequestDTO) =>
+    apiService.post<ScheduleDraftDTO>(`${BASE}`, payload),
 
-    publishDraft: (scheduleId: string) =>
-        apiService.put<ScheduleDraftDTO>(`${BASE}/${scheduleId}/publish`, {}),
+  updateScheduleStatus: (
+    scheduleId: string,
+    payload: { status: string; revisionNote?: string | null },
+  ) => apiService.patch<ScheduleDraftDTO>(`${BASE}/${scheduleId}/status`, payload),
 
-    // ─── Grup B: Persiapan UI ─────────────────────────────────────────────
-    getClassesSummary: (scheduleId: string) =>
-        apiService.get<ClassSummaryDTO[]>(`${BASE}/${scheduleId}/classes-summary`),
+  publishDraft: (scheduleId: string) =>
+    apiService.put<ScheduleDraftDTO>(`${BASE}/${scheduleId}/publish`, {}),
 
-    getSidebar: (scheduleId: string, classId: string) =>
-        apiService.get<SidebarItemDTO[]>(`${BASE}/${scheduleId}/sidebar`, { params: { classId } }),
+  // ─── Grup B: Persiapan UI ─────────────────────────────────────────────
+  getClassesSummary: (scheduleId: string) =>
+    apiService.get<ClassSummaryDTO[]>(`${BASE}/${scheduleId}/classes-summary`),
 
-    getEntries: (scheduleId: string, classId: string) =>
-        apiService.get<ScheduleEntryDTO[]>(`${BASE}/${scheduleId}/entries`, { params: { classId } }),
+  getSidebar: (scheduleId: string, classId: string) =>
+    apiService.get<SidebarItemDTO[]>(`${BASE}/${scheduleId}/sidebar`, { params: { classId } }),
 
-    // ─── Grup C:
-    bulkAssign: (scheduleId: string, payload: BulkAssignRequestDTO) => 
-        apiService.post<BulkAssignResultDTO>(`${BASE}/${scheduleId}/bulk-assign`, payload),
+  getEntries: (scheduleId: string, classId: string) =>
+    apiService.get<ScheduleEntryDTO[]>(`${BASE}/${scheduleId}/entries`, { params: { classId } }),
 
-    deleteEntry: (entryId: string) => {
-        if (!entryId) {
-            console.error('Gagal menghapus: entryId tidak valid atau kosong!')
-            return Promise.reject(new Error('Silakan tunggu data tersinkronisasi'))
-        }
-        return apiService.delete<DeleteEntryResultDTO>(`${BASE}/entries/${entryId}`)
-    },
+  // ─── Grup C: Assignment
+  bulkAssign: (scheduleId: string, payload: BulkAssignRequestDTO) =>
+    apiService.post<BulkAssignResultDTO>(`${BASE}/${scheduleId}/bulk-assign`, payload),
 
-    clearClass: (scheduleId: string, classId: string) => 
-        apiService.delete<any>(`${BASE}/${scheduleId}/classes/${classId}/clear`),
+  singleAssign: (
+    scheduleId: string,
+    slotId: string,
+    payload: Omit<BulkAssignRequestDTO, 'timeSlotIds'>,
+  ) =>
+    apiService.post<BulkAssignResultDTO>(`${BASE}/${scheduleId}/bulk-assign`, {
+      ...payload,
+      timeSlotIds: [slotId],
+    }),
 
-    // ─── Grup D: Validasi ─────────────────────────────────────────────────
-    validateClass: (scheduleId: string, classId: string) =>
-        apiService.get<ClassValidationResultDTO>(
-            `${BASE}/${scheduleId}/classes/${classId}/validate`,
-        ),
+  deleteEntry: (entryId: string) => {
+    if (!entryId) {
+      console.error('Gagal menghapus: entryId tidak valid atau kosong!')
+      return Promise.reject(new Error('Silakan tunggu data tersinkronisasi'))
+    }
+    return apiService.delete<DeleteEntryResultDTO>(`${BASE}/entries/${entryId}`)
+  },
+
+  clearClass: (scheduleId: string, classId: string) =>
+    apiService.delete<any>(`${BASE}/${scheduleId}/classes/${classId}/clear`),
+
+  // ─── Grup D: Validasi ─────────────────────────────────────────────────
+  validateClass: (scheduleId: string, classId: string) =>
+    apiService.get<ClassValidationResultDTO>(`${BASE}/${scheduleId}/classes/${classId}/validate`),
 }

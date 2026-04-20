@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useToast } from 'vue-toastification'
 import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceStore'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import SidebarResource from './SidebarResource.vue'
 import ScheduleGrid from './ScheduleGrid.vue'
+import BaseModal from '@/components/common/BaseModal.vue'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
 
 // ─── Props ───────────────────────────────────────────────────────────────────
@@ -15,20 +17,49 @@ const emit = defineEmits<{ back: [] }>()
 // ─── Stores ──────────────────────────────────────────────────────────────────
 const workspaceStore = useScheduleWorkspaceStore()
 const timeSlotStore = useTimeSlotStore()
+const toast = useToast()
 
 // ─── Local State ─────────────────────────────────────────────────────────────
 const isSaving = ref(false)
 const isClearingClass = ref(false)
 const showValidationModal = ref(false)
-const toastMessage = ref<string | null>(null)
-const toastType = ref<'success' | 'warning' | 'error'>('success')
+const showClearClassModal = ref(false)
+const isInitializing = ref(true)
+
+// ─── Computed ─────────────────────────────────────────────────────────────────
+/** Flag untuk menandakan grid siap dirender - semua data async sudah resolved */
+const isGridReady = computed(() => {
+  // Grid siap jika:
+  // 1. Tidak sedang inisialisasi awal
+  // 2. Time slots sudah loaded (bukan loading dan schedules sudah ada)
+  // 3. Jika ada kelas aktif, grid entries juga harus sudah loaded
+  if (isInitializing.value) return false
+  if (timeSlotStore.isLoading) return false
+
+  // Jika ada kelas aktif, pastikan grid juga sudah selesai loading
+  if (workspaceStore.activeClassId && workspaceStore.isLoadingGrid) return false
+
+  return true
+})
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await workspaceStore.initWorkspace(props.draft)
-  // Pastikan time slots sudah dimuat (semesterId dari draft jika tersedia)
-  if (timeSlotStore.academicYears.length > 0 && timeSlotStore.activeSemesterId) {
-    await timeSlotStore.fetchSlotStructure()
+  isInitializing.value = true
+  try {
+    // PERBAIKAN: Fetch academic years dan init workspace secara paralel
+    // untuk mengurangi waktu inisialisasi
+    await Promise.all([
+      timeSlotStore.fetchAcademicYears(),
+      workspaceStore.initWorkspace(props.draft),
+    ])
+
+    // PERBAIKAN: Setelah academic years fetched, pastikan slot structure juga di-fetch
+    // Jika activeSemesterId sudah tersedia setelah fetchAcademicYears
+    if (timeSlotStore.activeSemesterId) {
+      await timeSlotStore.fetchSlotStructure()
+    }
+  } finally {
+    isInitializing.value = false
   }
 })
 
@@ -57,7 +88,11 @@ async function onSaveAndClose() {
 
 async function onClearClass() {
   if (!workspaceStore.activeClassId) return
-  if (!confirm('Yakin ingin menghapus SELURUH jadwal kelas ini? Tindakan ini tidak bisa dibatalkan.')) return
+  showClearClassModal.value = true
+}
+
+async function confirmClearClass() {
+  showClearClassModal.value = false
   isClearingClass.value = true
   const result = await workspaceStore.clearClassEntries()
   isClearingClass.value = false
@@ -74,28 +109,14 @@ function onBack() {
 }
 
 function showToast(msg: string, type: 'success' | 'warning' | 'error') {
-  toastMessage.value = msg
-  toastType.value = type
-  setTimeout(() => { toastMessage.value = null }, 4500)
-}
-
-function toastBgClass() {
-  if (toastType.value === 'success') return 'bg-emerald-600 text-white'
-  if (toastType.value === 'warning') return 'bg-amber-500 text-white'
-  return 'bg-red-600 text-white'
+  if (type === 'success') toast.success(msg)
+  else if (type === 'warning') toast.warning(msg)
+  else toast.error(msg)
 }
 </script>
 
 <template>
   <div>
-    <!-- ─── Toast Notification ──────────────────────────────────────────── -->
-    <div
-      v-if="toastMessage"
-      :class="['fixed top-5 right-5 z-50 max-w-sm rounded-lg px-5 py-3 text-sm font-semibold shadow-lg', toastBgClass()]"
-    >
-      {{ toastMessage }}
-    </div>
-
     <!-- ─── Workspace Header ───────────────────────────────────────────────── -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <!-- Back + Title -->
@@ -154,10 +175,26 @@ function toastBgClass() {
       </div>
     </div>
 
+    <!-- ─── Initial Loading State ─────────────────────────────────────────── -->
+    <div
+      v-if="isInitializing || timeSlotStore.isLoading"
+      class="flex items-center justify-center py-16"
+    >
+      <div class="text-center">
+        <span
+          class="inline-block h-8 w-8 animate-spin rounded-full border-4 border-emerald-300 border-t-emerald-700"
+        ></span>
+        <p class="mt-3 text-sm text-gray-500">Memuat data jadwal...</p>
+      </div>
+    </div>
+
     <!-- ─── Active Class Workspace ─────────────────────────────────────────── -->
-    <div v-if="workspaceStore.activeClassId" class="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+    <div
+      v-else-if="workspaceStore.activeClassId"
+      class="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]"
+    >
       <SidebarResource />
-      <ScheduleGrid @show-toast="showToast" />
+      <ScheduleGrid :is-grid-ready="isGridReady" @show-toast="showToast" />
     </div>
 
     <!-- ─── Empty State (no class selected) ──────────────────────────────── -->
@@ -188,7 +225,9 @@ function toastBgClass() {
           <table class="w-full text-sm">
             <thead class="bg-gray-50">
               <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">Mata Pelajaran</th>
+                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">
+                  Mata Pelajaran
+                </th>
                 <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Target</th>
                 <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Terisi</th>
                 <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Kurang</th>
@@ -220,12 +259,44 @@ function toastBgClass() {
           </button>
           <button
             class="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
-            @click="showValidationModal = false; onBack()"
+            @click="
+              showValidationModal = false;
+              onBack()
+            "
           >
             Tetap Keluar
           </button>
         </div>
       </div>
     </div>
+
+    <!-- ─── Clear Class Warning Modal ──────────────────────────────────────── -->
+    <BaseModal :show="showClearClassModal" @close="showClearClassModal = false">
+      <template #header>
+        <div class="mb-4 text-5xl">🗑️</div>
+        <h3 class="mb-2 text-lg font-bold text-gray-800">Kosongkan Jadwal Kelas?</h3>
+      </template>
+      <template #body>
+        <p class="mb-6 text-sm text-gray-500">
+          Yakin ingin menghapus SELURUH jadwal kelas ini? Tindakan ini tidak bisa dibatalkan.
+        </p>
+      </template>
+      <template #footer>
+        <div class="flex justify-center gap-3">
+          <button
+            class="rounded-lg border border-gray-300 px-6 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            @click="showClearClassModal = false"
+          >
+            Batal
+          </button>
+          <button
+            class="rounded-lg bg-red-600 px-6 py-2 text-sm font-bold text-white transition hover:bg-red-700"
+            @click="confirmClearClass"
+          >
+            Ya, Kosongkan
+          </button>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>

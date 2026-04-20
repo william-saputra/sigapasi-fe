@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import VButton from '@/components/common/VButton.vue';
 import BaseModal from '@/components/common/BaseModal.vue';
@@ -37,7 +37,6 @@ const filteredClasses = computed(() => {
 const getAvailableSubjects = (currentSubjectId: string) => {
   const selectedIds = activeTargets.value.map(t => t.subjectId).filter(id => id !== '');
   return allSubjectsByLevel.value.filter(subject => {
-    console.log(allSubjectsByLevel.value)
      return !selectedIds.includes(subject.id) || subject.id === currentSubjectId;
   });
 };
@@ -48,12 +47,90 @@ const handleLevelChange = async () => {
   }
 };
 
+const classNameSuffix = ref('');
+
+// Logika ekstraksi nama yang tahan terhadap format tanpa spasi (misal: "1-A")
+function extractSuffix(targetClass = selectedClass.value) {
+  if (targetClass) {
+    if (targetClass.gradeLevel && targetClass.name) {
+      const prefixRegex = new RegExp(`^${targetClass.gradeLevel}`, 'i');
+      classNameSuffix.value = targetClass.name.replace(prefixRegex, '').trimStart();
+    } else {
+      classNameSuffix.value = targetClass.name || '';
+    }
+  } else {
+    classNameSuffix.value = '';
+  }
+}
+
+// [PERBAIKAN 1]: Kombinasi nama yang rapih untuk mencegah spasi ganda
+function updateCombinedName() {
+  if (!selectedClass.value) return;
+  const prefix = selectedClass.value.gradeLevel ? String(selectedClass.value.gradeLevel) : '';
+  const suffix = classNameSuffix.value;
+  
+  if (prefix && suffix) {
+    // Jika user mengetik strip (-) di awal, jangan tambahkan spasi
+    if (suffix.startsWith('-') || suffix.startsWith(' ')) {
+      selectedClass.value.name = prefix + suffix;
+    } else {
+      selectedClass.value.name = `${prefix} ${suffix}`;
+    }
+  } else {
+    selectedClass.value.name = prefix + suffix;
+  }
+}
+
+function onClassNameInput(e: Event) {
+  const input = e.target as HTMLInputElement;
+  // Hanya menerima huruf, angka, spasi, titik, strip
+  input.value = input.value.replace(/[^a-zA-Z0-9 .-]/g, '');
+  classNameSuffix.value = input.value;
+  updateCombinedName();
+}
+
+// Watcher untuk membersihkan Target Mapel jika Jenjang berubah
+watch(() => selectedClass.value?.gradeLevel, async (newGrade, oldGrade) => {
+  if (newGrade === undefined || newGrade === null || String(newGrade) === '') return;
+  
+  let targetLevelName = '';
+  if (newGrade >= 1 && newGrade <= 6) targetLevelName = 'SD';
+  else if (newGrade >= 7 && newGrade <= 9) targetLevelName = 'SMP';
+  else if (newGrade >= 10 && newGrade <= 12) targetLevelName = 'SMA';
+  
+  if (targetLevelName) {
+    const level = schoolLevels.value.find(l => l.name === targetLevelName);
+    if (level && selectedClass.value && selectedClass.value.schoolLevelId !== level.id) {
+      selectedClass.value.schoolLevelId = level.id;
+      handleLevelChange();
+      
+      // Jika perubahan jenjang dipicu oleh ketikan user (bukan load dari sidebar)
+      if (oldGrade !== undefined) {
+         // 1. Tembak API DELETE ke backend untuk setiap target yang sudah tersimpan di DB
+         for (const target of activeTargets.value) {
+           if (target.id) { // Hanya hapus yang memiliki ID (sudah tersimpan di backend)
+             await store.deleteTargetForSelectedClass(target.id);
+           }
+         }
+         // 2. Baru kosongkan state lokal di layar
+         activeTargets.value = [];
+      }
+    }
+  }
+  updateCombinedName();
+});
+
 const selectClass = async (cls: any) => {
+  extractSuffix(cls);
+  
   await store.selectClass(cls);
 };
 
 const addClass = () => {
+  classNameSuffix.value = ''; 
+  
   store.initNewClass();
+  
   // Fetch subjects for default school level
   const firstLevel = schoolLevels.value[0];
   if (firstLevel && firstLevel.id) {
@@ -117,6 +194,22 @@ const closeModal = () => {
 
 const saveConfig = async () => {
   if (!selectedClass.value) return;
+
+  if (!classNameSuffix.value || classNameSuffix.value.trim() === '') {
+    showErrorModal('Nama Kelas tidak boleh kosong!');
+    return;
+  }
+
+  if (!selectedClass.value.gradeLevel) {
+    showErrorModal('Tingkat Kelas harus diisi!');
+    return;
+  }
+
+  if (selectedClass.value.gradeLevel < 1 || selectedClass.value.gradeLevel > 12) {
+    showErrorModal('Tingkat Kelas harus berada di rentang 1 - 12!');
+    return;
+  }
+
   const targetPayload = activeTargets.value
     .filter(t => t.subjectId !== '')
     .map(t => ({
@@ -240,7 +333,7 @@ const deleteClass = () => {
       </div>
 
       <template v-else>
-        <div class="flex-1 p-8 md:p-10 max-w-4xl mx-auto w-full pb-40">
+        <div class="flex-1 p-8 md:p-10 max-w-4xl mx-auto w-full pb-10">
           
           <div class="mb-8 flex items-center justify-between">
             <div>
@@ -261,13 +354,31 @@ const deleteClass = () => {
             </div>
             <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
               <div class="md:col-span-1">
-                <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Nama Kelas</label>
+                <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Tingkat</label>
                 <input 
-                  v-model="selectedClass.name" 
-                  type="text" 
+                  v-model.number="selectedClass.gradeLevel" 
+                  type="number" 
                   class="w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#014f01]/20 focus:border-[#014f01] outline-none transition-all text-gray-800 font-medium"
-                  placeholder="Contoh: 10-A"
+                  placeholder="Contoh: 10"
+                  min="1" max="12"
                 />
+              </div>
+
+              <div class="md:col-span-1">
+                <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Nama Kelas</label>
+                <div class="flex items-center">
+                  <span class="px-3 py-2.5 bg-gray-100 border border-gray-300 border-r-0 rounded-l-xl text-gray-500 font-bold whitespace-nowrap">
+                    {{ selectedClass.gradeLevel || '-' }}
+                  </span>
+                  <input 
+                    :value="classNameSuffix"
+                    @input="onClassNameInput"
+                    type="text" 
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-r-xl focus:bg-white focus:ring-2 focus:ring-[#014f01]/20 focus:border-[#014f01] outline-none transition-all text-gray-800 font-medium"
+                    placeholder="Contoh: IPA 1"
+                    maxlength="20"
+                  />
+                </div>
               </div>
               
               <div class="md:col-span-1">
@@ -276,7 +387,8 @@ const deleteClass = () => {
                   <select 
                     v-model="selectedClass.schoolLevelId"
                     @change="handleLevelChange"
-                    class="w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#014f01]/20 focus:border-[#014f01] outline-none transition-all text-gray-800 font-medium appearance-none cursor-pointer"
+                    :disabled="!!selectedClass.gradeLevel"
+                    class="w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#014f01]/20 focus:border-[#014f01] outline-none transition-all text-gray-800 font-medium appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <option v-for="level in schoolLevels" :key="level.id" :value="level.id">
                       {{ level.name }}
@@ -286,17 +398,6 @@ const deleteClass = () => {
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
                   </div>
                 </div>
-              </div>
-
-              <div class="md:col-span-1">
-                <label class="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Tingkat</label>
-                <input 
-                  v-model.number="selectedClass.gradeLevel" 
-                  type="number" 
-                  class="w-full px-4 py-2.5 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-[#014f01]/20 focus:border-[#014f01] outline-none transition-all text-gray-800 font-medium"
-                  placeholder="Contoh: 10"
-                  min="1" max="15"
-                />
               </div>
             </div>
           </section>
@@ -386,27 +487,33 @@ const deleteClass = () => {
           </section>
         </div>
 
-        <div class="absolute bottom-0 left-0 right-0 p-6 z-20 pointer-events-none">
-          <div class="max-w-4xl mx-auto flex justify-end pointer-events-auto">
-            <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-100 p-4 flex items-center gap-8">
-              <div class="flex items-center gap-4 pl-2">
-                <div class="w-12 h-12 rounded-xl bg-[#014f01]/10 flex items-center justify-center text-[#014f01]">
-                  <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Beban</p>
-                  <p class="text-2xl font-black text-gray-800 leading-none">{{ totalHours }} <span class="text-sm font-semibold text-gray-500">Jam/Mgg</span></p>
-                </div>
-              </div>
-              
-              <VButton variant="primary" :loading="loading" @click="saveConfig" class="px-8 py-3.5 shadow-lg shadow-[#014f01]/30 rounded-xl font-bold text-sm">
-                Simpan Konfigurasi
-              </VButton>
+        <section class="mt-8 mb-12 max-w-4xl mx-auto w-full">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col md:flex-row items-center justify-between gap-6">
+          
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-[#014f01]/10 flex items-center justify-center text-[#014f01]">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">Total Beban</p>
+              <p class="text-2xl font-black text-gray-800 leading-none">
+                {{ totalHours }} <span class="text-sm font-semibold text-gray-500">Jam/Mgg</span>
+              </p>
             </div>
           </div>
+          
+          <VButton 
+            variant="primary" 
+            :loading="loading" 
+            @click="saveConfig" 
+            class="w-full md:w-auto px-8 py-3.5 shadow-lg shadow-[#014f01]/30 rounded-xl font-bold text-sm"
+          >
+            Simpan Konfigurasi
+          </VButton>
         </div>
+      </section>
       </template>
     </main>
 

@@ -12,16 +12,33 @@ function toggleSubject(subjectId: string) {
 }
 
 // ─── Drag handler ────────────────────────────────────────────────────────────
-function onDragStart(event: DragEvent, item: { teacherId: string; teacherName: string; subjectId: string; subjectName: string }) {
+function onDragStart(
+  event: DragEvent,
+  item: {
+    teacherId: string
+    teacherName: string
+    subjectId: string
+    subjectName: string
+    subjectKode: string
+  },
+) {
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'copy'
-    event.dataTransfer.setData('application/json', JSON.stringify({
-      teacherId: item.teacherId,
-      teacherName: item.teacherName,
-      subjectId: item.subjectId,
-      subjectName: item.subjectName,
-    }))
+    event.dataTransfer.setData(
+      'text/plain',
+      JSON.stringify({
+        teacherId: item.teacherId,
+        teacherName: item.teacherName,
+        subjectId: item.subjectId,
+        subjectName: item.subjectName,
+        subjectKode: item.subjectKode,
+      }),
+    )
   }
+}
+
+function onDragEnd() {
+  window.dispatchEvent(new CustomEvent('drag-session-end'))
 }
 
 // ─── Progress indicator ──────────────────────────────────────────────────────
@@ -35,13 +52,13 @@ function indicatorClass(currentHours: number, targetHours: number): string {
 /** Total filled hours per subject group (sum across all teachers in that group) */
 function groupCurrentHours(subjectId: string): number {
   return store.sidebarItems
-    .filter(s => s.subjectId === subjectId)
+    .filter((s) => s.subjectId === subjectId)
     .reduce((sum, s) => sum + s.currentHours, 0)
 }
 
 function groupTargetHours(subjectId: string): number {
   // target hours sama untuk semua teacher dalam satu subject group
-  return store.sidebarItems.find(s => s.subjectId === subjectId)?.targetHours ?? 0
+  return store.sidebarItems.find((s) => s.subjectId === subjectId)?.targetHours ?? 0
 }
 
 const activeClassId = computed(() => store.activeClassId)
@@ -63,7 +80,10 @@ const activeClassId = computed(() => store.activeClassId)
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="store.sidebarBySubject.length === 0" class="py-6 text-center text-sm text-gray-400">
+    <div
+      v-else-if="store.sidebarBySubject.length === 0"
+      class="py-6 text-center text-sm text-gray-400"
+    >
       Tidak ada target beban mengajar untuk kelas ini.
     </div>
 
@@ -83,8 +103,13 @@ const activeClassId = computed(() => store.activeClassId)
             <span
               class="text-xs transition-transform"
               :class="openSubjects[group.subjectId] ? 'rotate-90' : ''"
-            >▶</span>
-            <span class="text-sm font-semibold text-gray-800">{{ group.subjectName }}</span>
+              >▶</span
+            >
+            <span
+              class="text-sm font-semibold uppercase text-gray-800"
+              :title="group.subjectName"
+              >{{ group.subjectKode }}</span
+            >
           </div>
           <!-- JP Indicator -->
           <span
@@ -98,13 +123,25 @@ const activeClassId = computed(() => store.activeClassId)
         </button>
 
         <!-- Teacher list -->
-        <div v-if="openSubjects[group.subjectId]" class="border-t border-gray-200 bg-white px-4 py-2">
+        <div
+          v-if="openSubjects[group.subjectId]"
+          class="border-t border-gray-200 bg-white px-4 py-2"
+        >
           <div
             v-for="teacher in group.teachers"
             :key="teacher.teacherId"
             class="mb-1 flex cursor-grab items-center justify-between gap-2 rounded-md border border-transparent px-3 py-2 text-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 active:cursor-grabbing"
             draggable="true"
-            @dragstart="onDragStart($event, { teacherId: teacher.teacherId, teacherName: teacher.teacherName, subjectId: teacher.subjectId, subjectName: teacher.subjectName })"
+            @dragstart="
+              onDragStart($event, {
+                teacherId: teacher.teacherId,
+                teacherName: teacher.teacherName,
+                subjectId: teacher.subjectId,
+                subjectName: teacher.subjectName,
+                subjectKode: teacher.subjectKode,
+              })
+            "
+            @dragend="onDragEnd"
           >
             <div class="flex items-center gap-2">
               <span class="text-base">👤</span>

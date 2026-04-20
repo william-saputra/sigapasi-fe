@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useToast } from 'vue-toastification'
 import { scheduleService } from '@/services/schedule/schedule.service'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import type {
@@ -9,6 +10,8 @@ import type {
 import type { AcademicYearSemesterResponseDTO, SemesterResponseDTO } from '@/interfaces/schedules/timeSlot.types'
 
 export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
+    const toast = useToast()
+
     // ─── State ─────────────────────────────────────────────────────────────
     const drafts = ref<ScheduleDraftDTO[]>([])
     const isLoadingDrafts = ref(false)
@@ -88,11 +91,31 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
             if (idx >= 0) drafts.value[idx] = updated
             return true
         } catch (err: any) {
+            let errorMsg = 'Gagal mempublikasikan jadwal.'
             if (err.response?.status === 409) {
-                errorMessage.value = 'Jadwal sudah dipublikasikan sebelumnya.'
-            } else {
-                errorMessage.value = err.response?.data?.message || 'Gagal mempublikasikan jadwal.'
+                errorMsg = 'Jadwal sudah dipublikasikan sebelumnya.'
+            } else if (err.response?.data?.message) {
+                errorMsg = err.response.data.message
             }
+            if (toast) toast.error(errorMsg)
+            return false
+        } finally {
+            isPublishing.value = false
+        }
+    }
+
+    /** Update Status Draft menggunakan Master Draft Paradigm */
+    async function updateScheduleStatus(scheduleId: string, status: string, revisionNote?: string | null): Promise<boolean> {
+        isPublishing.value = true // Reusing isPublishing flag or might need a new one
+        errorMessage.value = null
+        try {
+            const updated = await scheduleService.updateScheduleStatus(scheduleId, { status, revisionNote })
+            const idx = drafts.value.findIndex(d => d.scheduleId === scheduleId)
+            if (idx >= 0) drafts.value[idx] = updated
+            return true
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.message || 'Gagal mengupdate status jadwal.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             isPublishing.value = false
@@ -129,6 +152,7 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
         fetchDrafts,
         createDraft,
         publishDraft,
+        updateScheduleStatus,
         selectAcademicYear,
         selectSemester,
         clearError,

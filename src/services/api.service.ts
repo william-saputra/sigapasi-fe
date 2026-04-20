@@ -71,6 +71,17 @@ const apiService = {
       throw error
     }
   },
+
+  // Request PATCH untuk update parsial
+  async patch<T>(resource: string, data: any, config?: object): Promise<T> {
+    try {
+      const response = await apiClient.patch<BaseResponse<T>>(resource, data, config)
+      return response.data.data
+    } catch (error) {
+      console.error('API PATCH Error', error)
+      throw error
+    }
+  },
 }
 
 export default apiService
