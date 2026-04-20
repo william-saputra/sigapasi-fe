@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useToast } from 'vue-toastification'
 import { classManagementService } from '@/services/schedule/classManagement.service'
 import type {
     SchoolLevelResponseDTO,
@@ -12,6 +13,7 @@ import type {
 } from '@/interfaces/schedules/classManagement.types'
 
 export const useClassManagementStore = defineStore('classManagement', () => {
+    const toast = useToast()
 
     // --- State ---
     const loading = ref(false)
@@ -115,7 +117,8 @@ export const useClassManagementStore = defineStore('classManagement', () => {
             }
             return true
         } catch (err: any) {
-            error.value = err.response?.data?.message || 'Gagal menyimpan detail kelas.'
+            const errorMsg = err.response?.data?.message || 'Gagal menyimpan detail kelas.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             loading.value = false
@@ -133,7 +136,8 @@ export const useClassManagementStore = defineStore('classManagement', () => {
             activeTargets.value = []
             return true
         } catch (err: any) {
-            error.value = err.response?.data?.message || 'Gagal menghapus kelas.'
+            const errorMsg = err.response?.data?.message || 'Gagal menghapus kelas.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             loading.value = false
@@ -175,7 +179,8 @@ export const useClassManagementStore = defineStore('classManagement', () => {
             await fetchTargetsForSelectedClass()
             return true
         } catch (err: any) {
-            error.value = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+            const errorMsg = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             loading.value = false
@@ -222,7 +227,8 @@ export const useClassManagementStore = defineStore('classManagement', () => {
             await fetchTargetsForSelectedClass()
             return true
         } catch (err: any) {
-            error.value = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+            const errorMsg = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             loading.value = false
@@ -237,7 +243,8 @@ export const useClassManagementStore = defineStore('classManagement', () => {
             await fetchTargetsForSelectedClass()
             return true
         } catch (err: any) {
-            error.value = err.response?.data?.message || 'Gagal menghapus target mata pelajaran.'
+            const errorMsg = err.response?.data?.message || 'Gagal menghapus target mata pelajaran.'
+            if (toast) toast.error(errorMsg)
             return false
         } finally {
             loading.value = false

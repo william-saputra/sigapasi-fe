@@ -7,6 +7,7 @@ import type { DayOfWeekEnum } from '@/interfaces/schedules/timeSlot.types'
 import TimeSlotConfig from '@/components/schedules/TimeSlotConfig.vue'
 import TimeSlotGrid from '@/components/schedules/TimeSlotGrid.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import { AlertTriangle, Calendar, BookOpen } from 'lucide-vue-next'
 
 // --- Store & Router ---
 const store = useTimeSlotStore()
@@ -102,10 +103,14 @@ async function confirmSetup() {
     let academicYearLabel = '';
 
     if (setupMode.value === 'NEW_YEAR') {
-      await store.createAcademicYear({
+      const res = await store.createAcademicYear({
         year_start: String(newYearStart.value),
         year_end: String(newYearEnd.value)
-      })
+      }, true)
+      if (!res.success) {
+        setupError.value = res.error || 'Gagal menyimpan pengaturan baru.'
+        return
+      }
       // The API doesn't return the created ID directly in academicYears action, 
       // but fetchAcademicYears updates the store. We find the matched one.
       const newlyCreated = store.academicYears.find(ay => 
@@ -127,10 +132,15 @@ async function confirmSetup() {
 
     const finalSemesterName = `${newSemesterName.value.trim()} ${academicYearLabel}`.trim()
 
-    await store.createSemester({
+    const resSem = await store.createSemester({
       academic_year_id: targetAcademicYearId,
       name: finalSemesterName
-    })
+    }, true)
+    
+    if (!resSem.success) {
+      setupError.value = resSem.error || 'Gagal menyimpan pengaturan baru.'
+      return
+    }
     
     showSetupModal.value = false
     
@@ -264,7 +274,7 @@ onMounted(async () => {
         v-if="store.error"
         class="mb-6 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
       >
-        <span class="text-lg">⚠️</span>
+        <AlertTriangle class="h-5 w-5 text-red-600 shrink-0" />
         <span class="flex-1">{{ store.error }}</span>
         <button
           class="cursor-pointer text-xs font-semibold text-red-600 underline hover:text-red-800"
@@ -309,8 +319,7 @@ onMounted(async () => {
           v-if="!store.activeSemesterId || !store.activeSchoolLevelId"
           class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-12 text-center"
         >
-          <span class="mb-3 text-5xl">📅</span>
-          <p class="text-base font-semibold text-gray-500">Pilih Semester dan Jenjang</p>
+          <Calendar class="h-12 w-12 text-gray-400 mb-3" stroke-width="1.5" />
           <p class="text-base font-semibold text-gray-500">Pilih Semester dan Jenjang</p>
           <p class="mt-1 text-sm text-gray-400">Gunakan dropdown di atas untuk memulai.</p>
         </div>
@@ -323,7 +332,7 @@ onMounted(async () => {
   <!-- Integrated Setup Modal -->
   <BaseModal :show="showSetupModal" @close="showSetupModal = false">
     <template #header>
-      <div class="mb-4 text-5xl">📚</div>
+      <div class="mb-4 flex justify-center"><BookOpen class="h-12 w-12 text-emerald-800" stroke-width="1.5" /></div>
       <h3 class="mb-2 text-lg font-bold text-gray-800">
         {{ setupMode === 'NEW_YEAR' ? 'Tambah Tahun Ajaran & Semester' : 'Tambah Semester Baru' }}
       </h3>
