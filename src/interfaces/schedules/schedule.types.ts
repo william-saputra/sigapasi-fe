@@ -45,7 +45,7 @@ export interface SchoolClass {
 export interface ScheduleDraftDTO {
   scheduleId: string
   name: string
-  status: 'DRAFT' | 'PUBLISHED'
+  status: string
   createdAt: string
 }
 

@@ -32,9 +32,6 @@ const isInitializing = ref(true)
 /** Flag untuk menandakan grid siap dirender - semua data async sudah resolved */
 const isGridReady = computed(() => {
   // Grid siap jika:
-  // 1. Tidak sedang inisialisasi awal
-  // 2. Time slots sudah loaded (bukan loading dan schedules sudah ada)
-  // 3. Jika ada kelas aktif, grid entries juga harus sudah loaded
   if (isInitializing.value) return false
   if (timeSlotStore.isLoading) return false
 

@@ -6,6 +6,7 @@ import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import type {
     ScheduleDraftDTO,
     CreateScheduleDraftRequestDTO,
+    ScheduleApprovalListDTO,
 } from '@/interfaces/schedules/schedule.types'
 import type { AcademicYearSemesterResponseDTO, SemesterResponseDTO } from '@/interfaces/schedules/timeSlot.types'
 
@@ -18,6 +19,9 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
     const isCreating = ref(false)
     const isPublishing = ref(false)
     const errorMessage = ref<string | null>(null)
+
+    const allSchedules = ref<ScheduleApprovalListDTO[]>([])
+    const isLoadingAllSchedules = ref(false)
 
     // Seleksi Tahun Ajaran / Semester (reuse data dari timeSlotStore)
     const selectedAcademicYearId = ref<string | null>(null)
@@ -48,6 +52,7 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
         try {
             const data = await scheduleService.getDrafts(selectedSemesterId.value)
             drafts.value = Array.isArray(data) ? data : (data as any)?.data ?? []
+            console.log(drafts.value)
         } catch (err: any) {
             errorMessage.value = err.response?.data?.message || 'Gagal mengambil daftar draf jadwal.'
         } finally {
@@ -122,6 +127,43 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
         }
     }
 
+    async function fetchAllSchedules(): Promise<void> {
+        isLoadingAllSchedules.value = true
+        errorMessage.value = null
+        try {
+            const data = await scheduleService.getAllSchedules()
+            // Pastikan mengecek struktur axios response (data.data atau data langsung)
+            allSchedules.value = Array.isArray(data) ? data : (data as any)?.data ?? []
+        } catch (err: any) {
+            errorMessage.value = err.response?.data?.message || 'Gagal mengambil daftar persetujuan jadwal.'
+            if (toast) toast.error(errorMessage.value)
+        } finally {
+            isLoadingAllSchedules.value = false
+        }
+    }
+
+    async function submitDraft(scheduleId: string): Promise<boolean> {
+        isPublishing.value = true 
+        errorMessage.value = null
+        try {
+            const updated = await scheduleService.submitSchedule(scheduleId)
+            
+            const idx = drafts.value.findIndex(d => d.scheduleId === scheduleId)
+            if (idx >= 0) drafts.value[idx] = updated
+
+            await fetchAllSchedules()
+            
+            if (toast) toast.success('Jadwal berhasil diajukan untuk persetujuan.')
+            return true
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.message || 'Gagal mengajukan jadwal.'
+            if (toast) toast.error(errorMsg)
+            return false
+        } finally {
+            isPublishing.value = false
+        }
+    }
+
     function selectAcademicYear(id: string) {
         selectedAcademicYearId.value = id
         selectedSemesterId.value = null
@@ -139,6 +181,8 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
     return {
         // State
         drafts,
+        allSchedules, 
+        isLoadingAllSchedules,
         isLoadingDrafts,
         isCreating,
         isPublishing,
@@ -150,8 +194,10 @@ export const useScheduleDraftStore = defineStore('scheduleDraft', () => {
         availableSemesters,
         // Actions
         fetchDrafts,
+        fetchAllSchedules,
         createDraft,
         publishDraft,
+        submitDraft,
         updateScheduleStatus,
         selectAcademicYear,
         selectSemester,
