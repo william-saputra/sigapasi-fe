@@ -1,167 +1,167 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-import AppLayout from "@/components/common/AppLayout.vue";
-import PageHeader from "@/components/header/PageHeader.vue";
-import AppButton from "@/components/common/AppButton.vue";
-import AppCard from "@/components/common/AppCard.vue";
-import AppBadge from "@/components/common/AppBadge.vue";
-import DataTable from "@/components/table/DataTable.vue";
+import AppLayout from '@/components/common/AppLayout.vue'
+import PageHeader from '@/components/header/PageHeader.vue'
+import AppButton from '@/components/common/AppButton.vue'
+import AppCard from '@/components/common/AppCard.vue'
+import AppBadge from '@/components/common/AppBadge.vue'
+import DataTable from '@/components/table/DataTable.vue'
 
-import { useLeaveStore } from "@/stores/leaves/leaverequest.store";
-import type { LeaveRequestResponseDTO } from "@/interfaces/leaves/leaverequest.interface";
+import { useLeaveStore } from '@/stores/leaves/leaverequest.store'
+import type { LeaveRequestResponseDTO } from '@/interfaces/leaves/leaverequest.interface'
 
-const router = useRouter();
-const leaveStore = useLeaveStore();
+const router = useRouter()
+const leaveStore = useLeaveStore()
 
 onMounted(() => {
-  leaveStore.fetchAllLeaves();
-});
+  leaveStore.fetchAllLeaves()
+})
 
 const columns = [
-  { key: "createdAt", label: "TGL DIAJUKAN", thStyle: "width: 16%;" },
-  { key: "detail", label: "DETAIL IZIN", thStyle: "width: 20%;" },
-  { key: "period", label: "WAKTU PELAKSANAAN", thStyle: "width: 24%;" },
-  { key: "status", label: "STATUS", thStyle: "width: 14%;" },
-  { key: "note", label: "ALASAN / REJECTION NOTE", thStyle: "width: 26%;" },
-];
+  { key: 'createdAt', label: 'TGL DIAJUKAN', thStyle: 'width: 16%;' },
+  { key: 'detail', label: 'DETAIL IZIN', thStyle: 'width: 20%;' },
+  { key: 'period', label: 'WAKTU PELAKSANAAN', thStyle: 'width: 24%;' },
+  { key: 'status', label: 'STATUS', thStyle: 'width: 14%;' },
+  { key: 'note', label: 'ALASAN / REJECTION NOTE', thStyle: 'width: 26%;' },
+]
 
 function onNewLeave() {
-  router.push({ name: "leave-request" });
+  router.push({ name: 'leave-request' })
 }
 
 function formatCategory(category: string): string {
   const map: Record<string, string> = {
-    SAKIT: "Sakit",
-    IZIN_PRIBADI: "Izin Pribadi",
-    DINAS_LUAR: "Dinas Luar",
-    MELAHIRKAN: "Melahirkan",
-  };
-  return map[category] || category;
+    SAKIT: 'Sakit',
+    IZIN_PRIBADI: 'Izin Pribadi',
+    DINAS_LUAR: 'Dinas Luar',
+    MELAHIRKAN: 'Melahirkan',
+  }
+  return map[category] || category
 }
 
 function getCategoryClass(category: string): string {
   const map: Record<string, string> = {
-    SAKIT: "cat-sakit",
-    IZIN_PRIBADI: "cat-izin",
-    DINAS_LUAR: "cat-dinas",
-    MELAHIRKAN: "cat-lahir",
-  };
-  return map[category] || "cat-izin";
+    SAKIT: 'cat-sakit',
+    IZIN_PRIBADI: 'cat-izin',
+    DINAS_LUAR: 'cat-dinas',
+    MELAHIRKAN: 'cat-lahir',
+  }
+  return map[category] || 'cat-izin'
 }
 
 function formatType(type: string): string {
   const map: Record<string, string> = {
-    FULL_DAY: "Cuti Harian",
-    PARTIAL: "Parsial (Jam Tertentu)",
-    DAILY: "Harian",
-  };
-  return map[type] || type;
+    FULL_DAY: 'Cuti Harian',
+    PARTIAL: 'Parsial (Jam Tertentu)',
+    DAILY: 'Harian',
+  }
+  return map[type] || type
 }
 
 function formatStatus(status: string): string {
   const map: Record<string, string> = {
-    PENDING: "Pending",
-    APPROVED: "Approved",
-    REJECTED: "Rejected",
-  };
-  return map[status] || status;
+    PENDING: 'Pending',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+  }
+  return map[status] || status
 }
 
-function getStatusVariant(status: string): "pending" | "success" | "danger" {
-  const map: Record<string, "pending" | "success" | "danger"> = {
-    PENDING: "pending",
-    APPROVED: "success",
-    REJECTED: "danger",
-  };
-  return map[status] || "pending";
+function getStatusVariant(status: string): 'pending' | 'success' | 'danger' {
+  const map: Record<string, 'pending' | 'success' | 'danger'> = {
+    PENDING: 'pending',
+    APPROVED: 'success',
+    REJECTED: 'danger',
+  }
+  return map[status] || 'pending'
 }
 
 function formatDate(dateString: string): string {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 function formatCreatedDate(createdAt: string): string {
-  if (!createdAt) return "-";
-  const createdDate = new Date(createdAt);
-  const today = new Date();
+  if (!createdAt) return '-'
+  const createdDate = new Date(createdAt)
+  const today = new Date()
 
   const isSameDay =
     createdDate.getDate() === today.getDate() &&
     createdDate.getMonth() === today.getMonth() &&
-    createdDate.getFullYear() === today.getFullYear();
+    createdDate.getFullYear() === today.getFullYear()
 
-  if (isSameDay) return "Hari ini";
-  return formatDate(createdAt);
+  if (isSameDay) return 'Hari ini'
+  return formatDate(createdAt)
 }
 
 function formatCreatedTime(createdAt: string): string {
-  if (!createdAt) return "-";
+  if (!createdAt) return '-'
   return (
-    new Date(createdAt).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
+    new Date(createdAt).toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
-    }) + " WIB"
-  );
+    }) + ' WIB'
+  )
 }
 
 function formatTimeOnly(time: string | null): string {
-  if (!time) return "";
-  return time.slice(0, 5); // Mengambil HH:mm dari format HH:mm:ss
+  if (!time) return ''
+  return time.slice(0, 5) // Mengambil HH:mm dari format HH:mm:ss
 }
 
 function calculateWorkingDays(startDate: string, endDate: string): number {
-  if (!startDate || !endDate) return 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  if (!startDate || !endDate) return 0
+  const start = new Date(startDate)
+  const end = new Date(endDate)
 
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
 
-  let count = 0;
-  let current = new Date(start);
+  let count = 0
+  let current = new Date(start)
 
   while (current <= end) {
-    const dayOfWeek = current.getDay();
+    const dayOfWeek = current.getDay()
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count++;
+      count++
     }
-    current.setDate(current.getDate() + 1);
+    current.setDate(current.getDate() + 1)
   }
 
-  return count;
+  return count
 }
 
 function getPeriodDisplay(row: LeaveRequestResponseDTO): { label: string; meta: string } {
-  const startLabel = formatDate(row.startDate);
-  const endLabel = formatDate(row.endDate);
+  const startLabel = formatDate(row.startDate)
+  const endLabel = formatDate(row.endDate)
 
-  if (row.type === "PARTIAL") {
+  if (row.type === 'PARTIAL') {
     return {
       label: startLabel,
       meta: `${formatTimeOnly(row.startTime)} - ${formatTimeOnly(row.endTime)} WIB`,
-    };
+    }
   }
 
-  const days = calculateWorkingDays(row.startDate, row.endDate);
+  const days = calculateWorkingDays(row.startDate, row.endDate)
 
   return {
     label: row.startDate === row.endDate ? startLabel : `${startLabel} - ${endLabel}`,
     meta: `${days} Hari Kerja`,
-  };
+  }
 }
 
-function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
-  if (status === "PENDING") return "waiting";
-  if (status === "REJECTED") return "rejected";
-  return "normal";
+function getNoteMode(status: string): 'waiting' | 'rejected' | 'normal' {
+  if (status === 'PENDING') return 'waiting'
+  if (status === 'REJECTED') return 'rejected'
+  return 'normal'
 }
 </script>
 
@@ -177,11 +177,11 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
     </PageHeader>
 
     <AppCard>
-      <div v-if="leaveStore.isLoading" style="text-align: center; padding: 20px;">
+      <div v-if="leaveStore.isLoading" style="text-align: center; padding: 20px">
         Memuat data...
       </div>
 
-      <div v-else-if="leaveStore.error" style="color: red; text-align: center; padding: 20px;">
+      <div v-else-if="leaveStore.error" style="color: red; text-align: center; padding: 20px">
         {{ leaveStore.error }}
       </div>
 
@@ -222,9 +222,7 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
             <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px">
               Ditolak oleh Kepsek:
             </div>
-            <div class="note-box danger">
-              "{{ row.rejectionReason }}"
-            </div>
+            <div class="note-box danger">"{{ row.rejectionReason }}"</div>
           </template>
 
           <template v-else>
@@ -264,17 +262,41 @@ function getNoteMode(status: string): "waiting" | "rejected" | "normal" {
   flex-shrink: 0;
 }
 
-.cat-sakit  { background: #FCEBEB; border-color: #F09595; color: #791F1F; }
-.cat-sakit .dot  { background: #E24B4A; }
+.cat-sakit {
+  background: #fcebeb;
+  border-color: #f09595;
+  color: #791f1f;
+}
+.cat-sakit .dot {
+  background: #e24b4a;
+}
 
-.cat-izin   { background: #FAEEDA; border-color: #FAC775; color: #633806; }
-.cat-izin .dot   { background: #BA7517; }
+.cat-izin {
+  background: #faeeda;
+  border-color: #fac775;
+  color: #633806;
+}
+.cat-izin .dot {
+  background: #ba7517;
+}
 
-.cat-dinas  { background: #E6F1FB; border-color: #85B7EB; color: #0C447C; }
-.cat-dinas .dot  { background: #378ADD; }
+.cat-dinas {
+  background: #e6f1fb;
+  border-color: #85b7eb;
+  color: #0c447c;
+}
+.cat-dinas .dot {
+  background: #378add;
+}
 
-.cat-lahir  { background: #FBEAF0; border-color: #ED93B1; color: #72243E; }
-.cat-lahir .dot  { background: #D4537E; }
+.cat-lahir {
+  background: #fbeaf0;
+  border-color: #ed93b1;
+  color: #72243e;
+}
+.cat-lahir .dot {
+  background: #d4537e;
+}
 
 /* Note boxes */
 .note-box {

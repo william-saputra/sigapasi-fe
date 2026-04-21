@@ -24,17 +24,10 @@ function onBackToDashboard() {
   <div class="min-h-screen bg-gray-50 font-sans">
     <div class="mx-auto max-w-[1400px] px-5 py-8">
       <!-- Dashboard Application View -->
-      <DraftDashboard
-        v-if="viewMode === 'dashboard'"
-        @open-draft="onOpenDraft"
-      />
+      <DraftDashboard v-if="viewMode === 'dashboard'" @open-draft="onOpenDraft" />
 
       <!-- Workspace Composition View -->
-      <DraftWorkspace
-        v-else-if="activeDraft"
-        :draft="activeDraft"
-        @back="onBackToDashboard"
-      />
+      <DraftWorkspace v-else-if="activeDraft" :draft="activeDraft" @back="onBackToDashboard" />
     </div>
   </div>
 </template>

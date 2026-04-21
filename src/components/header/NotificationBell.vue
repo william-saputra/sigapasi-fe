@@ -33,45 +33,47 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const props = defineProps({
   modelValue: { type: Array, default: () => [] }, // list notif
-});
-const emit = defineEmits(["update:modelValue"]);
+})
+const emit = defineEmits(['update:modelValue'])
 
-const open = ref(false);
+const open = ref(false)
 
 const items = computed({
   get: () => props.modelValue,
-  set: (val) => emit("update:modelValue", val),
-});
+  set: (val) => emit('update:modelValue', val),
+})
 
-const hasUnread = computed(() => items.value.some((x) => !x.read));
+const hasUnread = computed(() => items.value.some((x) => !x.read))
 
 function toggle() {
-  open.value = !open.value;
+  open.value = !open.value
 }
 
 function markAllAsRead() {
-  items.value = items.value.map((x) => ({ ...x, read: true }));
+  items.value = items.value.map((x) => ({ ...x, read: true }))
 }
 
 function markOneAsRead(id) {
-  items.value = items.value.map((x) => (x.id === id ? { ...x, read: true } : x));
+  items.value = items.value.map((x) => (x.id === id ? { ...x, read: true } : x))
 }
 
 function onWindowClick(e) {
   // close if click outside
-  if (!e.target.closest(".notification-wrapper")) open.value = false;
+  if (!e.target.closest('.notification-wrapper')) open.value = false
 }
 
-onMounted(() => window.addEventListener("click", onWindowClick));
-onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
+onMounted(() => window.addEventListener('click', onWindowClick))
+onBeforeUnmount(() => window.removeEventListener('click', onWindowClick))
 </script>
 
 <style scoped>
-.notification-wrapper { position: relative; }
+.notification-wrapper {
+  position: relative;
+}
 .notification-bell {
   position: relative;
   font-size: 20px;
@@ -83,12 +85,16 @@ onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
   border: 1px solid var(--border);
   user-select: none;
 }
-.notification-bell:hover { background: var(--bg-light); }
+.notification-bell:hover {
+  background: var(--bg-light);
+}
 
 .notification-dot {
   position: absolute;
-  top: 4px; right: 4px;
-  width: 10px; height: 10px;
+  top: 4px;
+  right: 4px;
+  width: 10px;
+  height: 10px;
   background: var(--danger-text);
   border-radius: 50%;
   border: 2px solid var(--white);
@@ -103,7 +109,7 @@ onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
   background: var(--white);
   border-radius: 12px;
   border: 1px solid var(--border);
-  box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   display: none;
   z-index: 50;
   overflow: hidden;
@@ -123,9 +129,13 @@ onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #F9FAFB;
+  background: #f9fafb;
 }
-.notif-header h3 { margin: 0; font-size: 15px; color: var(--text-dark); }
+.notif-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-dark);
+}
 
 .mark-read-btn {
   font-size: 12px;
@@ -133,9 +143,14 @@ onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
   cursor: pointer;
   font-weight: 600;
 }
-.mark-read-btn:hover { text-decoration: underline; }
+.mark-read-btn:hover {
+  text-decoration: underline;
+}
 
-.notif-body { max-height: 350px; overflow-y: auto; }
+.notif-body {
+  max-height: 350px;
+  overflow-y: auto;
+}
 
 .notif-item {
   padding: 16px;
@@ -145,13 +160,33 @@ onBeforeUnmount(() => window.removeEventListener("click", onWindowClick));
   cursor: pointer;
   transition: background 0.2s;
 }
-.notif-item:last-child { border-bottom: none; }
-.notif-item:hover { background: #F3F4F6; }
+.notif-item:last-child {
+  border-bottom: none;
+}
+.notif-item:hover {
+  background: #f3f4f6;
+}
 
-.notif-item.unread { background: var(--success-bg); }
-.notif-item.unread:hover { background: #D1FAE5; }
+.notif-item.unread {
+  background: var(--success-bg);
+}
+.notif-item.unread:hover {
+  background: #d1fae5;
+}
 
-.notif-icon { font-size: 20px; }
-.notif-content p { margin: 0; font-size: 13px; color: var(--text-dark); line-height: 1.5; }
-.notif-time { font-size: 11px; color: var(--text-grey); margin-top: 6px; font-weight: 500; }
+.notif-icon {
+  font-size: 20px;
+}
+.notif-content p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dark);
+  line-height: 1.5;
+}
+.notif-time {
+  font-size: 11px;
+  color: var(--text-grey);
+  margin-top: 6px;
+  font-weight: 500;
+}
 </style>

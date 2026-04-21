@@ -174,11 +174,7 @@ onBeforeUnmount(() => {
               Edit Akun
             </button>
 
-            <button
-              v-if="isAuthenticatedAdmin"
-              class="option-item danger"
-              @click="openDeleteModal"
-            >
+            <button v-if="isAuthenticatedAdmin" class="option-item danger" @click="openDeleteModal">
               <i class="fa-regular fa-trash-can"></i>
               Hapus Akun
             </button>
@@ -271,26 +267,18 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click.self="closeDeleteModal"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-card">
         <h3 class="modal-title">Konfirmasi Hapus</h3>
         <p class="modal-description">
           Apakah Anda yakin ingin menghapus akun
-          <strong>{{ displayName }}</strong>?
-          Tindakan ini tidak dapat dibatalkan.
+          <strong>{{ displayName }}</strong
+          >? Tindakan ini tidak dapat dibatalkan.
         </p>
 
         <div class="modal-actions">
-          <button class="modal-button cancel" @click="closeDeleteModal">
-            Batal
-          </button>
-          <button class="modal-button delete" @click="confirmDelete">
-            Hapus
-          </button>
+          <button class="modal-button cancel" @click="closeDeleteModal">Batal</button>
+          <button class="modal-button delete" @click="confirmDelete">Hapus</button>
         </div>
       </div>
     </div>

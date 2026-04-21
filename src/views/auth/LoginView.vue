@@ -32,16 +32,18 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="flex h-[90vh] items-center justify-center overflow-hidden bg-[#F7FAF7] text-slate-900">
+  <div
+    class="flex h-[90vh] items-center justify-center overflow-hidden bg-[#F7FAF7] text-slate-900"
+  >
     <div class="w-full max-w-md">
-      <div class="rounded-[32px] border border-emerald-100 bg-white p-9 shadow-xl shadow-emerald-100/40 sm:p-10">
+      <div
+        class="rounded-[32px] border border-emerald-100 bg-white p-9 shadow-xl shadow-emerald-100/40 sm:p-10"
+      >
         <div class="mb-8">
           <div class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Login Sistem
           </div>
-          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-            Masuk ke akun Anda
-          </h2>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Masuk ke akun Anda</h2>
           <p class="mt-3 text-sm leading-6 text-slate-600">
             Gunakan email dan kata sandi yang terdaftar untuk mengakses dashboard SIGAPASI.
           </p>
@@ -49,9 +51,7 @@ const handleLogin = async () => {
 
         <form class="space-y-5" @submit.prevent="handleLogin">
           <div>
-            <label for="email" class="mb-2 block text-sm font-medium text-slate-700">
-              Email
-            </label>
+            <label for="email" class="mb-2 block text-sm font-medium text-slate-700"> Email </label>
             <input
               id="email"
               v-model="loginData.email"
@@ -66,7 +66,10 @@ const handleLogin = async () => {
               <label for="password" class="block text-sm font-medium text-slate-700">
                 Kata Sandi
               </label>
-              <a href="#" class="text-sm font-medium text-emerald-700 transition hover:text-emerald-800">
+              <a
+                href="#"
+                class="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+              >
                 Lupa password?
               </a>
             </div>
@@ -103,7 +106,9 @@ const handleLogin = async () => {
 
         <div class="my-6 flex items-center gap-4">
           <div class="h-px flex-1 bg-slate-200" />
-          <span class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">SIGAPASI</span>
+          <span class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400"
+            >SIGAPASI</span
+          >
           <div class="h-px flex-1 bg-slate-200" />
         </div>
 
@@ -115,9 +120,7 @@ const handleLogin = async () => {
         </p>
       </div>
 
-      <p class="mt-5 text-center text-xs text-slate-400">
-        © 2026 SIGAPASI. All rights reserved.
-      </p>
+      <p class="mt-5 text-center text-xs text-slate-400">© 2026 SIGAPASI. All rights reserved.</p>
     </div>
   </div>
 </template>

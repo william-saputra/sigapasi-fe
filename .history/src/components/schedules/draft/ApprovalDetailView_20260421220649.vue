@@ -149,10 +149,6 @@ function statusLabel(status: string) {
   if (status === 'PENDING_APPROVAL' || status === 'DRAFT') return 'Menunggu Persetujuan'
   return status
 }
-function closeRevisionModal() {
-  showRevisionModal.value = false
-  revisionNote.value = ''
-}
 </script>
 
 <template>

@@ -73,8 +73,7 @@ export const scheduleService = {
   validateAllClasses: (scheduleId: string) =>
     apiService.get<ClassValidationSummaryDTO[]>(`${BASE}/${scheduleId}/validate-all`),
 
-  getAllSchedules: () => 
-    apiService.get<ScheduleApprovalListDTO[]>(`${BASE}/approvals`),
+  getAllSchedules: () => apiService.get<ScheduleApprovalListDTO[]>(`${BASE}/approvals`),
 
   submitSchedule: (scheduleId: string) =>
     apiService.put<ScheduleDraftDTO>(`${BASE}/${scheduleId}/submit`, {}),

@@ -223,7 +223,12 @@ function closeCreateModal() {
     >
       <span>⚠️</span>
       <span class="flex-1">{{ globalError || draftStore.errorMessage }}</span>
-      <button class="text-xs font-semibold underline" @click="clearAndCloseErrors">Tutup</button>
+      <button
+        class="text-xs font-semibold underline"
+        @click="clearAndCloseErrors"
+      >
+        Tutup
+      </button>
     </div>
 
     <div class="mb-4">
@@ -398,7 +403,10 @@ function closeCreateModal() {
         <div class="flex justify-end gap-3">
           <button
             class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-            @click="closeCreateModal"
+            @click="
+              showCreateModal = false
+              newDraftName = ''
+            "
           >
             Batal
           </button>
