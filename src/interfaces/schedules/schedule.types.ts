@@ -151,3 +151,26 @@ export interface EdgePullResult {
   failedSlots: { slotId: string; error: string }[]
   warnings: { slotId: string; message: string }[]
 }
+
+// ─── Grup F: Persetujuan (Approval) Kepala Sekolah ─────────────────────────
+export interface ScheduleApprovalListDTO {
+  id: string
+  scheduleName: string
+  createdBy: string
+  createdAt: string
+  status: string
+  semesterId: string  // ← tambahkan ini
+  revisionNote?: string // Tambahkan baris ini
+}
+
+export interface ScheduleApprovalDetailDTO {
+  id: string
+  scheduleName: string
+  academicYear: string
+  semester: string
+  createdBy: string
+  createdAt: string
+  status: string
+  revisionNote: string | null
+  entries: ScheduleEntryDTO[] // Bisa reuse dari Grup B
+}
