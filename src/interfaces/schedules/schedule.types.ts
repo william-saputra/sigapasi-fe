@@ -125,6 +125,22 @@ export interface ClassValidationResultDTO {
   unfulfilledSubjects: UnfulfilledSubjectDTO[]
 }
 
+// ─── Grup D: Batch Validation (Seluruh Kelas) ───────────────────────────────
+export interface UnfulfilledTargetDTO {
+  subjectName: string
+  targetHours: number
+  allocatedHours: number
+  missingHours: number
+}
+
+export interface ClassValidationSummaryDTO {
+  classId: string
+  className: string
+  isValid: boolean
+  unfulfilledTargets: UnfulfilledTargetDTO[]
+  conflicts: any[]
+}
+
 // ─── DnD Payload (dipakai di dataTransfer) ────────────────────────────────
 export interface DragPayload {
   teacherId: string
@@ -150,27 +166,4 @@ export interface EdgePullResult {
   successSlots: string[]
   failedSlots: { slotId: string; error: string }[]
   warnings: { slotId: string; message: string }[]
-}
-
-// ─── Grup F: Persetujuan (Approval) Kepala Sekolah ─────────────────────────
-export interface ScheduleApprovalListDTO {
-  id: string
-  scheduleName: string
-  createdBy: string
-  createdAt: string
-  status: string
-  semesterId: string  // ← tambahkan ini
-  revisionNote?: string // Tambahkan baris ini
-}
-
-export interface ScheduleApprovalDetailDTO {
-  id: string
-  scheduleName: string
-  academicYear: string
-  semester: string
-  createdBy: string
-  createdAt: string
-  status: string
-  revisionNote: string | null
-  entries: ScheduleEntryDTO[] // Bisa reuse dari Grup B
 }

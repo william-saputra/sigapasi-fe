@@ -62,7 +62,7 @@ function openLockModal(index: number) {
  * Applies lock or unlock changes to the targeted slot locally.
  * Cleans up temporary states to reset modal logic.
  */
-function confirmLock() {
+async function confirmLock() {
   if (lockTargetIndex.value === null) return
 
   const slot = store.currentSchedule[lockTargetIndex.value]
@@ -75,15 +75,46 @@ function confirmLock() {
     }
   }
 
-  slot.is_locked = !isUnlocking.value
-  slot.locked_label = slot.is_locked ? lockLabel.value.trim() : null
-
-  toast.success(isUnlocking.value ? 'Slot berhasil dibuka kunci' : 'Slot berhasil dikunci')
-
-  showLockModal.value = false
-  lockTargetIndex.value = null
-  lockLabel.value = ''
+  // JIKA SLOT SUDAH ADA DI DATABASE (Punya ID)
+  if (slot.id) {
+    try {
+      if (isUnlocking.value) {
+        await store.unlockSlot(slot.id)
+        toast.success('Slot berhasil dibuka kunci')
+        
+        // Update state lokal SETELAH API sukses (jangan panggil fetch)
+        slot.is_locked = false
+        slot.locked_label = null
+      } else {
+        await store.lockSlot(slot.id, lockLabel.value.trim())
+        toast.success('Slot berhasil dikunci')
+        
+        // Update state lokal SETELAH API sukses
+        slot.is_locked = true
+        slot.locked_label = lockLabel.value.trim()
+      }
+      
+      showLockModal.value = false
+      lockTargetIndex.value = null
+      lockLabel.value = ''
+      
+    } catch (error) {
+      console.error("Gagal mengunci/membuka kunci:", error)
+      // Jika gagal, state lokal tidak diubah, perubahan dibatalkan
+    }
+  } 
+  else {
+    slot.is_locked = !isUnlocking.value
+    slot.locked_label = slot.is_locked ? lockLabel.value.trim() : null
+    
+    toast.success(isUnlocking.value ? 'Slot berhasil dibuka (Lokal)' : 'Slot berhasil dikunci (Lokal)')
+    
+    showLockModal.value = false
+    lockTargetIndex.value = null
+    lockLabel.value = ''
+  }
 }
+
 </script>
 
 <template>
@@ -176,16 +207,18 @@ function confirmLock() {
       <template #footer>
         <div class="flex gap-4">
           <button
-            class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300"
+            class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
             @click="showLockModal = false"
+            :disabled="store.isSaving"
           >
             Kembali
           </button>
           <button
-            class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
+            class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="confirmLock"
+            :disabled="store.isSaving"
           >
-            {{ isUnlocking ? 'Buka Kunci' : 'Simpan' }}
+            {{ store.isSaving ? 'Memproses...' : (isUnlocking ? 'Buka Kunci' : 'Simpan') }}
           </button>
         </div>
       </template>

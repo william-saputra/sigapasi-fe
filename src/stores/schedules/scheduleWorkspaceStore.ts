@@ -10,6 +10,7 @@ import type {
   ScheduleEntryDTO,
   BulkAssignRequestDTO,
   ClassValidationResultDTO,
+  ClassValidationSummaryDTO,
   EdgePullState,
   EdgePullResult,
   BlockPosition,
@@ -32,6 +33,9 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
   const isLoadingSidebar = ref(false)
   const isLoadingGrid = ref(false)
   const isLoadingSummary = ref(false)
+
+  const batchValidationResults = ref<ClassValidationSummaryDTO[]>([])
+  const isBatchValidating = ref(false)
 
   // ─── Edge Pull State ────────────────────────────────────────────────
   const edgePull = ref<EdgePullState>({
@@ -82,8 +86,12 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
 
     // activeClass menggunakan camelCase (schoolLevelId) dari ClassSummaryDTO
     const levelId = activeClass?.schoolLevelId || (activeClass as any)?.school_level_id
-    if (!levelId) return result
-
+    if (!levelId) {
+      console.warn(
+        `[DEBUG] Gagal merender Grid! Class ${activeClassName.value} tidak memiliki schoolLevelId dari API.`,
+      )
+      return result
+    }
     const schedules = tsStore.schedules
 
     for (const day of ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const) {
@@ -272,6 +280,25 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     }
   }
 
+  /** Validasi kelengkapan seluruh kelas (Batch) */
+  async function fetchBatchValidation(
+    scheduleId: string,
+  ): Promise<ClassValidationSummaryDTO[] | null> {
+    isBatchValidating.value = true
+    try {
+      const data = await scheduleService.validateAllClasses(scheduleId)
+      batchValidationResults.value = Array.isArray(data) ? data : ((data as any)?.data ?? [])
+      return batchValidationResults.value
+    } catch (err: any) {
+      console.error('Gagal memvalidasi seluruh kelas:', err)
+      const apiMessage = err.response?.data?.message ?? 'Terjadi kesalahan saat memvalidasi kelas.'
+      if (toast) toast.error(apiMessage)
+      return null
+    } finally {
+      isBatchValidating.value = false
+    }
+  }
+
   // ─── Edge Pull Actions ─────────────────────────────────────────────────
   function startEdgePull(entry: ScheduleEntryDTO, slotId: string, day: string): void {
     edgePull.value = {
@@ -326,7 +353,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     if (result.error) {
       return {
         successSlots: [],
-        failedSlots: targetSlotIds.map((id) => ({ slotId: id, error: result.error! })),
+        failedSlots: targetSlotIds.map((id:any) => ({ slotId: id, error: result.error! })),
         warnings: [],
       }
     }
@@ -390,6 +417,8 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     isLoadingSidebar,
     isLoadingGrid,
     isLoadingSummary,
+    batchValidationResults,
+    isBatchValidating,
     edgePull,
     // Getters
     entryBySlotId,
@@ -407,6 +436,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     deleteEntry,
     clearClassEntries,
     validateClass,
+    fetchBatchValidation,
     startEdgePull,
     updateEdgePullTarget,
     cancelEdgePull,
