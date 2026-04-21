@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { BaseResponse } from '@/interfaces/base-response.interface'
 
 // Instance utama Axios untuk seluruh request API
-const apiClient = axios.create({
+export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   headers: { 'Content-Type': 'application/json' },
 })
@@ -68,6 +68,17 @@ const apiService = {
       return response.data.data
     } catch (error) {
       console.error('API DELETE Error', error)
+      throw error
+    }
+  },
+
+  // Request PATCH untuk update parsial
+  async patch<T>(resource: string, data: any, config?: object): Promise<T> {
+    try {
+      const response = await apiClient.patch<BaseResponse<T>>(resource, data, config)
+      return response.data.data
+    } catch (error) {
+      console.error('API PATCH Error', error)
       throw error
     }
   },

@@ -1,43 +1,40 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useScheduleStore } from '@/stores/schedules/scheduleStore'
 import DraftDashboard from '@/components/schedules/draft/DraftDashboard.vue'
 import DraftWorkspace from '@/components/schedules/draft/DraftWorkspace.vue'
-
-// --- Store ---
-const store = useScheduleStore()
+import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
 
 // --- State ---
-// Current active view mode determination
 const viewMode = ref<'dashboard' | 'workspace'>('dashboard')
+const activeDraft = ref<ScheduleDraftDTO | null>(null)
 
 // --- Functions ---
-/** Opens a specific draft by id and switches view to workspace */
-function onOpenDraft(id: string) {
-  store.openDraft(id)
+function onOpenDraft(draft: ScheduleDraftDTO) {
+  activeDraft.value = draft
   viewMode.value = 'workspace'
 }
 
-/** Transitions the view back to the main draft dashboard */
 function onBackToDashboard() {
+  activeDraft.value = null
   viewMode.value = 'dashboard'
 }
 </script>
 
 <template>
   <div class="min-h-screen bg-gray-50 font-sans">
-    <div class="mx-auto max-w-[1200px] px-5 py-8">
-      
+    <div class="mx-auto max-w-[1400px] px-5 py-8">
       <!-- Dashboard Application View -->
       <DraftDashboard
         v-if="viewMode === 'dashboard'"
         @open-draft="onOpenDraft"
-        @create-draft="() => {}"
       />
-      
+
       <!-- Workspace Composition View -->
-      <DraftWorkspace v-else @back="onBackToDashboard" />
-      
+      <DraftWorkspace
+        v-else-if="activeDraft"
+        :draft="activeDraft"
+        @back="onBackToDashboard"
+      />
     </div>
   </div>
 </template>

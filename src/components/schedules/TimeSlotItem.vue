@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TimeSlot } from '@/interfaces/schedules/timeSlot.types'
+import { Lock, Unlock, X } from 'lucide-vue-next'
 
 // --- Props & Emits ---
 const props = defineProps<{
@@ -106,7 +107,8 @@ function onDurationChange(e: Event) {
         :title="slot.is_locked ? 'Unlock' : 'Lock'"
         @click="emit('toggle-lock', index)"
       >
-        {{ slot.is_locked ? '🔒' : '🔓' }}
+        <Lock v-if="slot.is_locked" class="h-4 w-4" />
+        <Unlock v-else class="h-4 w-4" />
       </button>
 
       <!-- Delete Action -->
@@ -115,7 +117,7 @@ function onDurationChange(e: Event) {
         title="Hapus"
         @click="emit('delete', index)"
       >
-        ✖
+        <X class="h-4 w-4" />
       </button>
     </div>
   </div>

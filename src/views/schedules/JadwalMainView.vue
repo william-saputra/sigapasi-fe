@@ -34,6 +34,22 @@ const cards = computed(() => [
     color: 'sky',
     show: true,
   },
+  {
+    title: 'Kelola Kelas & Target Jam',
+    description: 'Manajemen daftar kelas dan alokasi jam mata pelajaran untuk setiap kelas.',
+    icon: '🏫',
+    link: '/jadwal/kelola-kelas',
+    color: 'indigo',
+    show: canConfigure.value,
+  },
+  // {
+  //   title: 'Kelola Mata Pelajaran',
+  //   description: 'Manajemen daftar mata pelajaran untuk setiap jenjang pendidikan.',
+  //   icon: '📚',
+  //   link: '/jadwal/mata-pelajaran',
+  //   color: 'rose',
+  //   show: canConfigure.value,
+  // },
 ])
 
 // Filter out cards the user doesn't have access to
