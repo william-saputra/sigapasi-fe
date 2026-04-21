@@ -263,9 +263,9 @@ function getProgressPercent(row: ReviewPeriodRow): number {
             <span class="period-icon">📅</span>
             <div class="period-name-info">
               <span style="font-weight: 600">{{ row.semesterName }}</span>
-              <!-- <span class="period-date-range"
+              <span class="period-date-range"
                 >{{ formatDate(row.startDate) }} – {{ formatDate(row.endDate) }}</span
-              > -->
+              >
             </div>
           </div>
         </template>

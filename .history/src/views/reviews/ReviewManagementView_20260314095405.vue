@@ -60,6 +60,8 @@ onMounted(fetchPeriods)
 const columns = [
   { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 25%;' },
   { key: 'dateRange', label: 'Periode Review', thStyle: 'width: 25%;' },
+  { key: 'semesterName', label: 'Nama Periode', thStyle: 'width: 25%;' },
+  { key: 'dateRange', label: 'Periode Review', thStyle: 'width: 25%;' },
   { key: 'progress', label: 'Progress Pengisian', thStyle: 'width: 30%;' },
   { key: 'aksi', label: 'Aksi', thStyle: 'width: 20%;' },
 ]
