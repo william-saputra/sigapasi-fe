@@ -180,7 +180,7 @@ const router = createRouter({
       path: '/ketersediaan-mengajar',
       name: 'ketersediaan-mengajar',
       component: () => import('@/views/schedules/TeacherAvailabilityView.vue'),
-      meta: { requiresTeacher: true }
+      meta: { requiresTeacher: true },
     },
     {
       path: '/ketersediaan-mengajar/ringkasan',
