@@ -108,12 +108,8 @@ async function onRemoveEntry(entryId: string) {
 }
 
 function onStartEdgePull(entry: ScheduleEntryDTO, slotId: string) {
-  const day = ALL_DAYS.find((d) =>
-    workspaceStore.filteredTimeSlots[d as DayOfWeek]?.some((s: any) => s.id === slotId),
-  ) as DayOfWeek | undefined
-  const slot = day
-    ? workspaceStore.filteredTimeSlots[day]?.find((s: any) => s.id === slotId)
-    : undefined
+  const day = ALL_DAYS.find((d) => workspaceStore.filteredTimeSlots[d as DayOfWeek]?.some((s: any) => s.id === slotId)) as DayOfWeek | undefined
+  const slot = day ? workspaceStore.filteredTimeSlots[day]?.find((s: any) => s.id === slotId) : undefined
 
   if (day) {
     workspaceStore.startEdgePull(entry, slotId, day)
@@ -154,10 +150,8 @@ function onMouseMove(event: MouseEvent) {
       for (let i = 1; i < tds.length; i++) {
         const dayIndex = i - 1
         const day = ALL_DAYS[dayIndex]
-        if (day) {
-          const slot = getSlotAt(day, rows.length - 1 - targetRowIndex)
-          if (slot?.id === sourceSlotId) return true
-        }
+        const slot = getSlotAt(day, rows.length - 1 - targetRowIndex)
+        if (slot?.id === sourceSlotId) return true
       }
       return false
     })
@@ -188,28 +182,21 @@ async function onMouseUp() {
 
   if (result.warnings && result.warnings.length > 0) {
     const warningMsg = result.warnings
-      .map((w: any) => {
-        const day = ALL_DAYS.find((d) =>
-          workspaceStore.filteredTimeSlots[d as DayOfWeek]?.some((s: any) => s.id === w.slotId),
-        ) as DayOfWeek | undefined
-        const daySlots = day ? workspaceStore.filteredTimeSlots[day] : []
-        const slotIndex = daySlots?.findIndex((s: any) => s.id === w.slotId) ?? -1
+      .map((w) => {
+        const daySlots =
+          workspaceStore.filteredTimeSlots[
+            ALL_DAYS.find((d) =>
+              workspaceStore.filteredTimeSlots[d]?.some((s) => s.id === w.slotId),
+            ) as DayOfWeek | undefined
+          ]
+        const slotIndex = daySlots?.findIndex((s) => s.id === w.slotId) ?? -1
         return `Sesi ${slotIndex + 1}`
       })
       .join(', ')
-    emit(
-      'show-toast',
-      `Bentrok di slot ${warningMsg}: ${result.warnings[0]?.message || 'Terjadi bentrok'}`,
-      'warning',
-    )
+    emit('show-toast', `Bentrok di slot ${warningMsg}: ${result.warnings[0].message}`, 'warning')
   }
 
-  if (
-    result.successSlots &&
-    result.successSlots.length > 0 &&
-    result.failedSlots &&
-    result.failedSlots.length === 0
-  ) {
+  if (result.successSlots && result.successSlots.length > 0 && result.failedSlots && result.failedSlots.length === 0) {
     emit('show-toast', `${result.successSlots.length} slot berhasil diisi`, 'success')
   }
 }
@@ -262,7 +249,10 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-else-if="maxSlotCount === 0" class="py-10 text-center text-gray-400">
+    <div
+      v-else-if="maxSlotCount === 0"
+      class="py-10 text-center text-gray-400"
+    >
       <div class="mb-3 text-4xl">📅</div>
       <p>
         Belum ada slot waktu.<br />
@@ -306,13 +296,7 @@ onUnmounted(() => {
             <TimeSlotCell
               v-for="day in activeDays"
               :key="`${day}-${rowIndex}`"
-              :slot="
-                getSlotAt(day, rowIndex - 1) ?? {
-                  id: undefined,
-                  slot_type: 'BLANK',
-                  is_locked: true,
-                }
-              "
+              :slot="getSlotAt(day, rowIndex - 1) ?? { id: undefined, slot_type: 'BLANK', is_locked: true }"
               :day="day"
               :entry="
                 workspaceStore.activeClassId && getSlotAt(day, rowIndex - 1)?.id

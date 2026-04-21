@@ -62,7 +62,7 @@ export interface ScheduleApprovalListDTO {
   createdAt: string
   submittedAt?: string
   revisionNote?: string
-  createdBy?: string
+  creatorName?: string
   approverName?: string
 }
 
