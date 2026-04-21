@@ -174,7 +174,7 @@ const router = createRouter({
       path: '/ketersediaan-mengajar',
       name: 'ketersediaan-mengajar',
       component: () => import('@/views/schedules/TeacherAvailabilityView.vue'),
-      meta: { requiresTeacher: true },
+      meta: { requiresTeacher: true }
     },
     {
       path: '/ketersediaan-mengajar/ringkasan',
@@ -182,6 +182,23 @@ const router = createRouter({
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
       meta: { requiresTeacher: true },
     },
+    // {
+    //   // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+    //   path: '/persetujuan-jadwal/detail', 
+    //   name: 'schedule-approval-detail',
+    //   component: () => import('@/views/schedules/ScheduleApprovalDetailView.vue'),
+    //   // beforeEnter: headOnly,
+    //   meta: { title: 'Detail Persetujuan Jadwal' }
+    // },
+        {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal', 
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+
   ],
 })
 
