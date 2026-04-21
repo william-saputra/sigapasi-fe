@@ -600,7 +600,6 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
         lockedLabel: label,
         locked_label: label,
       })
-      await fetchSlotStructure()
     } catch (err: any) {
       const apiMessage = err.response?.data?.message || 'Gagal mengunci slot.'
       if (toast) toast.error(apiMessage)
@@ -616,7 +615,6 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
     error.value = null
     try {
       await apiService.delete(`/slot/locked-slots/${slotId}`)
-      await fetchSlotStructure()
     } catch (err: any) {
       const apiMessage = err.response?.data?.message || 'Gagal membuka kunci slot.'
       if (toast) toast.error(apiMessage)

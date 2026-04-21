@@ -119,6 +119,12 @@ const router = createRouter({
       beforeEnter: adminStaffOnly,
     },
     {
+      path: '/jadwal/draft/:draftId/validation',
+      name: 'draft-validation',
+      component: () => import('@/views/schedules/DraftValidationView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
       path: '/slot-waktu',
       name: 'MasterSlotWaktu',
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
@@ -135,9 +141,9 @@ const router = createRouter({
       beforeEnter: teacherOnly,
     },
     {
-      path: "/leaves/approvals",
-      name: "leave-approvals",
-      component: () => import("@/views/leaves/LeavesApprovalsView.vue"),
+      path: '/leaves/approvals',
+      name: 'leave-approvals',
+      component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
       beforeEnter: headAdminStaffOnly,
     },
     {
@@ -182,14 +188,6 @@ const router = createRouter({
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
       meta: { requiresTeacher: true },
     },
-    // {
-    //   // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
-    //   path: '/persetujuan-jadwal/detail', 
-    //   name: 'schedule-approval-detail',
-    //   component: () => import('@/views/schedules/ScheduleApprovalDetailView.vue'),
-    //   // beforeEnter: headOnly,
-    //   meta: { title: 'Detail Persetujuan Jadwal' }
-    // },
         {
       // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
       path: '/persetujuan-jadwal', 
@@ -202,6 +200,7 @@ const router = createRouter({
   ],
 })
 
+
 import { useAcademicSetupStore } from '@/stores/academicSetupStore'
 
 router.beforeEach(async (to, from, next) => {
@@ -211,9 +210,10 @@ router.beforeEach(async (to, from, next) => {
     'kelola-mata-pelajaran',
     'pengaturan-slot-waktu',
     'penyusunan-jadwal',
+    'draft-validation',
     'MasterSlotWaktu',
     'ketersediaan-mengajar',
-    'ketersediaan-ringkasan'
+    'ketersediaan-ringkasan',
   ]
 
   if (to.name && schedulingRoutes.includes(to.name as string)) {

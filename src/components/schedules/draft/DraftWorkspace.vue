@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceStore'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
@@ -7,6 +8,7 @@ import SidebarResource from './SidebarResource.vue'
 import ScheduleGrid from './ScheduleGrid.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
+import { Trash2 } from 'lucide-vue-next'
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 const props = defineProps<{ draft: ScheduleDraftDTO }>()
@@ -15,6 +17,7 @@ const props = defineProps<{ draft: ScheduleDraftDTO }>()
 const emit = defineEmits<{ back: [] }>()
 
 // ─── Stores ──────────────────────────────────────────────────────────────────
+const router = useRouter()
 const workspaceStore = useScheduleWorkspaceStore()
 const timeSlotStore = useTimeSlotStore()
 const toast = useToast()
@@ -22,7 +25,6 @@ const toast = useToast()
 // ─── Local State ─────────────────────────────────────────────────────────────
 const isSaving = ref(false)
 const isClearingClass = ref(false)
-const showValidationModal = ref(false)
 const showClearClassModal = ref(false)
 const isInitializing = ref(true)
 
@@ -53,10 +55,8 @@ onMounted(async () => {
       workspaceStore.initWorkspace(props.draft),
     ])
 
-    // PERBAIKAN: Setelah academic years fetched, pastikan slot structure juga di-fetch
-    // Jika activeSemesterId sudah tersedia setelah fetchAcademicYears
     if (timeSlotStore.activeSemesterId) {
-      await timeSlotStore.fetchSlotStructure()
+      await timeSlotStore.fetchSlotStructureForAll()
     }
   } finally {
     isInitializing.value = false
@@ -70,19 +70,14 @@ async function onSelectClass(event: Event) {
 }
 
 async function onSaveAndClose() {
-  if (!workspaceStore.activeClassId) {
-    emit('back')
-    return
-  }
   isSaving.value = true
-  const result = await workspaceStore.validateClass()
-  isSaving.value = false
-
-  if (!result || result.status === 'OK') {
-    emit('back')
-  } else {
-    // Ada mapel yang belum terpenuhi → tampilkan modal peringatan
-    showValidationModal.value = true
+  try {
+    router.push({
+      name: 'draft-validation',
+      params: { draftId: props.draft.scheduleId },
+    })
+  } finally {
+    isSaving.value = false
   }
 }
 
@@ -206,74 +201,12 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
       </p>
     </div>
 
-    <!-- ─── Validation Warning Modal ──────────────────────────────────────── -->
-    <div
-      v-if="showValidationModal && workspaceStore.validationResult"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-    >
-      <div class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
-        <div class="mb-4 flex items-center gap-3">
-          <span class="text-3xl">⚠️</span>
-          <div>
-            <h3 class="text-lg font-bold text-gray-800">Jadwal Belum Lengkap</h3>
-            <p class="text-sm text-gray-500">Beberapa mata pelajaran belum memenuhi target jam.</p>
-          </div>
-        </div>
-
-        <!-- Unfulfilled subjects table -->
-        <div class="mb-5 max-h-60 overflow-y-auto rounded-lg border border-gray-200">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-2 text-left text-xs font-semibold text-gray-600">
-                  Mata Pelajaran
-                </th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Target</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Terisi</th>
-                <th class="px-4 py-2 text-center text-xs font-semibold text-gray-600">Kurang</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="sub in workspaceStore.validationResult.unfulfilledSubjects"
-                :key="sub.subjectName"
-                class="border-t border-gray-100"
-              >
-                <td class="px-4 py-2 font-medium text-gray-800">{{ sub.subjectName }}</td>
-                <td class="px-4 py-2 text-center text-gray-600">{{ sub.targetHours }} jam</td>
-                <td class="px-4 py-2 text-center text-gray-600">{{ sub.assignedHours }} jam</td>
-                <td class="px-4 py-2 text-center font-bold text-red-600">
-                  {{ sub.targetHours - sub.assignedHours }} jam
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="flex justify-end gap-3">
-          <button
-            class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            @click="showValidationModal = false"
-          >
-            Kembali Susun
-          </button>
-          <button
-            class="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-red-700"
-            @click="
-              showValidationModal = false;
-              onBack()
-            "
-          >
-            Tetap Keluar
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- ─── Clear Class Warning Modal ──────────────────────────────────────── -->
     <BaseModal :show="showClearClassModal" @close="showClearClassModal = false">
       <template #header>
-        <div class="mb-4 text-5xl">🗑️</div>
+        <div class="mb-4 flex justify-center">
+          <Trash2 class="h-12 w-12 text-red-500" stroke-width="1.5" />
+        </div>
         <h3 class="mb-2 text-lg font-bold text-gray-800">Kosongkan Jadwal Kelas?</h3>
       </template>
       <template #body>
