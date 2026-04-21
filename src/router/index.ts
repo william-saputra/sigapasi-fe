@@ -4,34 +4,41 @@ import HomeView from '../views/HomeView.vue'
 
 function getRoleFromToken(): string | null {
   try {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token')
 
     // 1. Cek apakah token ada
-    if (!token) return null;
+    if (!token) return null
 
     // 2. Pecah string JWT
-    const parts = token.split('.');
+    const parts = token.split('.')
 
     // 3. Ambil bagian payload (indeks ke-1)
     // Kita simpan ke variabel dan pastikan ada isinya
-    const payloadPart = parts[1];
+    const payloadPart = parts[1]
 
-    if (!payloadPart) return null;
+    if (!payloadPart) return null
 
     // 4. Decode menggunakan atob.
     // Kita beritahu TS bahwa payloadPart pasti string pakai "as string"
     // atau biarkan pengecekan if di atas bekerja.
-    const decodedPayload = JSON.parse(atob(payloadPart));
+    const decodedPayload = JSON.parse(atob(payloadPart))
 
-    return decodedPayload.role ?? null;
+    return decodedPayload.role ?? null
   } catch (error) {
-    return null;
+    return null
   }
 }
 
 function adminStaffOnly() {
   const role = getRoleFromToken()
   if (role !== 'ADMIN' && role !== 'STAFF') {
+    return { path: '/' }
+  }
+}
+
+function headAdminStaffOnly() {
+  const role = getRoleFromToken()
+  if (role !== 'HEAD' && role !== 'ADMIN' && role !== 'STAFF') {
     return { path: '/' }
   }
 }
@@ -88,6 +95,18 @@ const router = createRouter({
       component: () => import('@/views/schedules/JadwalMainView.vue'),
     },
     {
+      path: '/jadwal/kelola-kelas',
+      name: 'kelola-kelas',
+      component: () => import('@/views/schedules/ClassManagementView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
+      path: '/jadwal/mata-pelajaran',
+      name: 'kelola-mata-pelajaran',
+      component: () => import('@/views/schedules/SubjectManagementView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
       path: '/pengaturan-slot-waktu',
       name: 'pengaturan-slot-waktu',
       component: () => import('@/views/schedules/PengaturanSlotWaktuView.vue'),
@@ -100,26 +119,50 @@ const router = createRouter({
       beforeEnter: adminStaffOnly,
     },
     {
+      path: '/jadwal/draft/:draftId/validation',
+      name: 'draft-validation',
+      component: () => import('@/views/schedules/DraftValidationView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
       path: '/slot-waktu',
       name: 'MasterSlotWaktu',
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
     },
     {
-      path: "/leaves/history",
-      name: "leaves-history",
+      path: '/leaves/history',
+      name: 'leaves-history',
       component: LeavesHistoryView,
     },
     {
-      path: "/leaves/request",
-      name: "leave-request",
-      component: () => import("@/views/leaves/LeaveRequestFormView.vue"),
+      path: '/leaves/request',
+      name: 'leave-request',
+      component: () => import('@/views/leaves/LeaveRequestFormView.vue'),
       beforeEnter: teacherOnly,
+    },
+    {
+      path: '/leaves/approvals',
+      name: 'leave-approvals',
+      component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
+      beforeEnter: headAdminStaffOnly,
     },
     {
       path: '/reviews/periods',
       name: 'reviews-periods',
       component: () => import('@/views/reviews/ReviewManagementView.vue'),
       beforeEnter: adminStaffOnly,
+    },
+    {
+      path: '/reviews',
+      name: 'reviews-home',
+      component: () => import('@/views/reviews/ReviewTeacherDashboardView.vue'),
+      beforeEnter: teacherOnly,
+    },
+    {
+      path: '/reviews/:taskId/form',
+      name: 'reviews-task-form',
+      component: () => import('@/views/reviews/ReviewTaskFormView.vue'),
+      beforeEnter: teacherOnly,
     },
     {
       path: '/reviews/periods/:periodId',
@@ -137,16 +180,58 @@ const router = createRouter({
       path: '/ketersediaan-mengajar',
       name: 'ketersediaan-mengajar',
       component: () => import('@/views/schedules/TeacherAvailabilityView.vue'),
-      meta: { requiresTeacher: true }
+      meta: { requiresTeacher: true },
     },
     {
       path: '/ketersediaan-mengajar/ringkasan',
       name: 'ketersediaan-ringkasan',
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
-      meta: { requiresTeacher: true }
+      meta: { requiresTeacher: true },
     },
+        {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal', 
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+
   ],
-}
-)
+})
+
+
+import { useAcademicSetupStore } from '@/stores/academicSetupStore'
+
+router.beforeEach(async (to, from, next) => {
+  const schedulingRoutes = [
+    'jadwal-dashboard',
+    'kelola-kelas',
+    'kelola-mata-pelajaran',
+    'pengaturan-slot-waktu',
+    'penyusunan-jadwal',
+    'draft-validation',
+    'MasterSlotWaktu',
+    'ketersediaan-mengajar',
+    'ketersediaan-ringkasan',
+  ]
+
+  if (to.name && schedulingRoutes.includes(to.name as string)) {
+    const academicSetupStore = useAcademicSetupStore()
+
+    if (!academicSetupStore.isLoaded) {
+      await academicSetupStore.fetchActiveSetup()
+    }
+
+    if (!academicSetupStore.activeSemester) {
+      if (to.path !== '/setup-academic') {
+        // Peringatkan user atau redirect
+        return next({ path: '/setup-academic' })
+      }
+    }
+  }
+
+  next()
+})
 
 export default router

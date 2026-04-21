@@ -4,6 +4,7 @@ import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
 import type { DayOfWeekEnum } from '@/interfaces/schedules/timeSlot.types'
 import BaseModal from '@/components/common/BaseModal.vue'
+import { CheckCircle, AlertTriangle, XCircle } from 'lucide-vue-next'
 
 // --- Store ---
 const store = useTimeSlotStore()
@@ -103,12 +104,12 @@ async function onSave() {
       activeSemesterId.value,
       applyToAllLevels.value,
     )
-    const gradeLabel = applyToAllLevels.value
-      ? 'semua tingkatan'
-      : `Jenjang Terpilih`
+    const gradeLabel = applyToAllLevels.value ? 'semua tingkatan' : `Jenjang Terpilih`
     showNotification(`Struktur slot berhasil disimpan untuk ${gradeLabel}!`, 'success')
-  } catch {
-    showNotification(store.error || 'Gagal menyimpan struktur slot.', 'error')
+  } catch (err) {
+    // Error toast sudah ditangani oleh store
+    // Refresh data untuk mengembalikan ke state semula dari server
+    await store.fetchSlotStructure()
   }
 }
 
@@ -121,7 +122,7 @@ function triggerApply() {
   showApplyModal.value = true
 }
 
-/** 
+/**
  * Copies and saves schedule to target days.
  * Clones local state first to prevent wipeout during sequential saves.
  */
@@ -145,7 +146,7 @@ async function confirmApply() {
       store.currentSchedule,
       activeSemesterId.value,
       applyToAllLevels.value,
-      true 
+      true,
     )
     for (let i = 0; i < payloads.length; i++) {
       const payload = payloads[i]
@@ -156,12 +157,14 @@ async function confirmApply() {
         payload.slots,
         activeSemesterId.value,
         applyToAllLevels.value,
-        !isLast // disable fetch unless it's the last iteration
+        !isLast, // disable fetch unless it's the last iteration
       )
     }
     showNotification('Pengaturan berhasil disimpan dan disalin!', 'success')
-  } catch {
-    showNotification(store.error || 'Gagal menyimpan.', 'error')
+  } catch (err) {
+    // Error toast sudah ditangani oleh store
+    // Refresh data untuk mengembalikan ke state semula dari server
+    await store.fetchSlotStructure()
   }
 
   selectedDays.value = []
@@ -234,7 +237,7 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
       @click="onGenerate"
     >
-      <span>⚡ Generate</span>
+      <span>Generate</span>
     </button>
 
     <hr class="my-5 border-t border-gray-200" />
@@ -263,21 +266,17 @@ function confirmClearAll() {
       class="mb-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-red-300 bg-red-50 px-4 py-2.5 font-bold text-red-600 transition-colors hover:bg-red-100"
       @click="onClearAll"
     >
-      🗑️ Kosongkan Jadwal
+      Kosongkan Jadwal
     </button>
 
     <hr class="my-5 border-t border-gray-200" />
 
     <!-- Save Configuration Segment -->
-    <label class="mb-4 flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5">
-      <input
-        v-model="applyToAllLevels"
-        type="checkbox"
-        class="h-4 w-4 scale-110 accent-blue-600"
-      />
-      <span class="text-sm text-blue-800">
-        Terapkan konfigurasi hari ini ke seluruh jenjang
-      </span>
+    <label
+      class="mb-4 flex cursor-pointer items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2.5"
+    >
+      <input v-model="applyToAllLevels" type="checkbox" class="h-4 w-4 scale-110 accent-blue-600" />
+      <span class="text-sm text-blue-800"> Terapkan konfigurasi hari ini ke seluruh jenjang </span>
     </label>
 
     <!-- Save Action -->
@@ -285,17 +284,25 @@ function confirmClearAll() {
       :disabled="store.isSaving"
       :class="[
         'flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2.5 font-bold text-white transition-colors',
-        store.isSaving
-          ? 'cursor-not-allowed bg-gray-400'
-          : 'bg-blue-600 hover:bg-blue-700',
+        store.isSaving ? 'cursor-not-allowed bg-gray-400' : 'bg-blue-600 hover:bg-blue-700',
       ]"
       @click="onSave"
     >
-      <svg v-if="store.isSaving" class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <svg
+        v-if="store.isSaving"
+        class="h-4 w-4 animate-spin"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+        />
       </svg>
-      {{ store.isSaving ? 'Menyimpan...' : '💾 Simpan Hari Ini' }}
+      {{ store.isSaving ? 'Menyimpan...' : 'Simpan' }}
     </button>
 
     <!-- Copy Settings Section -->
@@ -328,20 +335,20 @@ function confirmClearAll() {
         :disabled="store.isSaving"
         :class="[
           'flex w-full cursor-pointer items-center justify-center gap-2 rounded-full px-4 py-2.5 font-bold text-white transition-colors',
-          store.isSaving
-            ? 'cursor-not-allowed bg-gray-400'
-            : 'bg-emerald-800 hover:bg-emerald-900',
+          store.isSaving ? 'cursor-not-allowed bg-gray-400' : 'bg-emerald-800 hover:bg-emerald-900',
         ]"
         @click="triggerApply"
       >
-        Simpan & Terapkan
+        Salin Pengaturan
       </button>
     </div>
 
     <!-- Apply Confirmation Modal -->
     <BaseModal :show="showApplyModal" @close="showApplyModal = false">
       <template #header>
-        <div class="mb-4 text-5xl">✅</div>
+        <div class="mb-4 flex justify-center">
+          <CheckCircle class="h-12 w-12 text-emerald-600" stroke-width="1.5" />
+        </div>
         <h3 class="mb-2 text-lg font-bold text-gray-800">Konfirmasi Simpan</h3>
       </template>
       <template #body>
@@ -373,14 +380,18 @@ function confirmClearAll() {
     <!-- Clear All Warning Modal -->
     <BaseModal :show="showClearAllModal" @close="showClearAllModal = false">
       <template #header>
-        <div class="mb-4 text-5xl">⚠️</div>
+        <div class="mb-4 flex justify-center">
+          <AlertTriangle class="h-12 w-12 text-red-500" stroke-width="1.5" />
+        </div>
         <h3 class="mb-2 text-lg font-bold text-gray-800">Kosongkan Jadwal?</h3>
       </template>
       <template #body>
         <p class="mb-6 text-sm leading-relaxed text-gray-500">
-          Apakah Anda yakin ingin mengosongkan seluruh baris slot di hari ini? 
+          Apakah Anda yakin ingin mengosongkan seluruh baris slot di hari ini?
           <br /><br />
-          <span class="text-xs text-red-500">(Perubahan ini akan permanen setelah Anda menekan tombol "Simpan Hari Ini")</span>
+          <span class="text-xs text-red-500"
+            >(Perubahan ini akan permanen setelah Anda menekan tombol "Simpan Hari Ini")</span
+          >
         </p>
       </template>
       <template #footer>
@@ -411,7 +422,8 @@ function confirmClearAll() {
             toastType === 'success' ? 'bg-emerald-700' : 'bg-red-600',
           ]"
         >
-          <span>{{ toastType === 'success' ? '✅' : '❌' }}</span>
+          <CheckCircle v-if="toastType === 'success'" class="h-5 w-5 shrink-0" />
+          <XCircle v-else class="h-5 w-5 shrink-0" />
           <span>{{ toastMessage }}</span>
         </div>
       </Transition>
