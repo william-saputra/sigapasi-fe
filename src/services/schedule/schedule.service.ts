@@ -10,6 +10,7 @@ import type {
   DeleteEntryResultDTO,
   ClassValidationResultDTO,
   ClassValidationSummaryDTO,
+  ScheduleApprovalListDTO,
 } from '@/interfaces/schedules/schedule.types'
 
 const BASE = '/schedules'
@@ -71,4 +72,10 @@ export const scheduleService = {
 
   validateAllClasses: (scheduleId: string) =>
     apiService.get<ClassValidationSummaryDTO[]>(`${BASE}/${scheduleId}/validate-all`),
+
+  getAllSchedules: () => 
+    apiService.get<ScheduleApprovalListDTO[]>(`${BASE}/approvals`),
+
+  submitSchedule: (scheduleId: string) =>
+    apiService.put<ScheduleDraftDTO>(`${BASE}/${scheduleId}/submit`, {}),
 }

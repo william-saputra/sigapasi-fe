@@ -7,6 +7,11 @@ import ScheduleApprovalModal from './ScheduleApprovalModal.vue'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
 import { scheduleService } from '@/services/schedule/schedule.service'
 
+// ─── Extended Type ───────────────────────────────────────────────────────────
+interface MergedDraft extends ScheduleDraftDTO {
+  revisionNote?: string | null
+}
+
 // ─── Stores ──────────────────────────────────────────────────────────────────
 const router = useRouter()
 const draftStore = useScheduleDraftStore()
@@ -21,6 +26,7 @@ const emit = defineEmits<{
 const showCreateModal = ref(false)
 const newDraftName = ref('')
 const publishingId = ref<string | null>(null)
+const submittingId = ref<string | null>(null) 
 const globalError = ref<string | null>(null)
 const modalError = ref<string | null>(null)
 
@@ -48,7 +54,7 @@ onMounted(async () => {
   if (timeSlotStore.academicYears.length === 0) {
     await timeSlotStore.fetchAcademicYears()
   }
-  // Auto-select tahun ajaran & semester aktif
+  
   const activeYear = timeSlotStore.academicYears.find(ay => ay.is_active || ay.isActive)
     ?? timeSlotStore.academicYears[0]
   if (activeYear) {
@@ -57,7 +63,10 @@ onMounted(async () => {
       ?? activeYear.listSemesters[0]
     if (activeSem) {
       draftStore.selectSemester(activeSem.id)
-      await draftStore.fetchDrafts()
+      await Promise.all([
+        draftStore.fetchDrafts(),
+        draftStore.fetchAllSchedules()
+      ])
     }
   }
 })
@@ -78,9 +87,27 @@ const flattenedSemesters = computed(() => {
   return result
 })
 
+const mergedDrafts = computed<MergedDraft[]>(() => {
+  return draftStore.drafts.map(draft => {
+    const approvalData = draftStore.allSchedules.find(
+      schedule => schedule.id === draft.scheduleId
+    );
+    
+    return {
+      ...draft,
+      revisionNote: (approvalData as any)?.revisionNote || null
+    };
+  });
+});
+
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(() => draftStore.selectedSemesterId, async (val) => {
-  if (val) await draftStore.fetchDrafts()
+  if (val) {
+    await Promise.all([
+      draftStore.fetchDrafts(),
+      draftStore.fetchAllSchedules()
+    ])
+  }
 })
 
 function onSemesterSelect(e: Event) {
@@ -114,17 +141,11 @@ async function onCreateDraft() {
     showCreateModal.value = false
     newDraftName.value = ''
     
-    // Redirect to detail page per instructions
-    // router.push dipanggil untuk mengarahkan pengguna
     router.push({ name: 'penyusunan-jadwal', query: { scheduleId: draft.scheduleId } })
-    
-    // Emit agar UI lokal juga bereaksi
     emit('open-draft', draft)
   } catch (error: any) {
-    // Mengekstrak error.response?.data?.message secara terpusat untuk ditampilkan dalam form
     modalError.value = error.response?.data?.message || 'Gagal membuat draf jadwal.'
   } finally {
-    // Memastikan loading selalu false di blok finally
     isLoading.value = false
   }
 }
@@ -136,6 +157,18 @@ async function onPublish(draft: ScheduleDraftDTO) {
   publishingId.value = null
   if (ok) {
     globalError.value = null
+  }
+}
+
+// Fungsi baru untuk mengajukan kembali jadwal yang direvisi
+async function onSubmitApproval(scheduleId: string) {
+  submittingId.value = scheduleId
+  const ok = await draftStore.submitDraft(scheduleId)
+  submittingId.value = null
+  
+  if (ok) {
+    globalError.value = null
+    await draftStore.fetchAllSchedules()
   }
 }
 
@@ -164,20 +197,19 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
   if (ok) {
     showApprovalModal.value = false
     selectedScheduleId.value = null
+    await draftStore.fetchAllSchedules()
   }
 }
 </script>
 
 <template>
   <div>
-    <!-- ─── Global Error Notification ───────────────────────────────────── -->
     <div v-if="globalError || draftStore.errorMessage" class="mb-5 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
       <span>⚠️</span>
       <span class="flex-1">{{ globalError || draftStore.errorMessage }}</span>
       <button class="text-xs font-semibold underline" @click="globalError = null; draftStore.clearError()">Tutup</button>
     </div>
 
-    <!-- ─── Header ────────────────────────────────────────────────────────── -->
     <div class="mb-4">
       <button
         @click="router.push('/jadwal')"
@@ -203,7 +235,6 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
       </button>
     </div>
 
-    <!-- ─── Semester Filter ────────────────────────────────────────────────── -->
     <div class="mb-6 flex flex-wrap gap-4">
       <div class="flex flex-col gap-1 w-64">
         <label class="text-xs font-semibold text-gray-500">Pilih Semester</label>
@@ -220,7 +251,6 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
       </div>
     </div>
 
-    <!-- ─── Loading Skeleton ──────────────────────────────────────────────── -->
     <div v-if="draftStore.isLoadingDrafts" class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       <div
         v-for="i in 3"
@@ -229,15 +259,12 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
       />
     </div>
 
-    <!-- ─── Draft Cards Grid ──────────────────────────────────────────────── -->
     <div v-else class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      <!-- Existing Draft Cards -->
       <div
-        v-for="draft in draftStore.drafts"
+        v-for="draft in mergedDrafts"
         :key="draft.scheduleId"
         class="flex min-h-[160px] flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-600 hover:shadow-md"
       >
-        <!-- Card Top: Info + Status -->
         <div
           class="cursor-pointer"
           @click="emit('open-draft', draft)"
@@ -253,9 +280,7 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
           </div>
         </div>
 
-        <!-- Card Bottom: Actions -->
         <div class="mt-4 flex flex-col gap-2">
-          <!-- Revision Warning if any -->
           <div v-if="draft.status === 'REVISION_REQUIRED' && draft.revisionNote" class="rounded-lg bg-red-50 p-3 mb-2 border border-red-200 text-xs">
             <strong class="text-red-800 block mb-1">⚠️ Catatan Revisi Atasan:</strong>
             <p class="text-red-700">{{ draft.revisionNote }}</p>
@@ -276,8 +301,16 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
             >
               {{ draft.status === 'PUBLISHED' ? 'Lihat Jadwal' : 'Edit Jadwal' }}
             </button>
+            
+            <button
+              v-if="userRole !== 'HEAD' && (draft.status === 'REVISION_REQUIRED' || draft.status === 'DRAFT')"
+              :disabled="(draftStore.isPublishing && publishingId === draft.scheduleId) || submittingId === draft.scheduleId"
+              class="flex-1 rounded-lg border border-yellow-500 bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-50"
+              @click="onSubmitApproval(draft.scheduleId)"
+            >
+              {{ submittingId === draft.scheduleId ? 'Mengajukan...' : 'Ajukan' }}
+            </button>
 
-            <!-- Atasan bisa review jika bukan PUBLISHED -->
             <button
               v-if="userRole === 'HEAD' && draft.status !== 'PUBLISHED'"
               :disabled="draftStore.isPublishing && publishingId === draft.scheduleId"
@@ -290,9 +323,8 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
         </div>
       </div>
 
-      <!-- Empty State (when no drafts for selected semester) -->
       <div
-        v-if="draftStore.drafts.length === 0 && draftStore.selectedSemesterId && !draftStore.isLoadingDrafts"
+        v-if="mergedDrafts.length === 0 && draftStore.selectedSemesterId && !draftStore.isLoadingDrafts"
         class="col-span-full py-12 text-center text-gray-400"
       >
         <div class="mb-3 text-4xl">📋</div>
@@ -300,7 +332,6 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
       </div>
     </div>
 
-    <!-- ─── Create Draft Modal ────────────────────────────────────────────── -->
     <div
       v-if="showCreateModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
@@ -309,7 +340,6 @@ async function handleApprovalSubmit(payload: { status: string, revisionNote: str
       <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <h3 class="mb-4 text-lg font-bold text-gray-800">Buat Draft Jadwal Baru</h3>
         
-        <!-- Error Notification for Modal -->
         <div v-if="modalError" class="mb-4 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-800">
           <span>⚠️</span>
           <span class="flex-1">{{ modalError }}</span>
