@@ -6,16 +6,16 @@
 
 <script setup>
 const props = defineProps({
-  variant: { type: String, default: "pending" }, // pending | success | danger
-});
+  variant: { type: String, default: 'pending' }, // pending | success | danger
+})
 
 const badgeClass = computed(() => {
-  if (props.variant === "success") return "badge-success";
-  if (props.variant === "danger") return "badge-danger";
-  return "badge-pending";
-});
+  if (props.variant === 'success') return 'badge-success'
+  if (props.variant === 'danger') return 'badge-danger'
+  return 'badge-pending'
+})
 
-import { computed } from "vue";
+import { computed } from 'vue'
 </script>
 
 <style scoped>
@@ -26,7 +26,16 @@ import { computed } from "vue";
   font-weight: 600;
   display: inline-block;
 }
-.badge-pending { background: var(--warning-bg); color: var(--warning-text); }
-.badge-success { background: var(--success-bg); color: var(--success-text); }
-.badge-danger { background: var(--danger-bg); color: var(--danger-text); }
+.badge-pending {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+}
 </style>

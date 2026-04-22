@@ -157,11 +157,6 @@ const handleSave = async () => {
     setTimeout(() => (message.value.text = ''), 4000)
   }
 }
-
-function selectDayAndClearSlot(day: any) {
-  selectedDay.value = day
-  openSlotId.value = null
-}
 </script>
 
 <template>

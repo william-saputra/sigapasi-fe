@@ -61,9 +61,7 @@ function setSort(key: 'name' | 'email' | 'role') {
 
 function getSortIcon(key: 'name' | 'email' | 'role') {
   if (sortKey.value !== key) return 'fa-solid fa-sort'
-  return sortOrder.value === 'asc'
-    ? 'fa-solid fa-sort-up'
-    : 'fa-solid fa-sort-down'
+  return sortOrder.value === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down'
 }
 
 const filteredAccounts = computed(() => {
@@ -76,11 +74,7 @@ const filteredAccounts = computed(() => {
 
     if (!keyword) return true
 
-    return (
-      name.includes(keyword) ||
-      email.includes(keyword) ||
-      role.includes(keyword)
-    )
+    return name.includes(keyword) || email.includes(keyword) || role.includes(keyword)
   })
 
   if (!sortKey.value) return result
@@ -236,11 +230,7 @@ onMounted(() => {
       <div class="controls">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari akun"
-          />
+          <input v-model="search" type="text" placeholder="Cari akun" />
         </div>
 
         <button class="add-button" @click="goToCreate">
@@ -289,10 +279,7 @@ onMounted(() => {
               <td>{{ getAccountName(account) }}</td>
               <td>{{ getAccountEmail(account) }}</td>
               <td>
-                <span
-                  class="role-badge"
-                  :class="getRoleClass(getAccountRole(account))"
-                >
+                <span class="role-badge" :class="getRoleClass(getAccountRole(account))">
                   {{ getAccountRole(account) }}
                 </span>
               </td>
@@ -350,26 +337,18 @@ onMounted(() => {
       </div>
     </div>
 
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click.self="closeDeleteModal"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-card">
         <h3 class="modal-title">Konfirmasi Hapus</h3>
         <p class="modal-description">
           Apakah Anda yakin ingin menghapus akun
-          <strong>{{ selectedAccount ? getAccountName(selectedAccount) : '' }}</strong>?
-          Tindakan ini tidak dapat dibatalkan.
+          <strong>{{ selectedAccount ? getAccountName(selectedAccount) : '' }}</strong
+          >? Tindakan ini tidak dapat dibatalkan.
         </p>
 
         <div class="modal-actions">
-          <button class="modal-button cancel" @click="closeDeleteModal">
-            Batal
-          </button>
-          <button class="modal-button delete" @click="confirmDelete">
-            Hapus
-          </button>
+          <button class="modal-button cancel" @click="closeDeleteModal">Batal</button>
+          <button class="modal-button delete" @click="confirmDelete">Hapus</button>
         </div>
       </div>
     </div>

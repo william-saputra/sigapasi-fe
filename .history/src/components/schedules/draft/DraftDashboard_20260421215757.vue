@@ -203,16 +203,6 @@ async function handleApprovalSubmit(payload: { status: string; revisionNote: str
     await draftStore.fetchAllSchedules()
   }
 }
-
-function clearAndCloseErrors() {
-  globalError.value = null
-  draftStore.clearError()
-}
-
-function closeCreateModal() {
-  showCreateModal.value = false
-  newDraftName.value = ''
-}
 </script>
 
 <template>
@@ -223,7 +213,12 @@ function closeCreateModal() {
     >
       <span>⚠️</span>
       <span class="flex-1">{{ globalError || draftStore.errorMessage }}</span>
-      <button class="text-xs font-semibold underline" @click="clearAndCloseErrors">Tutup</button>
+      <button
+        class="text-xs font-semibold underline"
+        @click="globalError = null; draftStore.clearError()"
+      >
+        Tutup
+      </button>
     </div>
 
     <div class="mb-4">
@@ -398,7 +393,10 @@ function closeCreateModal() {
         <div class="flex justify-end gap-3">
           <button
             class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50"
-            @click="closeCreateModal"
+            @click="
+              showCreateModal = false
+              newDraftName = ''
+            "
           >
             Batal
           </button>

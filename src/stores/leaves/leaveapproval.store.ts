@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getAuthToken, handleApiResponse } from '@/lib/auth'
-import type { LeaveRequestResponseDTO, LeaveRequestDetailAdminDTO } from '@/interfaces/leaves/leaverequest.interface'
+import type {
+  LeaveRequestResponseDTO,
+  LeaveRequestDetailAdminDTO,
+} from '@/interfaces/leaves/leaverequest.interface'
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api') + '/leaves'
 
@@ -47,7 +50,6 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
 
       const result = await handleApiResponse(response)
       pendingRequests.value = result.data || []
-
     } catch (err) {
       console.error('Error fetching pending requests:', err)
       error.value = err instanceof Error ? err.message : 'Gagal mengambil data antrean cuti.'
@@ -70,7 +72,6 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
 
       const result = await handleApiResponse(response)
       selectedRequestDetail.value = result.data
-
     } catch (err) {
       console.error('Error fetching detail:', err)
       error.value = err instanceof Error ? err.message : 'Gagal mengambil detail pengajuan.'
@@ -99,7 +100,6 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
 
       // result.data berisi return 'int' dari backend (total Substitute Assignments)
       return { success: true, count: result.data }
-
     } catch (err) {
       console.error('Error approving request:', err)
       error.value = err instanceof Error ? err.message : 'Terjadi kesalahan pada sistem.'
@@ -119,11 +119,11 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
         method: 'PUT',
         headers: {
           ...getAuthHeaders(),
-          'Content-Type': 'application/json' // 2. Header ini WAJIB ada
+          'Content-Type': 'application/json', // 2. Header ini WAJIB ada
         },
         body: JSON.stringify({
           leaveRequestId: id,
-          rejectionReason: reason
+          rejectionReason: reason,
         }),
       })
 
@@ -147,6 +147,6 @@ export const useLeaveApprovalStore = defineStore('leaveApproval', () => {
     fetchPendingRequests,
     fetchRequestDetail,
     approveRequest,
-    rejectRequest
+    rejectRequest,
   }
 })

@@ -81,40 +81,39 @@ async function confirmLock() {
       if (isUnlocking.value) {
         await store.unlockSlot(slot.id)
         toast.success('Slot berhasil dibuka kunci')
-        
+
         // Update state lokal SETELAH API sukses (jangan panggil fetch)
         slot.is_locked = false
         slot.locked_label = null
       } else {
         await store.lockSlot(slot.id, lockLabel.value.trim())
         toast.success('Slot berhasil dikunci')
-        
+
         // Update state lokal SETELAH API sukses
         slot.is_locked = true
         slot.locked_label = lockLabel.value.trim()
       }
-      
+
       showLockModal.value = false
       lockTargetIndex.value = null
       lockLabel.value = ''
-      
     } catch (error) {
-      console.error("Gagal mengunci/membuka kunci:", error)
+      console.error('Gagal mengunci/membuka kunci:', error)
       // Jika gagal, state lokal tidak diubah, perubahan dibatalkan
     }
-  } 
-  else {
+  } else {
     slot.is_locked = !isUnlocking.value
     slot.locked_label = slot.is_locked ? lockLabel.value.trim() : null
-    
-    toast.success(isUnlocking.value ? 'Slot berhasil dibuka (Lokal)' : 'Slot berhasil dikunci (Lokal)')
-    
+
+    toast.success(
+      isUnlocking.value ? 'Slot berhasil dibuka (Lokal)' : 'Slot berhasil dikunci (Lokal)',
+    )
+
     showLockModal.value = false
     lockTargetIndex.value = null
     lockLabel.value = ''
   }
 }
-
 </script>
 
 <template>
@@ -218,7 +217,7 @@ async function confirmLock() {
             @click="confirmLock"
             :disabled="store.isSaving"
           >
-            {{ store.isSaving ? 'Memproses...' : (isUnlocking ? 'Buka Kunci' : 'Simpan') }}
+            {{ store.isSaving ? 'Memproses...' : isUnlocking ? 'Buka Kunci' : 'Simpan' }}
           </button>
         </div>
       </template>

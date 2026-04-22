@@ -191,6 +191,14 @@ const router = createRouter({
       meta: { requiresTeacher: true },
     },
     {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal',
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' },
+    },
+    {
       path: '/notifications',
       name: 'notifications',
       component: () => import('@/views/notifications/ListNotificationView.vue'),
@@ -206,7 +214,6 @@ const router = createRouter({
 
   ],
 })
-
 
 import { useAcademicSetupStore } from '@/stores/academicSetupStore'
 

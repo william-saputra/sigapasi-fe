@@ -353,7 +353,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     if (result.error) {
       return {
         successSlots: [],
-        failedSlots: targetSlotIds.map((id:any) => ({ slotId: id, error: result.error! })),
+        failedSlots: targetSlotIds.map((id: any) => ({ slotId: id, error: result.error! })),
         warnings: [],
       }
     }

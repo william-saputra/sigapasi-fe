@@ -68,9 +68,7 @@ const handleLogin = async () => {
           <div class="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-700">
             Login Sistem
           </div>
-          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-            Masuk ke akun Anda
-          </h2>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">Masuk ke akun Anda</h2>
           <p class="mt-3 text-sm leading-6 text-slate-600">
             Gunakan email dan kata sandi yang terdaftar untuk mengakses dashboard SIGAPASI.
           </p>
@@ -78,9 +76,7 @@ const handleLogin = async () => {
 
         <form class="space-y-5" @submit.prevent="handleLogin" novalidate>
           <div>
-            <label for="email" class="mb-2 block text-sm font-medium text-slate-700">
-              Email
-            </label>
+            <label for="email" class="mb-2 block text-sm font-medium text-slate-700"> Email </label>
             <input
               id="email"
               v-model="loginData.email"
@@ -101,7 +97,10 @@ const handleLogin = async () => {
               <label for="password" class="block text-sm font-medium text-slate-700">
                 Kata Sandi
               </label>
-              <a href="#" class="text-sm font-medium text-emerald-700 transition hover:text-emerald-800">
+              <a
+                href="#"
+                class="text-sm font-medium text-emerald-700 transition hover:text-emerald-800"
+              >
                 Lupa password?
               </a>
             </div>

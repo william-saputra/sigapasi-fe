@@ -26,41 +26,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { storeToRefs } from "pinia";
-import { useRouter } from "vue-router";
-import { useAuthStore } from "@/stores/accounts/auth.store";
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/accounts/auth.store'
 
-const router = useRouter();
-const authStore = useAuthStore();
-const { user } = storeToRefs(authStore);
+const router = useRouter()
+const authStore = useAuthStore()
+const { user } = storeToRefs(authStore)
 
-const isOpen = ref(false);
-const profileRef = ref<HTMLElement | null>(null);
+const isOpen = ref(false)
+const profileRef = ref<HTMLElement | null>(null)
 
-const displayName = computed(() => user.value?.fullName || "Guest User");
+const displayName = computed(() => user.value?.fullName || 'Guest User')
 
 const displayRole = computed(() => {
   switch (user.value?.role) {
-    case "ADMIN":
-      return "Admin";
-    case "STAFF":
-      return "Staf";
-    case "TEACHER":
-      return "Guru";
-    case "HEAD":
-      return "Kepala Sekolah";
+    case 'ADMIN':
+      return 'Admin'
+    case 'STAFF':
+      return 'Staf'
+    case 'TEACHER':
+      return 'Guru'
+    case 'HEAD':
+      return 'Kepala Sekolah'
     default:
-      return "-";
+      return '-'
   }
-});
+})
 
 function toggleDropdown() {
-  isOpen.value = !isOpen.value;
+  isOpen.value = !isOpen.value
 }
 
 function closeDropdown() {
-  isOpen.value = false;
+  isOpen.value = false
 }
 
 function goToDetailAkun() {
@@ -73,25 +73,25 @@ function goToDetailAkun() {
 }
 
 async function handleLogout() {
-  closeDropdown();
-  await authStore.logout();
-  router.push("/login");
+  closeDropdown()
+  await authStore.logout()
+  router.push('/login')
 }
 
 function handleClickOutside(event: MouseEvent) {
-  const target = event.target as Node;
+  const target = event.target as Node
   if (profileRef.value && !profileRef.value.contains(target)) {
-    closeDropdown();
+    closeDropdown()
   }
 }
 
 onMounted(() => {
-  document.addEventListener("click", handleClickOutside);
-});
+  document.addEventListener('click', handleClickOutside)
+})
 
 onBeforeUnmount(() => {
-  document.removeEventListener("click", handleClickOutside);
-});
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>

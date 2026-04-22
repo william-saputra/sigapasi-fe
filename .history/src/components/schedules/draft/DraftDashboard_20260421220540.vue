@@ -223,7 +223,12 @@ function closeCreateModal() {
     >
       <span>⚠️</span>
       <span class="flex-1">{{ globalError || draftStore.errorMessage }}</span>
-      <button class="text-xs font-semibold underline" @click="clearAndCloseErrors">Tutup</button>
+      <button
+        class="text-xs font-semibold underline"
+        @click="clearAndCloseErrors"
+      >
+        Tutup
+      </button>
     </div>
 
     <div class="mb-4">
