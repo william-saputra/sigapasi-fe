@@ -43,6 +43,19 @@ export interface CreateSemesterRequestDTO {
 
 // --- Backend Response Interfaces ---
 export interface TimeSlotResponseDTO {
+<<<<<<< HEAD
+    id: string
+    semester_id: string
+    day_of_week: DayOfWeekEnum
+    session_number: number
+    start_time: string // Formatted ISO local date time string
+    end_time: string   // Formatted ISO local date time string
+    is_locked: boolean
+    locked_label: string | null
+    slot_type: SlotTypeEnum
+    schoolLevelId: string
+    schoolLevelName: string
+=======
   id: string
   semester_id: string
   day_of_week: DayOfWeekEnum
@@ -54,6 +67,7 @@ export interface TimeSlotResponseDTO {
   slot_type: SlotTypeEnum
   schoolLevelId: string
   schoolLevelName: string
+>>>>>>> origin/staging
 }
 
 // --- Backend Request Interfaces ---

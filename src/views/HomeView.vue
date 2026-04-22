@@ -52,10 +52,8 @@ const roles = [
           class="relative mx-auto grid max-w-7xl gap-10 px-6 py-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-10 lg:py-18"
         >
           <div>
-            <div
-              class="mb-4 inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm text-emerald-800 shadow-sm"
-            >
-              Operasional Penjadwalan Guru dan Evaluasi
+            <div class="mb-4 inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-1 text-sm text-emerald-800 shadow-sm">
+              Sistem Penjadwalan Guru dan Evaluasi
             </div>
             <div class="flex flex-col gap-3">
               <h1 class="text-4xl font-bold leading-tight lg:text-6xl">
