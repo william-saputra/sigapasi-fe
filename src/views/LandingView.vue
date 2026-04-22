@@ -109,7 +109,7 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
           <i class="fa-solid fa-user-tie"></i>
           {{ roleLabel }}
         </span>
-        <h1 class="hero-title">Selamat datang kembali 👋</h1>
+        <h1 class="hero-title">Selamat datang di SIGAPASI 👋</h1>
         <p class="hero-sub">{{ greeting }}</p>
       </div>
     </section>

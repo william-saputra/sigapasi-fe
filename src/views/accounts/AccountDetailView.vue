@@ -135,8 +135,18 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+const isAdmin = computed(() => account.value?.role === 'ADMIN')
+
 function goBack() {
-  router.back()
+  const previousPath = window.history.state?.back
+
+  if (isAdmin.value) {
+    router.push('/accounts')
+  } else if (previousPath && previousPath.includes('/edit')) {
+    router.push('/home')
+  } else {
+    router.back()
+  }
 }
 
 onMounted(() => {

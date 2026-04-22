@@ -44,6 +44,8 @@ function teacherOnly() {
   }
 }
 
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -155,3 +157,12 @@ const router = createRouter({
 )
 
 export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+
+  if (to.name === 'login' && token) {
+    next({ name: 'landing' })
+  } else {
+    next()
+  }
+})
