@@ -91,6 +91,15 @@ export const classManagementService = {
 
 // ─── Transformer Functions ────────────────────────────────────────────────
 function mapClassResponseToDTO(raw: any): ClassResponseDTO {
+<<<<<<< HEAD
+    return {
+        id: raw.id,
+        name: raw.name,
+        gradeLevel: raw.gradeLevel,
+        schoolLevelId: raw.schoolLevel?.id,
+        schoolLevelName: raw.schoolLevel?.name
+    }
+=======
   return {
     id: raw.id,
     name: raw.name,
@@ -98,4 +107,5 @@ function mapClassResponseToDTO(raw: any): ClassResponseDTO {
     schoolLevelId: raw.schoolLevel?.id,
     schoolLevelName: raw.schoolLevel?.name,
   }
+>>>>>>> origin/staging
 }
