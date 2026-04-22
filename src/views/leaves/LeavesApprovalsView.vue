@@ -1,260 +1,262 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed } from 'vue'
 
-import AppLayout from "@/components/common/AppLayout.vue";
-import PageHeader from "@/components/header/PageHeader.vue";
-import AppButton from "@/components/common/AppButton.vue";
-import AppCard from "@/components/common/AppCard.vue";
-import AppBadge from "@/components/common/AppBadge.vue";
-import DataTable from "@/components/table/DataTable.vue";
+import AppLayout from '@/components/common/AppLayout.vue'
+import PageHeader from '@/components/header/PageHeader.vue'
+import AppButton from '@/components/common/AppButton.vue'
+import AppCard from '@/components/common/AppCard.vue'
+import AppBadge from '@/components/common/AppBadge.vue'
+import DataTable from '@/components/table/DataTable.vue'
 
-import { useLeaveApprovalStore } from "@/stores/leaves/leaveapproval.store";
-import type { LeaveRequestResponseDTO } from "@/interfaces/leaves/leaverequest.interface";
+import { useLeaveApprovalStore } from '@/stores/leaves/leaveapproval.store'
+import type { LeaveRequestResponseDTO } from '@/interfaces/leaves/leaverequest.interface'
 
 // State Management
-const store = useLeaveApprovalStore();
-const selectedStatus = ref("PENDING");
-const sortOrder = ref("DATE_ASC");
+const store = useLeaveApprovalStore()
+const selectedStatus = ref('PENDING')
+const sortOrder = ref('DATE_ASC')
 
-const searchQuery = ref("");
+const searchQuery = ref('')
 
 // Modal States
-const isReviewModalOpen = ref(false);
-const isRejectModalOpen = ref(false);
-const rejectReason = ref("");
-const hasRejectError = ref(false);
-const selectedRequest = ref<LeaveRequestResponseDTO | null>(null);
+const isReviewModalOpen = ref(false)
+const isRejectModalOpen = ref(false)
+const rejectReason = ref('')
+const hasRejectError = ref(false)
+const selectedRequest = ref<LeaveRequestResponseDTO | null>(null)
 
 // Lifecycle & Fetch Data
 onMounted(() => {
-  fetchData();
-});
+  fetchData()
+})
 
 function fetchData() {
-  store.fetchPendingRequests(selectedStatus.value);
+  store.fetchPendingRequests(selectedStatus.value)
 }
 
 function handleFilterChange() {
-  fetchData();
+  fetchData()
 }
 
 const displayedRequests = computed(() => {
-  let list = [...store.pendingRequests];
+  let list = [...store.pendingRequests]
 
   // 1. Lakukan Filter Pencarian
-  if (searchQuery.value.trim() !== "") {
-    const query = searchQuery.value.toLowerCase();
+  if (searchQuery.value.trim() !== '') {
+    const query = searchQuery.value.toLowerCase()
     list = list.filter((req) => {
-      const teacherName = (req.teacherName || '').toLowerCase();
-      return teacherName.includes(query);
-    });
+      const teacherName = (req.teacherName || '').toLowerCase()
+      return teacherName.includes(query)
+    })
   }
 
   // 2. Lakukan Sorting
   list.sort((a, b) => {
     switch (sortOrder.value) {
-      case "DATE_ASC":
-        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-      case "DATE_DESC":
-        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
-      case "CREATED_DESC":
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      case "CREATED_ASC":
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      case 'DATE_ASC':
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+      case 'DATE_DESC':
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+      case 'CREATED_DESC':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      case 'CREATED_ASC':
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       default:
-        return 0;
+        return 0
     }
-  });
+  })
 
-  return list;
-});
+  return list
+})
 
 const isIzinPribadiHarian = computed(() => {
-  const detail = store.selectedRequestDetail;
+  const detail = store.selectedRequestDetail
   // Jika detail belum di-load dari BE, jangan tampilkan dulu
-  if (!detail) return false;
+  if (!detail) return false
 
   // Normalisasi string (buang spasi, jadikan UPPERCASE)
-  const category = (detail.category || "").toUpperCase().trim();
-  const type = (detail.type || "").toUpperCase().trim();
+  const category = (detail.category || '').toUpperCase().trim()
+  const type = (detail.type || '').toUpperCase().trim()
 
   // Cek kategori Izin Pribadi & Tipe Harian (tambahkan toleransi data lama)
-  const isValidCategory = category === "IZIN_PRIBADI" || category === "IZIN PRIBADI";
-  const isValidType = type === "FULL_DAY" || type === "DAILY" || type === "HARIAN";
-  return isValidCategory && isValidType;
-});
+  const isValidCategory = category === 'IZIN_PRIBADI' || category === 'IZIN PRIBADI'
+  const isValidType = type === 'FULL_DAY' || type === 'DAILY' || type === 'HARIAN'
+  return isValidCategory && isValidType
+})
 
 // Table Columns
 const columns = [
-  { key: "createdAt", label: "TGL PENGAJUAN", thStyle: "width: 15%;" },
-  { key: "teacher", label: "NAMA PEMOHON", thStyle: "width: 20%;" },
-  { key: "detail", label: "KATEGORI", thStyle: "width: 15%;" },
-  { key: "period", label: "WAKTU PELAKSANAAN", thStyle: "width: 20%;" },
-  { key: "status", label: "STATUS", thStyle: "width: 12%;" },
-  { key: "actions", label: "AKSI", thStyle: "width: 18%;" },
-];
+  { key: 'createdAt', label: 'TGL PENGAJUAN', thStyle: 'width: 15%;' },
+  { key: 'teacher', label: 'NAMA PEMOHON', thStyle: 'width: 20%;' },
+  { key: 'detail', label: 'KATEGORI', thStyle: 'width: 15%;' },
+  { key: 'period', label: 'WAKTU PELAKSANAAN', thStyle: 'width: 20%;' },
+  { key: 'status', label: 'STATUS', thStyle: 'width: 12%;' },
+  { key: 'actions', label: 'AKSI', thStyle: 'width: 18%;' },
+]
 
 // Helpers Formatting
 function formatCategory(category: string): string {
   const map: Record<string, string> = {
-    SAKIT: "Sakit",
-    IZIN_PRIBADI: "Izin Pribadi",
-    DINAS_LUAR: "Dinas Luar",
-    MELAHIRKAN: "Melahirkan",
-  };
-  return map[category] || category;
+    SAKIT: 'Sakit',
+    IZIN_PRIBADI: 'Izin Pribadi',
+    DINAS_LUAR: 'Dinas Luar',
+    MELAHIRKAN: 'Melahirkan',
+  }
+  return map[category] || category
 }
 
 function getCategoryClass(category: string): string {
   const map: Record<string, string> = {
-    SAKIT: "cat-sakit",
-    IZIN_PRIBADI: "cat-izin",
-    DINAS_LUAR: "cat-dinas",
-    MELAHIRKAN: "cat-lahir",
-  };
-  return map[category] || "cat-izin";
+    SAKIT: 'cat-sakit',
+    IZIN_PRIBADI: 'cat-izin',
+    DINAS_LUAR: 'cat-dinas',
+    MELAHIRKAN: 'cat-lahir',
+  }
+  return map[category] || 'cat-izin'
 }
 
 function formatType(type: string): string {
   const map: Record<string, string> = {
-    FULL_DAY: "Harian",
-    PARTIAL: "Parsial (Jam Tertentu)",
-    DAILY: "Harian",
-  };
-  return map[type] || type;
+    FULL_DAY: 'Harian',
+    PARTIAL: 'Parsial (Jam Tertentu)',
+    DAILY: 'Harian',
+  }
+  return map[type] || type
 }
 
 function formatStatus(status: string): string {
   const map: Record<string, string> = {
-    PENDING: "Pending",
-    APPROVED: "Approved",
-    REJECTED: "Rejected",
-  };
-  return map[status] || status;
+    PENDING: 'Pending',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+  }
+  return map[status] || status
 }
 
-function getStatusVariant(status: string): "pending" | "success" | "danger" {
-  const map: Record<string, "pending" | "success" | "danger"> = {
-    PENDING: "pending",
-    APPROVED: "success",
-    REJECTED: "danger",
-  };
-  return map[status] || "pending";
+function getStatusVariant(status: string): 'pending' | 'success' | 'danger' {
+  const map: Record<string, 'pending' | 'success' | 'danger'> = {
+    PENDING: 'pending',
+    APPROVED: 'success',
+    REJECTED: 'danger',
+  }
+  return map[status] || 'pending'
 }
 
 function formatDate(dateString: string): string {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleDateString("id-ID", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 function formatTimeOnly(time: string | null): string {
-  if (!time) return "";
-  return time.slice(0, 5);
+  if (!time) return ''
+  return time.slice(0, 5)
 }
 
 function calculateWorkingDays(startDate: string, endDate: string): number {
-  if (!startDate || !endDate) return 0;
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  if (!startDate || !endDate) return 0
+  const start = new Date(startDate)
+  const end = new Date(endDate)
 
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0)
+  end.setHours(0, 0, 0, 0)
 
-  let count = 0;
-  let current = new Date(start);
+  let count = 0
+  let current = new Date(start)
 
   while (current <= end) {
-    const dayOfWeek = current.getDay();
+    const dayOfWeek = current.getDay()
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count++;
+      count++
     }
-    current.setDate(current.getDate() + 1);
+    current.setDate(current.getDate() + 1)
   }
 
-  return count;
+  return count
 }
 
 function getPeriodDisplay(row: LeaveRequestResponseDTO): { label: string; meta: string } {
-  const startLabel = formatDate(row.startDate);
-  const endLabel = formatDate(row.endDate);
+  const startLabel = formatDate(row.startDate)
+  const endLabel = formatDate(row.endDate)
 
-  if (row.type === "PARTIAL") {
+  if (row.type === 'PARTIAL') {
     return {
       label: startLabel,
       meta: `${formatTimeOnly(row.startTime)} - ${formatTimeOnly(row.endTime)} WIB`,
-    };
+    }
   }
 
-  const days = calculateWorkingDays(row.startDate, row.endDate);
+  const days = calculateWorkingDays(row.startDate, row.endDate)
 
   return {
     label: row.startDate === row.endDate ? startLabel : `${startLabel} - ${endLabel}`,
     meta: `${days} Hari Kerja`,
-  };
+  }
 }
 
 // Modal Actions
 function openReview(request: LeaveRequestResponseDTO) {
-  selectedRequest.value = request;
-  isReviewModalOpen.value = true;
-  store.fetchRequestDetail(request.id);
+  selectedRequest.value = request
+  isReviewModalOpen.value = true
+  store.fetchRequestDetail(request.id)
 }
 
 function closeReviewModal() {
-  isReviewModalOpen.value = false;
-  selectedRequest.value = null;
+  isReviewModalOpen.value = false
+  selectedRequest.value = null
 }
 
 function openRejectForm() {
-  isReviewModalOpen.value = false;
-  rejectReason.value = "";
-  hasRejectError.value = false;
-  isRejectModalOpen.value = true;
+  isReviewModalOpen.value = false
+  rejectReason.value = ''
+  hasRejectError.value = false
+  isRejectModalOpen.value = true
 }
 
 function closeRejectModal() {
-  isRejectModalOpen.value = false;
-  hasRejectError.value = false;
+  isRejectModalOpen.value = false
+  hasRejectError.value = false
 }
 
 // Fungsi saat tombol hijau "Setujui Pengajuan" diklik
 async function finalizeApprove() {
-  if (!selectedRequest.value) return;
+  if (!selectedRequest.value) return
 
   // Panggil store dan tangkap status sukses beserta jumlah kelas pengganti
-  const { success, count } = await store.approveRequest(selectedRequest.value.id);
+  const { success, count } = await store.approveRequest(selectedRequest.value.id)
 
   if (success) {
     if (count !== undefined && count > 0) {
-      alert(`SUCCESS: Pengajuan telah DISETUJUI.\nSistem berhasil menyiapkan ${count} jadwal guru pengganti secara otomatis.`);
+      alert(
+        `SUCCESS: Pengajuan telah DISETUJUI.\nSistem berhasil menyiapkan ${count} jadwal guru pengganti secara otomatis.`,
+      )
     } else {
-      alert(`SUCCESS: Pengajuan telah DISETUJUI.\n(Tidak ada jadwal mengajar yang bertabrakan).`);
+      alert(`SUCCESS: Pengajuan telah DISETUJUI.\n(Tidak ada jadwal mengajar yang bertabrakan).`)
     }
 
-    closeReviewModal(); // Tutup modal otomatis
-    fetchData();        // Refresh data antrean di tabel belakang
+    closeReviewModal() // Tutup modal otomatis
+    fetchData() // Refresh data antrean di tabel belakang
   } else {
-    alert(`GAGAL: ${store.error}`);
+    alert(`GAGAL: ${store.error}`)
   }
 }
 
 async function finalizeReject() {
-  if (!selectedRequest.value) return;
-  if (rejectReason.value.trim() === "") {
-    hasRejectError.value = true;
-    return;
+  if (!selectedRequest.value) return
+  if (rejectReason.value.trim() === '') {
+    hasRejectError.value = true
+    return
   }
-  const success = await store.rejectRequest(selectedRequest.value.id, rejectReason.value);
+  const success = await store.rejectRequest(selectedRequest.value.id, rejectReason.value)
   if (success) {
-    alert("SUCCESS: Pengajuan berhasil ditolak.");
-    closeRejectModal();
-    fetchData();
+    alert('SUCCESS: Pengajuan berhasil ditolak.')
+    closeRejectModal()
+    fetchData()
   } else {
-    alert(`GAGAL: ${store.error}`);
+    alert(`GAGAL: ${store.error}`)
   }
 }
 </script>
@@ -267,7 +269,6 @@ async function finalizeReject() {
     >
       <template #actions>
         <div class="header-filters-wrapper">
-
           <div class="search-wrapper">
             <input
               v-model="searchQuery"
@@ -290,7 +291,12 @@ async function finalizeReject() {
 
             <div class="filter-group">
               <label for="statusFilter" class="filter-label">Status:</label>
-              <select id="statusFilter" v-model="selectedStatus" @change="handleFilterChange" class="form-control-sm">
+              <select
+                id="statusFilter"
+                v-model="selectedStatus"
+                @change="handleFilterChange"
+                class="form-control-sm"
+              >
                 <option value="PENDING">Menunggu Persetujuan</option>
                 <option value="APPROVED">Telah Disetujui</option>
                 <option value="REJECTED">Ditolak</option>
@@ -298,38 +304,42 @@ async function finalizeReject() {
               </select>
             </div>
           </div>
-
         </div>
       </template>
     </PageHeader>
 
     <AppCard>
-      <div v-if="store.isLoading" style="text-align: center; padding: 20px;">
+      <div v-if="store.isLoading" style="text-align: center; padding: 20px">
         Memuat data persetujuan...
       </div>
 
-      <div v-else-if="store.error" style="color: red; text-align: center; padding: 20px;">
+      <div v-else-if="store.error" style="color: red; text-align: center; padding: 20px">
         {{ store.error }}
       </div>
 
-      <div v-else-if="displayedRequests.length === 0" style="text-align: center; padding: 60px 20px; color: var(--text-grey);">
-        <h3 style="margin-bottom: 8px;">Tidak Ditemukan</h3>
-        <p v-if="searchQuery">Tidak ada hasil yang cocok dengan kata kunci "<b>{{ searchQuery }}</b>".</p>
+      <div
+        v-else-if="displayedRequests.length === 0"
+        style="text-align: center; padding: 60px 20px; color: var(--text-grey)"
+      >
+        <h3 style="margin-bottom: 8px">Tidak Ditemukan</h3>
+        <p v-if="searchQuery">
+          Tidak ada hasil yang cocok dengan kata kunci "<b>{{ searchQuery }}</b
+          >".
+        </p>
         <p v-else>Tidak ada pengajuan cuti dengan status {{ formatStatus(selectedStatus) }}.</p>
       </div>
 
       <DataTable v-else :columns="columns" :rows="displayedRequests">
-
         <template #cell:createdAt="{ row }">
           <div style="font-weight: 500">{{ formatDate(row.createdAt) }}</div>
         </template>
 
         <template #cell:teacher="{ row }">
-          <div style="font-weight: 600; color: var(--text-dark, #1F2937);">
+          <div style="font-weight: 600; color: var(--text-dark, #1f2937)">
             {{ row.teacherName || row.nama_guru || 'Nama Belum Termuat' }}
           </div>
-          <div style="font-size: 12px; color: var(--text-grey, #6B7280); margin-top: 2px;">
-            ID: {{ row.teacherId?.substring(0,8) || 'N/A' }}
+          <div style="font-size: 12px; color: var(--text-grey, #6b7280); margin-top: 2px">
+            ID: {{ row.teacherId?.substring(0, 8) || 'N/A' }}
           </div>
         </template>
 
@@ -353,20 +363,10 @@ async function finalizeReject() {
         </template>
 
         <template #cell:actions="{ row }">
-          <AppButton
-            v-if="row.status === 'PENDING'"
-            variant="outline"
-            @click="openReview(row)"
-          >
+          <AppButton v-if="row.status === 'PENDING'" variant="outline" @click="openReview(row)">
             Review Pengajuan
           </AppButton>
-          <AppButton
-            v-else
-            variant="outline"
-            @click="openReview(row)"
-          >
-            Lihat Detail
-          </AppButton>
+          <AppButton v-else variant="outline" @click="openReview(row)"> Lihat Detail </AppButton>
         </template>
       </DataTable>
     </AppCard>
@@ -378,49 +378,103 @@ async function finalizeReject() {
           <button class="btn-close" @click="closeReviewModal">&times;</button>
         </div>
 
-        <div class="modal-body" v-if="store.isDetailLoading" style="text-align: center; padding: 40px;">
-          <p style="color: var(--text-grey);">Memuat detail lengkap...</p>
+        <div
+          class="modal-body"
+          v-if="store.isDetailLoading"
+          style="text-align: center; padding: 40px"
+        >
+          <p style="color: var(--text-grey)">Memuat detail lengkap...</p>
         </div>
 
-        <div class="modal-body" v-else-if="store.error && !store.selectedRequestDetail" style="text-align: center; padding: 40px;">
+        <div
+          class="modal-body"
+          v-else-if="store.error && !store.selectedRequestDetail"
+          style="text-align: center; padding: 40px"
+        >
           <p class="text-danger">⚠️ {{ store.error }}</p>
         </div>
 
-        <div class="modal-body" v-else-if="store.selectedRequestDetail" style="padding-top: 16px;">
-
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div class="modal-body" v-else-if="store.selectedRequestDetail" style="padding-top: 16px">
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              margin-bottom: 20px;
+            "
+          >
             <div>
-              <div style="font-size: 18px; font-weight: 700; color: var(--text-dark);">
+              <div style="font-size: 18px; font-weight: 700; color: var(--text-dark)">
                 {{ store.selectedRequestDetail.teacherName || '-' }}
               </div>
-              <div style="font-size: 13px; color: var(--text-grey); font-family: monospace;">
+              <div style="font-size: 13px; color: var(--text-grey); font-family: monospace">
                 ID: {{ store.selectedRequestDetail.teacherId || '-' }}
               </div>
             </div>
-            <div style="text-align: right;">
-              <div style="font-size: 12px; color: var(--text-grey); font-weight: 500;">Tanggal Pengajuan</div>
-              <div style="font-size: 14px; font-weight: 600;">{{ formatDate(store.selectedRequestDetail.createdAt) }}</div>
+            <div style="text-align: right">
+              <div style="font-size: 12px; color: var(--text-grey); font-weight: 500">
+                Tanggal Pengajuan
+              </div>
+              <div style="font-size: 14px; font-weight: 600">
+                {{ formatDate(store.selectedRequestDetail.createdAt) }}
+              </div>
             </div>
           </div>
 
           <div class="highlight-info-box">
             <div class="hl-item">
               <div class="hl-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
               </div>
               <div>
                 <div class="hl-label">Durasi Cuti</div>
-                <div class="hl-value text-primary">{{ getPeriodDisplay(store.selectedRequestDetail).meta }}</div>
+                <div class="hl-value text-primary">
+                  {{ getPeriodDisplay(store.selectedRequestDetail).meta }}
+                </div>
               </div>
             </div>
 
             <div class="hl-item" v-if="isIzinPribadiHarian">
               <div class="hl-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 3v18h18" />
+                  <path d="m19 9-5 5-4-4-3 3" />
+                </svg>
               </div>
               <div>
                 <div class="hl-label">Sisa Kuota Cuti</div>
-                <div class="hl-value" :class="store.selectedRequestDetail.remainingQuota < parseInt(getPeriodDisplay(store.selectedRequestDetail).meta) ? 'text-danger' : 'text-success'">
+                <div
+                  class="hl-value"
+                  :class="
+                    store.selectedRequestDetail.remainingQuota <
+                    parseInt(getPeriodDisplay(store.selectedRequestDetail).meta)
+                      ? 'text-danger'
+                      : 'text-success'
+                  "
+                >
                   {{ store.selectedRequestDetail.remainingQuota ?? 0 }} Hari
                 </div>
               </div>
@@ -429,7 +483,11 @@ async function finalizeReject() {
 
           <div class="detail-row">
             <span class="detail-label">Kategori Izin</span>
-            <span class="detail-value">{{ formatCategory(store.selectedRequestDetail.category) }} ({{ formatType(store.selectedRequestDetail.type) }})</span>
+            <span class="detail-value"
+              >{{ formatCategory(store.selectedRequestDetail.category) }} ({{
+                formatType(store.selectedRequestDetail.type)
+              }})</span
+            >
           </div>
           <div class="detail-row">
             <span class="detail-label">Waktu Pelaksanaan</span>
@@ -440,19 +498,21 @@ async function finalizeReject() {
           <div class="detail-row">
             <span class="detail-label">Lampiran Bukti</span>
             <span class="detail-value">
-              <a v-if="store.selectedRequestDetail.attachmentUrl"
-                 :href="store.selectedRequestDetail.attachmentUrl"
-                 target="_blank"
-                 style="color: var(--primary, #1b5e20); text-decoration: underline; font-weight: 600;">
+              <a
+                v-if="store.selectedRequestDetail.attachmentUrl"
+                :href="store.selectedRequestDetail.attachmentUrl"
+                target="_blank"
+                style="color: var(--primary, #1b5e20); text-decoration: underline; font-weight: 600"
+              >
                 Lihat Lampiran ↗
               </a>
-              <span v-else style="color: var(--text-grey); font-style: italic; font-weight: 400;">
+              <span v-else style="color: var(--text-grey); font-style: italic; font-weight: 400">
                 Tidak ada
               </span>
             </span>
           </div>
 
-          <hr class="divider">
+          <hr class="divider" />
 
           <div class="detail-block">
             <span class="detail-label">Alasan / Keterangan:</span>
@@ -461,29 +521,41 @@ async function finalizeReject() {
 
           <div class="detail-block" v-if="store.selectedRequestDetail.status === 'REJECTED'">
             <span class="detail-label text-danger">Alasan Penolakan:</span>
-            <div class="reason-box border-danger">{{ store.selectedRequestDetail.rejectionReason }}</div>
+            <div class="reason-box border-danger">
+              {{ store.selectedRequestDetail.rejectionReason }}
+            </div>
           </div>
         </div>
 
         <div class="modal-footer" v-if="!store.isDetailLoading">
           <template v-if="store.selectedRequestDetail?.status === 'PENDING'">
-
-            <AppButton variant="outline" style="color: #dc2626; border-color: #dc2626;" @click="openRejectForm" :disabled="store.isLoading">
+            <AppButton
+              variant="outline"
+              style="color: #dc2626; border-color: #dc2626"
+              @click="openRejectForm"
+              :disabled="store.isLoading"
+            >
               Tolak Pengajuan
             </AppButton>
 
             <AppButton
               @click="finalizeApprove"
-              style="background: #15803d; border: none; color: white;"
+              style="background: #15803d; border: none; color: white"
               :disabled="store.isLoading"
             >
               {{ store.isLoading ? 'Memproses...' : 'Setujui Pengajuan' }}
             </AppButton>
-
           </template>
 
           <template v-else-if="store.selectedRequestDetail">
-            <span style="margin-right: auto; align-self: center; font-size: 13px; color: var(--text-grey);">
+            <span
+              style="
+                margin-right: auto;
+                align-self: center;
+                font-size: 13px;
+                color: var(--text-grey);
+              "
+            >
               Pengajuan ini telah diproses.
             </span>
             <AppButton variant="outline" @click="closeReviewModal">Tutup</AppButton>
@@ -493,20 +565,38 @@ async function finalizeReject() {
     </div>
 
     <div v-if="isRejectModalOpen" class="modal-backdrop">
-      <div class="modal-card" style="max-width: 450px;">
+      <div class="modal-card" style="max-width: 450px">
         <div class="modal-header">
           <h3 class="text-danger">Konfirmasi Penolakan</h3>
           <button class="btn-close" @click="closeRejectModal">&times;</button>
         </div>
 
         <div class="modal-body">
-          <div style="margin-bottom: 20px; background: #f9fafb; padding: 12px; border-radius: 8px; border: 1px solid #e5e7eb;">
-            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">Menolak pengajuan dari:</div>
-            <div style="font-weight: 600; color: #1f2937;">{{ selectedRequest?.teacherName }}</div>
+          <div
+            style="
+              margin-bottom: 20px;
+              background: #f9fafb;
+              padding: 12px;
+              border-radius: 8px;
+              border: 1px solid #e5e7eb;
+            "
+          >
+            <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px">
+              Menolak pengajuan dari:
+            </div>
+            <div style="font-weight: 600; color: #1f2937">{{ selectedRequest?.teacherName }}</div>
           </div>
 
           <div class="form-group">
-            <label style="font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 8px; display: block;">
+            <label
+              style="
+                font-size: 14px;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 8px;
+                display: block;
+              "
+            >
               Alasan Penolakan <span class="text-danger">*</span>
             </label>
             <textarea
@@ -515,7 +605,11 @@ async function finalizeReject() {
               rows="4"
               placeholder="Tuliskan alasan penolakan..."
             ></textarea>
-            <div v-if="hasRejectError" class="text-danger" style="font-size: 12px; margin-top: 6px; font-weight: 500;">
+            <div
+              v-if="hasRejectError"
+              class="text-danger"
+              style="font-size: 12px; margin-top: 6px; font-weight: 500"
+            >
               ⚠️ Alasan penolakan wajib diisi!
             </div>
           </div>
@@ -528,7 +622,7 @@ async function finalizeReject() {
 
           <AppButton
             @click="finalizeReject"
-            style="background: #dc2626; color: white;"
+            style="background: #dc2626; color: white"
             :disabled="rejectReason.trim() === '' || store.isLoading"
           >
             {{ store.isLoading ? 'Memproses...' : 'Tolak Pengajuan' }}
@@ -545,7 +639,9 @@ async function finalizeReject() {
   color: var(--text-grey, #6b7280);
   margin-top: 2px;
 }
-.text-danger { color: #dc2626; }
+.text-danger {
+  color: #dc2626;
+}
 
 .header-filters-wrapper {
   display: flex;
@@ -589,7 +685,7 @@ async function finalizeReject() {
   -webkit-appearance: none;
   -moz-appearance: none;
   background-color: #ffffff;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236b7280%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
   background-repeat: no-repeat;
   background-position: right 12px top 50%;
   background-size: 10px auto;
@@ -633,9 +729,14 @@ async function finalizeReject() {
 /* Modals Custom */
 .modal-backdrop {
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex; justify-content: center; align-items: center;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 1000;
 }
 .modal-card {
@@ -643,22 +744,37 @@ async function finalizeReject() {
   width: 90%;
   max-width: 500px;
   border-radius: 12px;
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 .modal-header {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border, #e5e7eb);
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.modal-header h3 { margin: 0; font-size: 18px; }
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
 .btn-close {
-  background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #6b7280;
 }
-.modal-body { padding: 24px; }
+.modal-body {
+  padding: 24px;
+}
 .modal-footer {
-  padding: 16px 24px; background: #f9fafb; border-top: 1px solid var(--border, #e5e7eb);
-  display: flex; justify-content: flex-end; gap: 12px;
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-top: 1px solid var(--border, #e5e7eb);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 /* Styling untuk Highlight Box di Modal */
@@ -673,7 +789,7 @@ async function finalizeReject() {
   background: white;
   color: var(--primary, #1b5e20);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
 }
 
@@ -707,9 +823,15 @@ async function finalizeReject() {
   font-weight: 700;
 }
 
-.text-primary { color: var(--primary, #1b5e20); }
-.text-success { color: #059669; } /* Hijau terang */
-.text-danger { color: #dc2626; } /* Merah terang untuk kuota tipis */
+.text-primary {
+  color: var(--primary, #1b5e20);
+}
+.text-success {
+  color: #059669;
+} /* Hijau terang */
+.text-danger {
+  color: #dc2626;
+} /* Merah terang untuk kuota tipis */
 
 @media (max-width: 480px) {
   .highlight-info-box {
@@ -719,44 +841,108 @@ async function finalizeReject() {
 }
 
 .detail-row {
-  display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 14px;
 }
-.detail-label { color: #6b7280; font-weight: 500; }
-.detail-value { font-weight: 600; text-align: right; }
-.divider { border: 0; border-top: 1px solid var(--border, #e5e7eb); margin: 16px 0; }
-.detail-block { margin-bottom: 16px; }
+.detail-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+.detail-value {
+  font-weight: 600;
+  text-align: right;
+}
+.divider {
+  border: 0;
+  border-top: 1px solid var(--border, #e5e7eb);
+  margin: 16px 0;
+}
+.detail-block {
+  margin-bottom: 16px;
+}
 .reason-box {
-  background: #f9fafb; padding: 12px; border-radius: 8px; font-size: 14px; border: 1px solid var(--border, #e5e7eb);
-  margin-top: 8px; line-height: 1.5;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid var(--border, #e5e7eb);
+  margin-top: 8px;
+  line-height: 1.5;
 }
-.reason-box.border-danger { border-color: #fca5a5; background: #fef2f2; }
+.reason-box.border-danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
 
 .cat-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: 12px; font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
   border: 1px solid transparent;
 }
 .cat-badge .dot {
-  width: 7px; height: 7px;
-  border-radius: 50%; flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-.cat-sakit  { background:#FCEBEB; border-color:#F09595; color:#791F1F; }
-.cat-sakit .dot  { background:#E24B4A; }
+.cat-sakit {
+  background: #fcebeb;
+  border-color: #f09595;
+  color: #791f1f;
+}
+.cat-sakit .dot {
+  background: #e24b4a;
+}
 
-.cat-izin   { background:#FAEEDA; border-color:#FAC775; color:#633806; }
-.cat-izin .dot   { background:#BA7517; }
+.cat-izin {
+  background: #faeeda;
+  border-color: #fac775;
+  color: #633806;
+}
+.cat-izin .dot {
+  background: #ba7517;
+}
 
-.cat-dinas  { background:#E6F1FB; border-color:#85B7EB; color:#0C447C; }
-.cat-dinas .dot  { background:#378ADD; }
+.cat-dinas {
+  background: #e6f1fb;
+  border-color: #85b7eb;
+  color: #0c447c;
+}
+.cat-dinas .dot {
+  background: #378add;
+}
 
-.cat-lahir  { background:#FBEAF0; border-color:#ED93B1; color:#72243E; }
-.cat-lahir .dot  { background:#D4537E; }
+.cat-lahir {
+  background: #fbeaf0;
+  border-color: #ed93b1;
+  color: #72243e;
+}
+.cat-lahir .dot {
+  background: #d4537e;
+}
 
 .form-textarea {
-  width: 100%; padding: 12px; border: 1px solid var(--border, #e5e7eb); border-radius: 8px;
-  font-family: inherit; font-size: 14px; box-sizing: border-box; resize: vertical; outline: none;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  resize: vertical;
+  outline: none;
 }
-.form-textarea:focus { border-color: var(--primary, #1b5e20); }
-.form-textarea.is-invalid { border-color: #dc2626; }
+.form-textarea:focus {
+  border-color: var(--primary, #1b5e20);
+}
+.form-textarea.is-invalid {
+  border-color: #dc2626;
+}
 </style>

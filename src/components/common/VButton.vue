@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = withDefaults(defineProps<{
-  variant?: 'primary' | 'secondary' | 'ghost'
-  size?: 'sm' | 'md' | 'lg'
-  block?: boolean
-  disabled?: boolean
-  type?: 'button' | 'submit' | 'reset'
-  loading?: boolean
-}>(), {
-  variant: 'primary',
-  size: 'md',
-  block: false,
-  disabled: false,
-  type: 'button',
-  loading: false,
-})
+const props = withDefaults(
+  defineProps<{
+    variant?: 'primary' | 'secondary' | 'ghost'
+    size?: 'sm' | 'md' | 'lg'
+    block?: boolean
+    disabled?: boolean
+    type?: 'button' | 'submit' | 'reset'
+    loading?: boolean
+  }>(),
+  {
+    variant: 'primary',
+    size: 'md',
+    block: false,
+    disabled: false,
+    type: 'button',
+    loading: false,
+  },
+)
 
 const base =
   'inline-flex items-center justify-center rounded-xl font-semibold transition ' +
@@ -32,8 +35,7 @@ const sizes: Record<string, string> = {
 
 const variants: Record<string, string> = {
   primary:
-    'bg-[#014f01] text-white hover:bg-[#013a01] active:bg-[#012a01] ' +
-    'focus:ring-[#014f01]',
+    'bg-[#014f01] text-white hover:bg-[#013a01] active:bg-[#012a01] ' + 'focus:ring-[#014f01]',
   secondary:
     'bg-white text-[#014f01] border border-[#014f01]/30 hover:bg-[#014f01]/10 ' +
     'active:bg-[#014f01]/20 focus:ring-[#014f01]',
@@ -51,11 +53,7 @@ const classes = computed(() => [
 </script>
 
 <template>
-  <button
-    :type="type"
-    :disabled="disabled || loading"
-    :class="classes"
-  >
+  <button :type="type" :disabled="disabled || loading" :class="classes">
     <span
       v-if="loading"
       class="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"

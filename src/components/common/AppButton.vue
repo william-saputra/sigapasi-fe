@@ -1,20 +1,15 @@
 <template>
-  <button
-    class="btn"
-    :type="type"
-    :disabled="disabled"
-    @click="$emit('click', $event)"
-  >
+  <button class="btn" :type="type" :disabled="disabled" @click="$emit('click', $event)">
     <slot />
   </button>
 </template>
 
 <script setup>
 defineProps({
-  type: { type: String, default: "button" },
+  type: { type: String, default: 'button' },
   disabled: { type: Boolean, default: false },
-});
-defineEmits(["click"]);
+})
+defineEmits(['click'])
 </script>
 
 <style scoped>
@@ -34,6 +29,11 @@ defineEmits(["click"]);
   font-family: var(--font);
   transition: 0.2s;
 }
-.btn:hover { background: var(--primary-hover); }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn:hover {
+  background: var(--primary-hover);
+}
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 </style>

@@ -21,9 +21,7 @@ const isAllLevels = computed(() => selectedSchoolLevelId.value === 'ALL')
 const visibleSchoolLevels = computed(() => store.schoolLevels)
 
 // Condition to check if there are any slots across all available days
-const hasData = computed(() =>
-  ALL_DAYS.some(day => (store.schedules[day]?.length ?? 0) > 0)
-)
+const hasData = computed(() => ALL_DAYS.some((day) => (store.schedules[day]?.length ?? 0) > 0))
 
 // --- Functions ---
 /** Dispatches data fetch actions depending on current grade filter mode */
@@ -38,10 +36,14 @@ async function loadData() {
 }
 
 /** Handles semester change event and reloads grid data */
-async function onSemesterChange() { await loadData() }
+async function onSemesterChange() {
+  await loadData()
+}
 
 /** Handles grade selection change event and reloads grid data */
-async function onGradeChange() { await loadData() }
+async function onGradeChange() {
+  await loadData()
+}
 
 /** Retrieves UI slots corresponding to a specific day for single grade views */
 function getDaySlots(day: DayOfWeekEnum): UISlot[] {
@@ -71,19 +73,22 @@ function slotBadgeClass(slot: UISlot): string {
 
 /** Filters and returns slots for a specific day and a specific grade level */
 function getLevelDaySlots(day: DayOfWeekEnum, levelId: string): UISlot[] {
-  return (store.schedules[day] ?? []).filter(s => s.school_level_id === levelId)
+  return (store.schedules[day] ?? []).filter((s) => s.school_level_id === levelId)
 }
 
 // --- Auto-hide Errors ---
-let errorTimeout: number | undefined;
-watch(() => store.error, (newVal) => {
-  if (newVal) {
-    clearTimeout(errorTimeout);
-    errorTimeout = window.setTimeout(() => {
-      if (store.error === newVal) store.clearError();
-    }, 5000);
-  }
-});
+let errorTimeout: number | undefined
+watch(
+  () => store.error,
+  (newVal) => {
+    if (newVal) {
+      clearTimeout(errorTimeout)
+      errorTimeout = window.setTimeout(() => {
+        if (store.error === newVal) store.clearError()
+      }, 5000)
+    }
+  },
+)
 
 // --- Lifecycle ---
 /** Initializes components by fetching academic years and slot structures if needed */
@@ -103,9 +108,10 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen bg-gray-50 font-sans">
     <div class="mx-auto max-w-[1400px] px-5 py-8">
-
       <!-- Page Header -->
-      <div class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b-2 border-emerald-100 pb-5">
+      <div
+        class="mb-6 flex flex-col md:flex-row md:items-start md:justify-between gap-4 border-b-2 border-emerald-100 pb-5"
+      >
         <div>
           <!-- Back Action -->
           <button
@@ -115,14 +121,18 @@ onMounted(async () => {
             ← Kembali
           </button>
           <h2 class="text-3xl font-bold text-emerald-800">Master Slot Waktu</h2>
-          <p class="mt-0.5 text-sm text-gray-500">Tampilan jadwal gabungan seluruh tingkatan kelas</p>
+          <p class="mt-0.5 text-sm text-gray-500">
+            Tampilan jadwal gabungan seluruh tingkatan kelas
+          </p>
         </div>
 
         <!-- Filter Controls -->
         <div class="flex items-end gap-4 flex-wrap">
           <!-- Semester Selector -->
           <div>
-            <label class="mb-1 block text-xs font-semibold text-gray-500">Tahun Ajaran &amp; Semester</label>
+            <label class="mb-1 block text-xs font-semibold text-gray-500"
+              >Tahun Ajaran &amp; Semester</label
+            >
             <select
               v-model="store.activeSemesterId"
               class="w-52 rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm transition-all focus:border-emerald-700 focus:bg-white focus:ring-2 focus:ring-emerald-700/10 focus:outline-none"
@@ -153,17 +163,39 @@ onMounted(async () => {
       </div>
 
       <!-- Error Notification -->
-      <div v-if="store.error" class="mb-5 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <div
+        v-if="store.error"
+        class="mb-5 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
+      >
         <span>⚠️</span>
         <span class="flex-1">{{ store.error }}</span>
         <button class="text-xs font-semibold underline" @click="store.clearError()">Tutup</button>
       </div>
 
       <!-- Loading State -->
-      <div v-if="store.isLoading" class="mb-5 flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-        <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      <div
+        v-if="store.isLoading"
+        class="mb-5 flex items-center gap-3 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+      >
+        <svg
+          class="h-4 w-4 animate-spin"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+          />
         </svg>
         Memuat data master jadwal...
       </div>
@@ -175,7 +207,9 @@ onMounted(async () => {
       >
         <span class="mb-4 text-6xl">📋</span>
         <p class="text-base font-semibold text-gray-500">Tidak ada data struktur jadwal</p>
-        <p class="mt-1 text-sm text-gray-400">Pilih Semester dan pastikan slot waktu sudah dikonfigurasi.</p>
+        <p class="mt-1 text-sm text-gray-400">
+          Pilih Semester dan pastikan slot waktu sudah dikonfigurasi.
+        </p>
       </div>
 
       <!-- Single Grade Layout View -->
@@ -189,7 +223,9 @@ onMounted(async () => {
           >
             <!-- Column Day Header -->
             <div class="bg-emerald-800 px-3 py-2.5 text-center">
-              <span class="text-sm font-bold uppercase tracking-wide text-white">{{ DAY_LABELS[day] }}</span>
+              <span class="text-sm font-bold uppercase tracking-wide text-white">{{
+                DAY_LABELS[day]
+              }}</span>
             </div>
 
             <!-- List Slot Items -->
@@ -208,15 +244,18 @@ onMounted(async () => {
                   <!-- Name and Duration -->
                   <div class="flex items-center justify-between gap-1">
                     <span class="text-sm font-bold leading-tight">{{ slotLabel(slot) }}</span>
-                    <span :class="['rounded-full px-1.5 py-0.5 text-[10px] font-bold', slotBadgeClass(slot)]">
+                    <span
+                      :class="[
+                        'rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+                        slotBadgeClass(slot),
+                      ]"
+                    >
                       {{ slot.duration }}m
                     </span>
                   </div>
                 </div>
               </template>
-              <div v-else class="py-6 text-center text-xs text-gray-400 italic">
-                Belum ada data
-              </div>
+              <div v-else class="py-6 text-center text-xs text-gray-400 italic">Belum ada data</div>
             </div>
           </div>
         </div>
@@ -224,19 +263,33 @@ onMounted(async () => {
         <!-- Single Grade Legend -->
         <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
           <span class="font-semibold text-gray-600">Keterangan:</span>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-emerald-100 bg-white"></span><span>Pelajaran</span></div>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-amber-200 bg-amber-50"></span><span>Istirahat</span></div>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-gray-300 bg-gray-100"></span><span>Slot Terkunci</span></div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-emerald-100 bg-white"></span
+            ><span>Pelajaran</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-amber-200 bg-amber-50"></span
+            ><span>Istirahat</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-gray-300 bg-gray-100"></span
+            ><span>Slot Terkunci</span>
+          </div>
         </div>
       </div>
 
       <!-- All Grades Layout View -->
-      <div v-else-if="isAllLevels && !store.isLoading" class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div
+        v-else-if="isAllLevels && !store.isLoading"
+        class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm"
+      >
         <table class="w-full border-collapse text-xs">
           <!-- Table Header -->
           <thead>
             <tr class="bg-emerald-800 text-white uppercase tracking-wide">
-              <th class="border border-emerald-700 px-3 py-3 text-center whitespace-nowrap w-16">HARI</th>
+              <th class="border border-emerald-700 px-3 py-3 text-center whitespace-nowrap w-16">
+                HARI
+              </th>
               <th
                 v-for="level in visibleSchoolLevels"
                 :key="level.id"
@@ -249,13 +302,11 @@ onMounted(async () => {
 
           <tbody>
             <!-- Table Row For Each Day -->
-            <tr
-              v-for="day in ALL_DAYS"
-              :key="day"
-              class="border-b border-gray-200 align-top"
-            >
+            <tr v-for="day in ALL_DAYS" :key="day" class="border-b border-gray-200 align-top">
               <!-- Day Identifier Cell -->
-              <td class="border border-gray-200 bg-emerald-50 px-2 py-3 text-center font-bold text-emerald-900 whitespace-nowrap">
+              <td
+                class="border border-gray-200 bg-emerald-50 px-2 py-3 text-center font-bold text-emerald-900 whitespace-nowrap"
+              >
                 {{ DAY_LABELS[day] }}
               </td>
 
@@ -275,27 +326,43 @@ onMounted(async () => {
                         ? 'bg-gray-100 border-gray-300'
                         : slot.slot_type === 'BREAK'
                           ? 'bg-amber-50 border-amber-200'
-                          : 'bg-white border-emerald-100'
+                          : 'bg-white border-emerald-100',
                     ]"
                   >
                     <!-- Time And Duration Segment -->
                     <div class="flex items-center justify-between mb-0.5 gap-1">
-                      <span class="text-[10px] font-semibold text-gray-400 leading-tight whitespace-nowrap">
+                      <span
+                        class="text-[10px] font-semibold text-gray-400 leading-tight whitespace-nowrap"
+                      >
                         {{ slot.start_time }} – {{ slot.end_time }}
                       </span>
-                      <span :class="[
-                        'rounded-full px-1.5 py-0.5 text-[9px] font-bold whitespace-nowrap',
-                        slot.is_locked ? 'bg-gray-200 text-gray-600' : slot.slot_type === 'BREAK' ? 'bg-amber-200 text-amber-800' : 'bg-emerald-100 text-emerald-800'
-                      ]">
+                      <span
+                        :class="[
+                          'rounded-full px-1.5 py-0.5 text-[9px] font-bold whitespace-nowrap',
+                          slot.is_locked
+                            ? 'bg-gray-200 text-gray-600'
+                            : slot.slot_type === 'BREAK'
+                              ? 'bg-amber-200 text-amber-800'
+                              : 'bg-emerald-100 text-emerald-800',
+                        ]"
+                      >
                         {{ slot.duration }}m
                       </span>
                     </div>
                     <!-- Label Presentation Segment -->
-                    <div :class="[
-                      'text-xs font-bold leading-tight',
-                      slot.is_locked ? 'text-gray-600' : slot.slot_type === 'BREAK' ? 'text-amber-700' : 'text-emerald-900'
-                    ]">
-                      <template v-if="slot.is_locked && slot.locked_label">{{ slot.locked_label }}</template>
+                    <div
+                      :class="[
+                        'text-xs font-bold leading-tight',
+                        slot.is_locked
+                          ? 'text-gray-600'
+                          : slot.slot_type === 'BREAK'
+                            ? 'text-amber-700'
+                            : 'text-emerald-900',
+                      ]"
+                    >
+                      <template v-if="slot.is_locked && slot.locked_label">{{
+                        slot.locked_label
+                      }}</template>
                       <template v-else-if="slot.slot_type === 'BREAK'">☕ Istirahat</template>
                       <template v-else>JP {{ slot.session_number }}</template>
                     </div>
@@ -308,15 +375,30 @@ onMounted(async () => {
         </table>
 
         <!-- All Grades Legend -->
-        <div class="flex flex-wrap items-center gap-4 px-4 py-3 text-xs text-gray-500 border-t border-gray-100">
+        <div
+          class="flex flex-wrap items-center gap-4 px-4 py-3 text-xs text-gray-500 border-t border-gray-100"
+        >
           <span class="font-semibold text-gray-600">Keterangan:</span>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-emerald-100 bg-white"></span><span>Pelajaran</span></div>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-amber-200 bg-amber-50"></span><span>Istirahat</span></div>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-gray-300 bg-gray-100"></span><span>Slot Terkunci</span></div>
-          <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-3 rounded border border-gray-100 bg-gray-50 text-gray-300 text-center leading-3 text-[9px]">—</span><span>Tidak ada data</span></div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-emerald-100 bg-white"></span
+            ><span>Pelajaran</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-amber-200 bg-amber-50"></span
+            ><span>Istirahat</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="inline-block w-3 h-3 rounded border border-gray-300 bg-gray-100"></span
+            ><span>Slot Terkunci</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span
+              class="inline-block w-3 h-3 rounded border border-gray-100 bg-gray-50 text-gray-300 text-center leading-3 text-[9px]"
+              >—</span
+            ><span>Tidak ada data</span>
+          </div>
         </div>
       </div>
-
     </div>
   </div>
 </template>

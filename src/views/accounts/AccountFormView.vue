@@ -160,16 +160,12 @@ async function loadAccountDetail() {
     if (result.role === 'TEACHER' && result.teacher) {
       await loadSubjects()
 
-      form.value.teacher.employmentType = normalizeEmploymentType(
-        result.teacher.employmentType,
-      )
+      form.value.teacher.employmentType = normalizeEmploymentType(result.teacher.employmentType)
       form.value.teacher.maxWeeklyHours = result.teacher.maxWeeklyHours ?? null
       form.value.teacher.schoolLevel = result.teacher.schoolLevel ?? ''
 
       form.value.teacher.subjectIds = subjectOptions.value
-        .filter((subject) =>
-          (result.teacher.subjects ?? []).includes(subject.name),
-        )
+        .filter((subject) => (result.teacher.subjects ?? []).includes(subject.name))
         .map((subject) => subject.id)
     }
   } finally {

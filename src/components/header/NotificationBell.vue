@@ -189,7 +189,9 @@ onBeforeUnmount(() => {
   user-select: none;
   transition: background 0.15s;
 }
-.notification-bell:hover { background: var(--bg-light); }
+.notification-bell:hover {
+  background: var(--bg-light);
+}
 
 .notification-dot {
   position: absolute;
@@ -232,7 +234,12 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #F9FAFB;
+  background: #f9fafb;
+}
+.notif-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-dark);
 }
 .notif-header h3 {
   margin: 0;
@@ -247,7 +254,9 @@ onBeforeUnmount(() => {
   font-weight: 600;
   white-space: nowrap;
 }
-.mark-read-btn:hover { text-decoration: underline; }
+.mark-read-btn:hover {
+  text-decoration: underline;
+}
 
 /* ── Body ── */
 .notif-body {

@@ -112,12 +112,42 @@ const statsMap: Record<Role, { label: string; value: string; note: string; icon:
 
 const menusMap: Record<Role, { title: string; desc: string; to: string; icon: string }[]> = {
   ADMIN: [
-    { title: 'Kelola Jadwal', desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/leaves/approvals', icon: 'fa-solid fa-file-circle-check' },
-    { title: 'Guru Pengganti', desc: 'Cari dan tetapkan guru pengganti kelas kosong.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
-    { title: '360 Review', desc: 'Pantau progres dan hasil evaluasi guru.', to: '/review', icon: 'fa-solid fa-chart-line' },
-    { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/accounts', icon: 'fa-solid fa-users-gear' },
-    { title: 'Laporan', desc: 'Unduh laporan operasional dan kinerja.', to: '/laporan', icon: 'fa-solid fa-file-export' },
+    {
+      title: 'Kelola Jadwal',
+      desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      title: 'Approval Cuti',
+      desc: 'Tinjau dan setujui pengajuan cuti guru.',
+      to: '/leaves/approvals',
+      icon: 'fa-solid fa-file-circle-check',
+    },
+    {
+      title: 'Guru Pengganti',
+      desc: 'Cari dan tetapkan guru pengganti kelas kosong.',
+      to: '/guru-pengganti',
+      icon: 'fa-solid fa-rotate',
+    },
+    {
+      title: '360 Review',
+      desc: 'Pantau progres dan hasil evaluasi guru.',
+      to: '/review',
+      icon: 'fa-solid fa-chart-line',
+    },
+    {
+      title: 'Manajemen Pengguna',
+      desc: 'Kelola akun dan hak akses sistem.',
+      to: '/accounts',
+      icon: 'fa-solid fa-users-gear',
+    },
+    {
+      title: 'Laporan',
+      desc: 'Unduh laporan operasional dan kinerja.',
+      to: '/laporan',
+      icon: 'fa-solid fa-file-export',
+    },
   ],
   STAFF: [
     {
@@ -146,16 +176,56 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     },
   ],
   HEAD: [
-    { title: 'Dashboard Kinerja', desc: 'Pantau KPI dan kinerja keseluruhan sekolah.', to: '/kinerja', icon: 'fa-solid fa-chart-line' },
-    { title: 'Approval Cuti', desc: 'Setujui atau tolak pengajuan cuti guru.', to: '/leaves/approvals', icon: 'fa-solid fa-file-circle-check' },
-    { title: 'Hasil Review', desc: 'Lihat rekap evaluasi 360 derajat guru.', to: '/review', icon: 'fa-solid fa-star-half-stroke' },
-    { title: 'Jadwal Sekolah', desc: 'Pantau jadwal dan kehadiran kelas.', to: '/jadwal', icon: 'fa-solid fa-school' },
+    {
+      title: 'Dashboard Kinerja',
+      desc: 'Pantau KPI dan kinerja keseluruhan sekolah.',
+      to: '/kinerja',
+      icon: 'fa-solid fa-chart-line',
+    },
+    {
+      title: 'Approval Cuti',
+      desc: 'Setujui atau tolak pengajuan cuti guru.',
+      to: '/leaves/approvals',
+      icon: 'fa-solid fa-file-circle-check',
+    },
+    {
+      title: 'Hasil Review',
+      desc: 'Lihat rekap evaluasi 360 derajat guru.',
+      to: '/review',
+      icon: 'fa-solid fa-star-half-stroke',
+    },
+    {
+      title: 'Jadwal Sekolah',
+      desc: 'Pantau jadwal dan kehadiran kelas.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-school',
+    },
   ],
   TEACHER: [
-    { title: 'Jadwal Mengajar', desc: 'Lihat jadwal kelas dan ruanganmu hari ini.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/leaves/history', icon: 'fa-solid fa-umbrella-beach' },
-    { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/reviews', icon: 'fa-solid fa-star' },
-    { title: 'Kelas Pengganti', desc: 'Cek jadwal penggantian yang ditugaskan.', to: '/guru-pengganti', icon: 'fa-solid fa-person-chalkboard' },
+    {
+      title: 'Jadwal Mengajar',
+      desc: 'Lihat jadwal kelas dan ruanganmu hari ini.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      title: 'Ajukan Cuti',
+      desc: 'Buat dan pantau status pengajuan cuti.',
+      to: '/leaves/history',
+      icon: 'fa-solid fa-umbrella-beach',
+    },
+    {
+      title: 'Review Saya',
+      desc: 'Lihat hasil evaluasi dan feedback.',
+      to: '/reviews',
+      icon: 'fa-solid fa-star',
+    },
+    {
+      title: 'Kelas Pengganti',
+      desc: 'Cek jadwal penggantian yang ditugaskan.',
+      to: '/guru-pengganti',
+      icon: 'fa-solid fa-person-chalkboard',
+    },
   ],
 }
 

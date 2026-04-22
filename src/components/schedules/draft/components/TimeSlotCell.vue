@@ -32,11 +32,13 @@ const cellBaseClass = computed(() => {
   if (!props.slot) return 'bg-gray-100'
   // FIX: Jadikan sel BLANK transparan tanpa border
   if (props.slot.slot_type === 'BLANK') return 'bg-gray-50/50 text-transparent border-transparent'
-  
+
   if (props.slot.slot_type === 'BREAK') return 'bg-amber-50 text-amber-600'
   if (props.slot.is_locked) return 'bg-gray-100 text-gray-400'
-  if (props.isEdgePullPreview) return 'bg-emerald-100 ring-2 ring-inset ring-emerald-400 ring-dashed'
-  if (isDragOver.value && isDroppable.value) return 'bg-emerald-50 ring-2 ring-inset ring-emerald-300'
+  if (props.isEdgePullPreview)
+    return 'bg-emerald-100 ring-2 ring-inset ring-emerald-400 ring-dashed'
+  if (isDragOver.value && isDroppable.value)
+    return 'bg-emerald-50 ring-2 ring-inset ring-emerald-300'
   return 'bg-white'
 })
 
@@ -102,14 +104,16 @@ onUnmounted(() => {
 
 <template>
   <td
-    :class="['border border-gray-200 px-2 py-2 text-center text-xs transition-colors', cellBaseClass]"
+    :class="[
+      'border border-gray-200 px-2 py-2 text-center text-xs transition-colors',
+      cellBaseClass,
+    ]"
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
     @dragover="onDragOver"
     @drop="onDrop"
   >
-    <template v-if="slot.slot_type === 'BLANK'">
-      </template>
+    <template v-if="slot.slot_type === 'BLANK'"> </template>
 
     <template v-else-if="slot.slot_type === 'BREAK'">
       <span class="text-xs font-semibold">Istirahat</span>
@@ -123,7 +127,9 @@ onUnmounted(() => {
 
     <template v-else>
       <div v-if="isPending" class="flex items-center justify-center py-1">
-        <span class="inline-block h-5 w-5 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700"></span>
+        <span
+          class="inline-block h-5 w-5 animate-spin rounded-full border-2 border-emerald-300 border-t-emerald-700"
+        ></span>
       </div>
 
       <EntryCard
