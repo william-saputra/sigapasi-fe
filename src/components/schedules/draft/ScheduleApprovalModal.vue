@@ -38,7 +38,6 @@ function handleRejectSubmit() {
       <div class="px-6 py-4 border-b border-gray-200">
         <h3 class="text-xl font-bold text-gray-800">Review Jadwal</h3>
       </div>
-
       <div class="px-6 py-6">
         <div v-if="actionType === null" class="flex flex-col gap-4">
           <p class="text-gray-600">Pilih tindakan untuk jadwal ini:</p>

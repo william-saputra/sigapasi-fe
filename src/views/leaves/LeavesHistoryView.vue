@@ -43,12 +43,12 @@ function formatCategory(category: string): string {
 
 function getCategoryClass(category: string): string {
   const map: Record<string, string> = {
-    SAKIT: 'cat-sakit',
-    IZIN_PRIBADI: 'cat-izin',
-    DINAS_LUAR: 'cat-dinas',
-    MELAHIRKAN: 'cat-lahir',
-  }
-  return map[category] || 'cat-izin'
+    SAKIT: "cat-sakit",
+    IZIN_PRIBADI: "cat-izin",
+    DINAS_LUAR: "cat-dinas",
+    MELAHIRKAN: "cat-lahir",
+  };
+  return map[category] || "cat-izin";
 }
 
 function formatType(type: string): string {

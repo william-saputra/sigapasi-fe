@@ -215,7 +215,7 @@ async function handleSubmit() {
       const result = await accountStore.updateProfile(payload)
 
       if (result && isAdmin.value) {
-        router.push('/accounts')
+        router.push(`/account/${form.value.id}`)
       } else if (result && isOwner.value) {
         await router.push(`/account/${form.value.id}`)
       }
@@ -273,26 +273,13 @@ onMounted(async () => {
         <h1 class="page-title">
           {{ isEditMode ? 'Edit Akun' : 'Tambah Akun Baru' }}
         </h1>
-
-        <div class="header-actions">
-          <button class="cancel-button" type="button" @click="goBack" :disabled="isSubmitting">
-            Cancel
-          </button>
-
-          <button
-            class="save-button"
-            type="submit"
-            form="account-form"
-            :disabled="isSubmitting || isLoadingDetail"
-          >
-            {{ isSubmitting ? 'Menyimpan...' : isEditMode ? 'Update' : 'Simpan' }}
-          </button>
-        </div>
       </div>
 
       <div class="form-card">
-        <form id="account-form" class="account-form" @submit.prevent="handleSubmit">
-          <div v-if="isLoadingDetail" class="helper-box">Memuat detail akun...</div>
+        <form id="account-form" @submit.prevent="handleSubmit">
+          <div v-if="isLoadingDetail" class="helper-box">
+            Memuat detail akun...
+          </div>
 
           <template v-else>
             <div class="section-title">Informasi Akun</div>
@@ -326,7 +313,7 @@ onMounted(async () => {
                 <label for="password">
                   Password
                   <span v-if="isEditMode" class="optional-text">
-                    {{ isOwner ? '(isi jika ingin ganti)' : '(tidak dapat diubah)' }}
+                    {{ isOwner ? '(isi jika ingin ganti)' : '(tidak dapat mengubah)' }}
                   </span>
                 </label>
 
@@ -340,7 +327,6 @@ onMounted(async () => {
                     :required="!isEditMode"
                     :disabled="isPasswordDisabled"
                   />
-
                   <button
                     v-if="!isPasswordDisabled"
                     type="button"
@@ -384,7 +370,6 @@ onMounted(async () => {
 
             <template v-if="isTeacher">
               <div class="section-title teacher-section-title">Informasi Teacher</div>
-
               <div class="form-grid">
                 <div class="form-group">
                   <label for="employmentType">Employment Type</label>
@@ -430,19 +415,12 @@ onMounted(async () => {
 
                 <div class="form-group form-group-full">
                   <label for="subjects">Mata Pelajaran</label>
-
                   <div v-if="!form.teacher.schoolLevel" class="helper-box">
-                    Pilih jenjang sekolah terlebih dahulu untuk memuat mata pelajaran.
+                    Pilih jenjang sekolah terlebih dahulu.
                   </div>
-
                   <div v-else-if="isLoadingSubjects" class="helper-box">
                     Memuat mata pelajaran...
                   </div>
-
-                  <div v-else-if="filteredSubjects.length === 0" class="helper-box">
-                    Tidak ada mata pelajaran untuk jenjang ini.
-                  </div>
-
                   <div v-else class="subjects-list">
                     <label
                       v-for="subject in filteredSubjects"
@@ -459,15 +437,30 @@ onMounted(async () => {
                       <span>{{ subject.name }}</span>
                     </label>
                   </div>
-
-                  <small class="helper-text">
-                    Pilih satu atau lebih mata pelajaran sesuai jenjang sekolah.
-                  </small>
                 </div>
               </div>
             </template>
           </template>
         </form>
+      </div>
+
+      <div class="outside-actions">
+        <button
+          class="cancel-button"
+          type="button"
+          @click="goBack"
+          :disabled="isSubmitting"
+        >
+          Cancel
+        </button>
+        <button
+          class="save-button"
+          type="submit"
+          form="account-form"
+          :disabled="isSubmitting || isLoadingDetail"
+        >
+          {{ isSubmitting ? 'Menyimpan...' : isEditMode ? 'Update' : 'Simpan' }}
+        </button>
       </div>
     </div>
   </main>
@@ -502,43 +495,7 @@ onMounted(async () => {
   color: #334155;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.cancel-button {
-  padding: 12px 24px;
-  border: 1px solid #dbe2ea;
-  border-radius: 12px;
-  background: #ffffff;
-  color: #475569;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.cancel-button:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.18);
-}
-
-.cancel-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
 .page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  flex-wrap: wrap;
   margin-bottom: 32px;
 }
 
@@ -546,30 +503,6 @@ onMounted(async () => {
   font-size: 36px;
   font-weight: 800;
   color: #0f172a;
-}
-
-.save-button {
-  padding: 12px 32px;
-  border: none;
-  border-radius: 12px;
-  background: #4a8f5f;
-  color: #ffffff;
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: 0.2s ease;
-}
-
-.save-button:hover {
-  background: #2d5f3f;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(45, 95, 63, 0.18);
-}
-
-.save-button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
 }
 
 .form-card {
@@ -587,10 +520,6 @@ onMounted(async () => {
   font-size: 18px;
   font-weight: 700;
   color: #334155;
-}
-
-.teacher-section-title {
-  margin-top: 8px;
 }
 
 .form-grid {
@@ -616,39 +545,14 @@ onMounted(async () => {
   color: #475569;
 }
 
-.optional-text {
-  margin-left: 6px;
-  font-size: 12px;
-  font-weight: 400;
-  color: #64748b;
-}
-
-.form-group input {
-  padding: 12px 16px;
-  border: 1px solid #dbe2ea;
-  border-radius: 12px;
-  background: #ffffff;
-  font-size: 15px;
-  color: #334155;
-  transition: 0.2s ease;
-}
-
+.form-group input,
 .form-group select {
-  width: 100%;
   padding: 12px 16px;
   border: 1px solid #dbe2ea;
   border-radius: 12px;
   background: #ffffff;
   font-size: 15px;
-  color: #334155;
   transition: 0.2s ease;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg fill='none' stroke='%2364758b' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' d='M6 9l6 6 6-6'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 16px center;
-  background-size: 16px;
 }
 
 .form-group input:focus,
@@ -665,18 +569,24 @@ onMounted(async () => {
   cursor: not-allowed;
 }
 
-.helper-text {
-  font-size: 12px;
-  color: #64748b;
+.password-field {
+  position: relative;
 }
 
-.helper-box {
-  padding: 12px 14px;
-  border: 1px dashed #cbd5e1;
-  border-radius: 12px;
-  background: #f8fafc;
-  font-size: 14px;
+.password-field input {
+  width: 100%;
+  padding-right: 42px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
   color: #64748b;
+  cursor: pointer;
 }
 
 .subjects-list {
@@ -689,95 +599,72 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 12px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+}
+
+.helper-box {
+  padding: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  color: #64748b;
+}
+
+.outside-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.cancel-button {
+  padding: 12px 28px;
   border: 1px solid #dbe2ea;
   border-radius: 12px;
   background: #ffffff;
+  color: #475569;
+  font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
 }
 
-.subject-item:hover {
-  border-color: #4a8f5f;
-  background: #f7fbf8;
-}
-
-.subject-item input {
-  width: 16px;
-  height: 16px;
-  accent-color: #4a8f5f;
-}
-
-.subject-item.disabled {
-  cursor: not-allowed;
-  background: #f8fafc;
-  border-color: #e2e8f0;
-  opacity: 0.75;
-}
-
-.subject-item.disabled:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-}
-
-.subject-item.disabled input,
-.subject-item.disabled span {
-  pointer-events: none;
-}
-
-.password-field {
-  position: relative;
-  width: 100%;
-}
-
-.password-field input {
-  width: 100%;
-  padding: 12px 42px 12px 16px;
-  box-sizing: border-box;
-}
-
-.toggle-password {
-  position: absolute;
-  top: 50%;
-  right: 14px;
-  transform: translateY(-50%);
+.save-button {
+  padding: 12px 40px;
   border: none;
-  background: transparent;
-  color: #64748b;
+  border-radius: 12px;
+  background: #4a8f5f;
+  color: #ffffff;
+  font-weight: 700;
   cursor: pointer;
-  font-size: 14px;
-  padding: 0;
-  line-height: 1;
+  transition: 0.3s ease;
+  box-shadow: 0 4px 12px rgba(74, 143, 95, 0.15);
 }
 
-.toggle-password:hover {
-  color: #334155;
+.save-button:hover:not(:disabled) {
+  background: #2d5f3f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(74, 143, 95, 0.25);
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.save-button:disabled, .cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
-  .create-account-container {
-    padding: 24px 16px 40px;
+  .outside-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
   }
-
-  .page-title {
-    font-size: 28px;
-  }
-
-  .page-header {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .save-button {
+  .cancel-button, .save-button {
     width: 100%;
-  }
-
-  .form-card {
-    padding: 24px 20px;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>

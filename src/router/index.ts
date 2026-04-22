@@ -51,6 +51,8 @@ function teacherOnly() {
   }
 }
 
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -196,6 +198,20 @@ const router = createRouter({
       // beforeEnter: headOnly,
       meta: { title: 'Detail Persetujuan Jadwal' },
     },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/notifications/ListNotificationView.vue'),
+    },
+        {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal', 
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+
   ],
 })
 
@@ -233,3 +249,12 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+
+  if (to.name === 'login' && token) {
+    next({ name: 'landing' })
+  } else {
+    next()
+  }
+})
