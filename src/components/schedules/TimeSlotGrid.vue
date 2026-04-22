@@ -2,11 +2,14 @@
 import { ref } from 'vue'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
+import { useToast } from 'vue-toastification'
 import TimeSlotItem from './TimeSlotItem.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import { Calendar, Lock, Unlock } from 'lucide-vue-next'
 
 // --- Store ---
 const store = useTimeSlotStore()
+const toast = useToast()
 
 // --- State ---
 // Drag and drop state
@@ -17,11 +20,6 @@ const showLockModal = ref(false)
 const lockTargetIndex = ref<number | null>(null)
 const lockLabel = ref('')
 const isUnlocking = ref(false)
-
-// Toast state
-const showToast = ref(false)
-const toastMessage = ref('')
-const toastType = ref<'success' | 'error'>('success')
 
 // --- Functions ---
 /** Records the starting index when a drag operation begins */
@@ -43,6 +41,7 @@ function onDragEnd() {
 }
 
 /** 
+
  * Prepares the target slot configuration before showing the lock modal.
  * Adjusts lock state indicators based on current status.
  */
@@ -63,28 +62,57 @@ function openLockModal(index: number) {
  * Applies lock or unlock changes to the targeted slot locally.
  * Cleans up temporary states to reset modal logic.
  */
-function confirmLock() {
+async function confirmLock() {
   if (lockTargetIndex.value === null) return
 
   const slot = store.currentSchedule[lockTargetIndex.value]
   if (!slot) return
 
-  slot.is_locked = !isUnlocking.value
-  slot.locked_label = slot.is_locked ? (lockLabel.value || 'Locked Slot') : null
+  if (!isUnlocking.value) {
+    if (!lockLabel.value || !lockLabel.value.trim()) {
+      toast.error('Nama label tidak boleh kosong!')
+      return
+    }
+  }
 
-  showLockModal.value = false
-  lockTargetIndex.value = null
-  lockLabel.value = ''
-}
+  // JIKA SLOT SUDAH ADA DI DATABASE (Punya ID)
+  if (slot.id) {
+    try {
+      if (isUnlocking.value) {
+        await store.unlockSlot(slot.id)
+        toast.success('Slot berhasil dibuka kunci')
 
-/** Displays a toast notification with message and type */
-function showNotification(message: string, type: 'success' | 'error' = 'success') {
-  toastMessage.value = message
-  toastType.value = type
-  showToast.value = true
-  setTimeout(() => {
-    showToast.value = false
-  }, 4000)
+        // Update state lokal SETELAH API sukses (jangan panggil fetch)
+        slot.is_locked = false
+        slot.locked_label = null
+      } else {
+        await store.lockSlot(slot.id, lockLabel.value.trim())
+        toast.success('Slot berhasil dikunci')
+
+        // Update state lokal SETELAH API sukses
+        slot.is_locked = true
+        slot.locked_label = lockLabel.value.trim()
+      }
+
+      showLockModal.value = false
+      lockTargetIndex.value = null
+      lockLabel.value = ''
+    } catch (error) {
+      console.error('Gagal mengunci/membuka kunci:', error)
+      // Jika gagal, state lokal tidak diubah, perubahan dibatalkan
+    }
+  } else {
+    slot.is_locked = !isUnlocking.value
+    slot.locked_label = slot.is_locked ? lockLabel.value.trim() : null
+
+    toast.success(
+      isUnlocking.value ? 'Slot berhasil dibuka (Lokal)' : 'Slot berhasil dikunci (Lokal)',
+    )
+
+    showLockModal.value = false
+    lockTargetIndex.value = null
+    lockLabel.value = ''
+  }
 }
 </script>
 
@@ -97,10 +125,22 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
     </div>
 
     <!-- Loading State -->
-    <div v-if="store.isLoading" class="flex flex-col items-center justify-center py-16 text-gray-400">
-      <svg class="mb-3 h-8 w-8 animate-spin text-emerald-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <div
+      v-if="store.isLoading"
+      class="flex flex-col items-center justify-center py-16 text-gray-400"
+    >
+      <svg
+        class="mb-3 h-8 w-8 animate-spin text-emerald-800"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+        />
       </svg>
       <p class="text-sm">Memuat slot waktu...</p>
     </div>
@@ -113,7 +153,6 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
         :slot="slotItem"
         :index="index"
         @update-duration="(i, d) => store.updateSlotDuration(i, d)"
-        @show-notification="showNotification"
         @toggle-lock="openLockModal"
         @delete="(i) => store.removeSlot(i)"
         @drag-start="onDragStart"
@@ -125,7 +164,9 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
 
     <!-- Empty State -->
     <div v-else class="py-10 text-center text-gray-500">
-      <div class="mb-3 text-4xl">📅</div>
+      <div class="mb-3 flex justify-center">
+        <Calendar class="h-12 w-12 text-gray-400" stroke-width="1.5" />
+      </div>
       <p>
         Belum ada slot waktu.<br />
         Gunakan panel kiri untuk generate.
@@ -135,7 +176,10 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
     <!-- Lock Confirmation Modal -->
     <BaseModal :show="showLockModal" @close="showLockModal = false">
       <template #header>
-        <div class="mb-4 text-5xl">{{ isUnlocking ? '🔓' : '🔒' }}</div>
+        <div class="mb-4 flex justify-center">
+          <Unlock v-if="isUnlocking" class="h-12 w-12 text-emerald-800" stroke-width="1.5" />
+          <Lock v-else class="h-12 w-12 text-emerald-800" stroke-width="1.5" />
+        </div>
         <h3 class="mb-2 text-lg font-bold text-gray-800">
           {{ isUnlocking ? 'Buka Kunci Slot?' : 'Kunci Slot Waktu' }}
         </h3>
@@ -162,47 +206,23 @@ function showNotification(message: string, type: 'success' | 'error' = 'success'
       <template #footer>
         <div class="flex gap-4">
           <button
-            class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300"
+            class="flex-1 rounded-full border border-gray-300 bg-gray-200 px-4 py-2.5 font-bold text-gray-800 transition-colors hover:bg-gray-300 disabled:opacity-50"
             @click="showLockModal = false"
+            :disabled="store.isSaving"
           >
             Kembali
           </button>
           <button
-            class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900"
+            class="flex-1 rounded-full bg-emerald-800 px-4 py-2.5 font-bold text-white transition-colors hover:bg-emerald-900 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="confirmLock"
+            :disabled="store.isSaving"
           >
-            {{ isUnlocking ? 'Buka Kunci' : 'Simpan' }}
+            {{ store.isSaving ? 'Memproses...' : isUnlocking ? 'Buka Kunci' : 'Simpan' }}
           </button>
         </div>
       </template>
     </BaseModal>
-
-    <!-- Toast Notification -->
-    <Teleport to="body">
-      <Transition name="toast">
-        <div
-          v-if="showToast"
-          :class="[
-            'fixed right-6 bottom-6 z-50 flex items-center gap-3 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow-lg',
-            toastType === 'success' ? 'bg-emerald-700' : 'bg-red-600',
-          ]"
-        >
-          <span>{{ toastType === 'success' ? '✅' : '❌' }}</span>
-          <span>{{ toastMessage }}</span>
-        </div>
-      </Transition>
-    </Teleport>
   </div>
 </template>
 
-<style scoped>
-.toast-enter-active,
-.toast-leave-active {
-  transition: all 0.3s ease;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateY(20px);
-}
-</style>
+<style scoped></style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useAccountStore } from '@/stores/accounts/account.store'
@@ -15,6 +15,9 @@ const selectedAccount = ref<Users | null>(null)
 
 const sortKey = ref<'name' | 'email' | 'role' | ''>('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
+
+const currentPage = ref(1)
+const itemsPerPage = 10
 
 function getAccountId(account: Users) {
   return (account as any).id || (account as any).accountId || ''
@@ -58,9 +61,7 @@ function setSort(key: 'name' | 'email' | 'role') {
 
 function getSortIcon(key: 'name' | 'email' | 'role') {
   if (sortKey.value !== key) return 'fa-solid fa-sort'
-  return sortOrder.value === 'asc'
-    ? 'fa-solid fa-sort-up'
-    : 'fa-solid fa-sort-down'
+  return sortOrder.value === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down'
 }
 
 const filteredAccounts = computed(() => {
@@ -73,11 +74,7 @@ const filteredAccounts = computed(() => {
 
     if (!keyword) return true
 
-    return (
-      name.includes(keyword) ||
-      email.includes(keyword) ||
-      role.includes(keyword)
-    )
+    return name.includes(keyword) || email.includes(keyword) || role.includes(keyword)
   })
 
   if (!sortKey.value) return result
@@ -107,6 +104,67 @@ const filteredAccounts = computed(() => {
   })
 })
 
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredAccounts.value.length / itemsPerPage))
+})
+
+const paginatedAccounts = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredAccounts.value.slice(start, end)
+})
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const pages: (number | string)[] = []
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+    return pages
+  }
+
+  pages.push(1)
+
+  if (current > 4) {
+    pages.push('...')
+  }
+
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  if (current < total - 3) {
+    pages.push('...')
+  }
+
+  pages.push(total)
+
+  return pages
+})
+
+function goToPage(page: number) {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+}
+
+function nextPage() {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++
+  }
+}
+
+function prevPage() {
+  if (currentPage.value > 1) {
+    currentPage.value--
+  }
+}
+
 function goToCreate() {
   router.push('/account/create')
 }
@@ -135,6 +193,10 @@ async function confirmDelete() {
 
   if (!accountStore.error) {
     closeDeleteModal()
+
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = totalPages.value
+    }
   }
 }
 
@@ -143,6 +205,17 @@ async function loadAccounts() {
   console.log('accounts:', accounts.value)
   console.log('error:', error.value)
 }
+
+watch([search, sortKey, sortOrder], () => {
+  currentPage.value = 1
+})
+
+watch(filteredAccounts, (newValue) => {
+  const maxPage = Math.max(1, Math.ceil(newValue.length / itemsPerPage))
+  if (currentPage.value > maxPage) {
+    currentPage.value = maxPage
+  }
+})
 
 onMounted(() => {
   loadAccounts()
@@ -157,11 +230,7 @@ onMounted(() => {
       <div class="controls">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass search-icon"></i>
-          <input
-            v-model="search"
-            type="text"
-            placeholder="Cari akun"
-          />
+          <input v-model="search" type="text" placeholder="Cari akun" />
         </div>
 
         <button class="add-button" @click="goToCreate">
@@ -204,16 +273,13 @@ onMounted(() => {
 
           <tbody>
             <tr
-              v-for="account in filteredAccounts"
+              v-for="account in paginatedAccounts"
               :key="getAccountId(account)"
             >
               <td>{{ getAccountName(account) }}</td>
               <td>{{ getAccountEmail(account) }}</td>
               <td>
-                <span
-                  class="role-badge"
-                  :class="getRoleClass(getAccountRole(account))"
-                >
+                <span class="role-badge" :class="getRoleClass(getAccountRole(account))">
                   {{ getAccountRole(account) }}
                 </span>
               </td>
@@ -221,10 +287,10 @@ onMounted(() => {
                 <div class="actions">
                   <button
                     class="icon-button"
-                    title="Lihat Detail"
+                    title="Lainnya"
                     @click="goToDetail(account)"
                   >
-                    <i class="fa-regular fa-eye"></i>
+                    <i class="fa-solid fa-ellipsis"></i>
                   </button>
 
                   <button
@@ -239,29 +305,50 @@ onMounted(() => {
             </tr>
           </tbody>
         </table>
+
+        <div v-if="filteredAccounts.length > itemsPerPage" class="pagination">
+          <button
+            class="pagination-nav"
+            :disabled="currentPage === 1"
+            @click="prevPage"
+          >
+            <i class="fa-solid fa-angle-left"></i>
+          </button>
+
+          <button
+            v-for="(page, index) in visiblePages"
+            :key="`${page}-${index}`"
+            class="pagination-number"
+            :class="{ active: page === currentPage, dots: page === '...' }"
+            :disabled="page === '...'"
+            @click="typeof page === 'number' && goToPage(page)"
+          >
+            {{ page }}
+          </button>
+
+          <button
+            class="pagination-nav"
+            :disabled="currentPage === totalPages"
+            @click="nextPage"
+          >
+            <i class="fa-solid fa-angle-right"></i>
+          </button>
+        </div>
       </div>
     </div>
 
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click.self="closeDeleteModal"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-card">
         <h3 class="modal-title">Konfirmasi Hapus</h3>
         <p class="modal-description">
           Apakah Anda yakin ingin menghapus akun
-          <strong>{{ selectedAccount ? getAccountName(selectedAccount) : '' }}</strong>?
-          Tindakan ini tidak dapat dibatalkan.
+          <strong>{{ selectedAccount ? getAccountName(selectedAccount) : '' }}</strong
+          >? Tindakan ini tidak dapat dibatalkan.
         </p>
 
         <div class="modal-actions">
-          <button class="modal-button cancel" @click="closeDeleteModal">
-            Batal
-          </button>
-          <button class="modal-button delete" @click="confirmDelete">
-            Hapus
-          </button>
+          <button class="modal-button cancel" @click="closeDeleteModal">Batal</button>
+          <button class="modal-button delete" @click="confirmDelete">Hapus</button>
         </div>
       </div>
     </div>
@@ -481,6 +568,56 @@ tbody td {
   color: #dc2626;
 }
 
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 18px 24px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.pagination-nav,
+.pagination-number {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.pagination-nav:hover:not(:disabled),
+.pagination-number:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.pagination-number.active {
+  background: #4a8f5f;
+  border-color: #4a8f5f;
+  color: #ffffff;
+}
+
+.pagination-number.dots {
+  cursor: default;
+  border-color: transparent;
+  background: transparent;
+}
+
+.pagination-nav:disabled,
+.pagination-number:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -575,6 +712,10 @@ tbody td {
   thead th,
   tbody td {
     padding: 14px 16px;
+  }
+
+  .pagination {
+    justify-content: center;
   }
 
   .modal-actions {

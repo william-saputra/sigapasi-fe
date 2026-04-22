@@ -25,57 +25,207 @@ const roleGreetings: Record<Role, string> = {
 
 const statsMap: Record<Role, { label: string; value: string; note: string; icon: string }[]> = {
   ADMIN: [
-    { label: 'Jadwal Aktif', value: '24', note: '2 perlu penyesuaian', icon: 'fa-solid fa-calendar-days' },
-    { label: 'Pengajuan Cuti', value: '5', note: '3 menunggu approval', icon: 'fa-solid fa-file-lines' },
-    { label: 'Guru Pengganti', value: '3', note: 'Slot perlu ditugaskan', icon: 'fa-solid fa-rotate' },
-    { label: 'Review Guru', value: '12', note: '4 evaluasi pending', icon: 'fa-solid fa-star-half-stroke' },
+    {
+      label: 'Jadwal Aktif',
+      value: '24',
+      note: '2 perlu penyesuaian',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      label: 'Pengajuan Cuti',
+      value: '5',
+      note: '3 menunggu approval',
+      icon: 'fa-solid fa-file-lines',
+    },
+    {
+      label: 'Guru Pengganti',
+      value: '3',
+      note: 'Slot perlu ditugaskan',
+      icon: 'fa-solid fa-rotate',
+    },
+    {
+      label: 'Review Guru',
+      value: '12',
+      note: '4 evaluasi pending',
+      icon: 'fa-solid fa-star-half-stroke',
+    },
   ],
   STAFF: [
-    { label: 'Jadwal Hari Ini', value: '24', note: '2 perlu penyesuaian', icon: 'fa-solid fa-calendar-days' },
-    { label: 'Kehadiran Guru', value: '87%', note: 'Dari total guru aktif', icon: 'fa-solid fa-circle-check' },
-    { label: 'Cuti Pending', value: '3', note: 'Menunggu diproses', icon: 'fa-solid fa-hourglass-half' },
+    {
+      label: 'Jadwal Hari Ini',
+      value: '24',
+      note: '2 perlu penyesuaian',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      label: 'Kehadiran Guru',
+      value: '87%',
+      note: 'Dari total guru aktif',
+      icon: 'fa-solid fa-circle-check',
+    },
+    {
+      label: 'Cuti Pending',
+      value: '3',
+      note: 'Menunggu diproses',
+      icon: 'fa-solid fa-hourglass-half',
+    },
     { label: 'Notifikasi', value: '7', note: 'Belum ditindaklanjuti', icon: 'fa-solid fa-bell' },
   ],
   HEAD: [
-    { label: 'Total Guru', value: '48', note: '2 cuti hari ini', icon: 'fa-solid fa-chalkboard-user' },
+    {
+      label: 'Total Guru',
+      value: '48',
+      note: '2 cuti hari ini',
+      icon: 'fa-solid fa-chalkboard-user',
+    },
     { label: 'Kelas Berjalan', value: '22/24', note: '2 kelas kosong', icon: 'fa-solid fa-school' },
-    { label: 'Approval Cuti', value: '5', note: '3 butuh keputusan', icon: 'fa-solid fa-file-circle-check' },
-    { label: 'Skor Evaluasi', value: '4.2', note: 'Rata-rata bulan ini', icon: 'fa-solid fa-chart-line' },
+    {
+      label: 'Approval Cuti',
+      value: '5',
+      note: '3 butuh keputusan',
+      icon: 'fa-solid fa-file-circle-check',
+    },
+    {
+      label: 'Skor Evaluasi',
+      value: '4.2',
+      note: 'Rata-rata bulan ini',
+      icon: 'fa-solid fa-chart-line',
+    },
   ],
   TEACHER: [
     { label: 'Kelas Hari Ini', value: '3', note: '1 kelas tersisa', icon: 'fa-solid fa-book-open' },
-    { label: 'Sisa Cuti', value: '9', note: 'Hari dari jatah tahunan', icon: 'fa-solid fa-umbrella-beach' },
-    { label: 'Tugas Pengganti', value: '1', note: 'Jadwal besok pagi', icon: 'fa-solid fa-person-chalkboard' },
+    {
+      label: 'Sisa Cuti',
+      value: '9',
+      note: 'Hari dari jatah tahunan',
+      icon: 'fa-solid fa-umbrella-beach',
+    },
+    {
+      label: 'Tugas Pengganti',
+      value: '1',
+      note: 'Jadwal besok pagi',
+      icon: 'fa-solid fa-person-chalkboard',
+    },
     { label: 'Skor Review', value: '4.5', note: 'Periode Januari', icon: 'fa-solid fa-star' },
   ],
 }
 
 const menusMap: Record<Role, { title: string; desc: string; to: string; icon: string }[]> = {
   ADMIN: [
-    { title: 'Kelola Jadwal', desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Approval Cuti', desc: 'Tinjau dan setujui pengajuan cuti guru.', to: '/leaves/approvals', icon: 'fa-solid fa-file-circle-check' },
-    { title: 'Guru Pengganti', desc: 'Cari dan tetapkan guru pengganti kelas kosong.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
-    { title: '360 Review', desc: 'Pantau progres dan hasil evaluasi guru.', to: '/review', icon: 'fa-solid fa-chart-line' },
-    { title: 'Manajemen Pengguna', desc: 'Kelola akun dan hak akses sistem.', to: '/accounts', icon: 'fa-solid fa-users-gear' },
-    { title: 'Laporan', desc: 'Unduh laporan operasional dan kinerja.', to: '/laporan', icon: 'fa-solid fa-file-export' },
+    {
+      title: 'Kelola Jadwal',
+      desc: 'Susun, revisi, dan cek bentrok jadwal pelajaran.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      title: 'Approval Cuti',
+      desc: 'Tinjau dan setujui pengajuan cuti guru.',
+      to: '/leaves/approvals',
+      icon: 'fa-solid fa-file-circle-check',
+    },
+    {
+      title: 'Guru Pengganti',
+      desc: 'Cari dan tetapkan guru pengganti kelas kosong.',
+      to: '/guru-pengganti',
+      icon: 'fa-solid fa-rotate',
+    },
+    {
+      title: '360 Review',
+      desc: 'Pantau progres dan hasil evaluasi guru.',
+      to: '/review',
+      icon: 'fa-solid fa-chart-line',
+    },
+    {
+      title: 'Manajemen Pengguna',
+      desc: 'Kelola akun dan hak akses sistem.',
+      to: '/accounts',
+      icon: 'fa-solid fa-users-gear',
+    },
+    {
+      title: 'Laporan',
+      desc: 'Unduh laporan operasional dan kinerja.',
+      to: '/laporan',
+      icon: 'fa-solid fa-file-export',
+    },
   ],
   STAFF: [
-    { title: 'Jadwal Hari Ini', desc: 'Cek dan perbarui jadwal pelajaran harian.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Proses Cuti', desc: 'Bantu proses administrasi pengajuan cuti.', to: '/leaves', icon: 'fa-solid fa-file-lines' },
-    { title: 'Guru Pengganti', desc: 'Koordinasi penugasan guru pengganti.', to: '/guru-pengganti', icon: 'fa-solid fa-rotate' },
-    { title: 'Data Guru', desc: 'Lihat dan perbarui data profil guru.', to: '/guru', icon: 'fa-solid fa-chalkboard-user' },
+    {
+      title: 'Jadwal Hari Ini',
+      desc: 'Cek dan perbarui jadwal pelajaran harian.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      title: 'Proses Cuti',
+      desc: 'Bantu proses administrasi pengajuan cuti.',
+      to: '/leaves',
+      icon: 'fa-solid fa-file-lines',
+    },
+    {
+      title: 'Guru Pengganti',
+      desc: 'Koordinasi penugasan guru pengganti.',
+      to: '/guru-pengganti',
+      icon: 'fa-solid fa-rotate',
+    },
+    {
+      title: 'Data Guru',
+      desc: 'Lihat dan perbarui data profil guru.',
+      to: '/guru',
+      icon: 'fa-solid fa-chalkboard-user',
+    },
   ],
   HEAD: [
-    { title: 'Dashboard Kinerja', desc: 'Pantau KPI dan kinerja keseluruhan sekolah.', to: '/kinerja', icon: 'fa-solid fa-chart-line' },
-    { title: 'Approval Cuti', desc: 'Setujui atau tolak pengajuan cuti guru.', to: '/leaves/approvals', icon: 'fa-solid fa-file-circle-check' },
-    { title: 'Hasil Review', desc: 'Lihat rekap evaluasi 360 derajat guru.', to: '/review', icon: 'fa-solid fa-star-half-stroke' },
-    { title: 'Jadwal Sekolah', desc: 'Pantau jadwal dan kehadiran kelas.', to: '/jadwal', icon: 'fa-solid fa-school' },
+    {
+      title: 'Dashboard Kinerja',
+      desc: 'Pantau KPI dan kinerja keseluruhan sekolah.',
+      to: '/kinerja',
+      icon: 'fa-solid fa-chart-line',
+    },
+    {
+      title: 'Approval Cuti',
+      desc: 'Setujui atau tolak pengajuan cuti guru.',
+      to: '/leaves/approvals',
+      icon: 'fa-solid fa-file-circle-check',
+    },
+    {
+      title: 'Hasil Review',
+      desc: 'Lihat rekap evaluasi 360 derajat guru.',
+      to: '/review',
+      icon: 'fa-solid fa-star-half-stroke',
+    },
+    {
+      title: 'Jadwal Sekolah',
+      desc: 'Pantau jadwal dan kehadiran kelas.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-school',
+    },
   ],
   TEACHER: [
-    { title: 'Jadwal Mengajar', desc: 'Lihat jadwal kelas dan ruanganmu hari ini.', to: '/jadwal', icon: 'fa-solid fa-calendar-days' },
-    { title: 'Ajukan Cuti', desc: 'Buat dan pantau status pengajuan cuti.', to: '/leaves/history', icon: 'fa-solid fa-umbrella-beach' },
-    { title: 'Review Saya', desc: 'Lihat hasil evaluasi dan feedback.', to: '/reviews', icon: 'fa-solid fa-star' },
-    { title: 'Kelas Pengganti', desc: 'Cek jadwal penggantian yang ditugaskan.', to: '/guru-pengganti', icon: 'fa-solid fa-person-chalkboard' },
+    {
+      title: 'Jadwal Mengajar',
+      desc: 'Lihat jadwal kelas dan ruanganmu hari ini.',
+      to: '/jadwal',
+      icon: 'fa-solid fa-calendar-days',
+    },
+    {
+      title: 'Ajukan Cuti',
+      desc: 'Buat dan pantau status pengajuan cuti.',
+      to: '/leaves/history',
+      icon: 'fa-solid fa-umbrella-beach',
+    },
+    {
+      title: 'Review Saya',
+      desc: 'Lihat hasil evaluasi dan feedback.',
+      to: '/reviews',
+      icon: 'fa-solid fa-star',
+    },
+    {
+      title: 'Kelas Pengganti',
+      desc: 'Cek jadwal penggantian yang ditugaskan.',
+      to: '/guru-pengganti',
+      icon: 'fa-solid fa-person-chalkboard',
+    },
   ],
 }
 
@@ -109,7 +259,7 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
           <i class="fa-solid fa-user-tie"></i>
           {{ roleLabel }}
         </span>
-        <h1 class="hero-title">Selamat datang kembali 👋</h1>
+        <h1 class="hero-title">Selamat datang di SIGAPASI 👋</h1>
         <p class="hero-sub">{{ greeting }}</p>
       </div>
     </section>
@@ -176,7 +326,8 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   min-height: 100vh;
   background: var(--surface);
   color: var(--ink);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
 }
@@ -254,7 +405,9 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   animation: fadeUp 0.35s ease both;
   animation-delay: calc(var(--i) * 55ms);
 }
@@ -358,7 +511,10 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   border: 1px solid var(--border);
   background: var(--surface);
   text-decoration: none;
-  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .menu-item:hover {
@@ -378,7 +534,9 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   justify-content: center;
   font-size: 17px;
   flex-shrink: 0;
-  transition: background 0.18s ease, color 0.18s ease;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
 }
 
 .menu-item:hover .menu-icon-box {
@@ -409,7 +567,9 @@ const roleLabel = computed(() => roleLabels[currentRole.value])
   font-size: 13px;
   color: var(--ink-soft);
   flex-shrink: 0;
-  transition: color 0.15s ease, transform 0.15s ease;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .menu-item:hover .menu-arrow {

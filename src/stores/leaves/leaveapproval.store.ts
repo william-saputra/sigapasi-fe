@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getAuthToken, handleApiResponse } from '@/lib/auth'
-import type { LeaveRequestResponseDTO, LeaveRequestDetailAdminDTO } from '@/interfaces/leaves/leaverequest.interface'
+import type {
+  LeaveRequestResponseDTO,
+  LeaveRequestDetailAdminDTO,
+} from '@/interfaces/leaves/leaverequest.interface'
 
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:8080/api') + '/leaves'
 

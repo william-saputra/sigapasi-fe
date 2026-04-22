@@ -135,8 +135,18 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+const isAdmin = computed(() => account.value?.role === 'ADMIN')
+
 function goBack() {
-  router.push('/home')
+  const previousPath = window.history.state?.back
+
+  if (isAdmin.value) {
+    router.push('/accounts')
+  } else if (previousPath && previousPath.includes('/edit')) {
+    router.push('/home')
+  } else {
+    router.back()
+  }
 }
 
 onMounted(() => {
@@ -162,7 +172,11 @@ onBeforeUnmount(() => {
           <p class="detail-account-subtitle">ID : {{ displayId }}</p>
         </div>
 
-        <div ref="optionsRef" class="detail-account-actions">
+        <div
+          v-if="account?.role !== 'ADMIN'"
+          ref="optionsRef"
+          class="detail-account-actions"
+        >
           <button class="options-button" @click.stop="toggleOptionsMenu">
             <i class="fa-solid fa-ellipsis"></i>
             Lainnya
@@ -174,11 +188,7 @@ onBeforeUnmount(() => {
               Edit Akun
             </button>
 
-            <button
-              v-if="isAuthenticatedAdmin"
-              class="option-item danger"
-              @click="openDeleteModal"
-            >
+            <button v-if="isAuthenticatedAdmin" class="option-item danger" @click="openDeleteModal">
               <i class="fa-regular fa-trash-can"></i>
               Hapus Akun
             </button>
@@ -271,26 +281,18 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div
-      v-if="showDeleteModal"
-      class="modal-overlay"
-      @click.self="closeDeleteModal"
-    >
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="closeDeleteModal">
       <div class="modal-card">
         <h3 class="modal-title">Konfirmasi Hapus</h3>
         <p class="modal-description">
           Apakah Anda yakin ingin menghapus akun
-          <strong>{{ displayName }}</strong>?
-          Tindakan ini tidak dapat dibatalkan.
+          <strong>{{ displayName }}</strong
+          >? Tindakan ini tidak dapat dibatalkan.
         </p>
 
         <div class="modal-actions">
-          <button class="modal-button cancel" @click="closeDeleteModal">
-            Batal
-          </button>
-          <button class="modal-button delete" @click="confirmDelete">
-            Hapus
-          </button>
+          <button class="modal-button cancel" @click="closeDeleteModal">Batal</button>
+          <button class="modal-button delete" @click="confirmDelete">Hapus</button>
         </div>
       </div>
     </div>

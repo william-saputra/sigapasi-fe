@@ -51,6 +51,8 @@ function teacherOnly() {
   }
 }
 
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -119,6 +121,12 @@ const router = createRouter({
       beforeEnter: adminStaffOnly,
     },
     {
+      path: '/jadwal/draft/:draftId/validation',
+      name: 'draft-validation',
+      component: () => import('@/views/schedules/DraftValidationView.vue'),
+      beforeEnter: adminStaffOnly,
+    },
+    {
       path: '/slot-waktu',
       name: 'MasterSlotWaktu',
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
@@ -135,9 +143,9 @@ const router = createRouter({
       beforeEnter: teacherOnly,
     },
     {
-      path: "/leaves/approvals",
-      name: "leave-approvals",
-      component: () => import("@/views/leaves/LeavesApprovalsView.vue"),
+      path: '/leaves/approvals',
+      name: 'leave-approvals',
+      component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
       beforeEnter: headAdminStaffOnly,
     },
     {
@@ -182,7 +190,71 @@ const router = createRouter({
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
       meta: { requiresTeacher: true },
     },
+    {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal',
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' },
+    },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/notifications/ListNotificationView.vue'),
+    },
+        {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal', 
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+
   ],
 })
 
+import { useAcademicSetupStore } from '@/stores/academicSetupStore'
+
+router.beforeEach(async (to, from, next) => {
+  const schedulingRoutes = [
+    'jadwal-dashboard',
+    'kelola-kelas',
+    'kelola-mata-pelajaran',
+    'pengaturan-slot-waktu',
+    'penyusunan-jadwal',
+    'draft-validation',
+    'MasterSlotWaktu',
+    'ketersediaan-mengajar',
+    'ketersediaan-ringkasan',
+  ]
+
+  if (to.name && schedulingRoutes.includes(to.name as string)) {
+    const academicSetupStore = useAcademicSetupStore()
+
+    if (!academicSetupStore.isLoaded) {
+      await academicSetupStore.fetchActiveSetup()
+    }
+
+    if (!academicSetupStore.activeSemester) {
+      if (to.path !== '/setup-academic') {
+        // Peringatkan user atau redirect
+        return next({ path: '/setup-academic' })
+      }
+    }
+  }
+
+  next()
+})
+
 export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+
+  if (to.name === 'login' && token) {
+    next({ name: 'landing' })
+  } else {
+    next()
+  }
+})

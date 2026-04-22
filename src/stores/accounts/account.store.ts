@@ -1,8 +1,4 @@
-import type {
-  Users,
-  AccountRequest,
-  AccountUpdate,
-} from '@/interfaces/accounts/account.interface'
+import type { Users, AccountRequest, AccountUpdate } from '@/interfaces/accounts/account.interface'
 import type { Subjects } from '@/interfaces/accounts/subjects.interface'
 import type { BaseResponse } from '@/interfaces/base-response.interface'
 
@@ -86,12 +82,9 @@ export const useAccountStore = defineStore('account', {
       this.error = null
 
       try {
-        const response = await axios.get<BaseResponse<Subjects[]>>(
-          `${baseAccountUrl}/subjects`,
-          {
-            headers: getAuthHeaders(),
-          },
-        )
+        const response = await axios.get<BaseResponse<Subjects[]>>(`${baseAccountUrl}/subjects`, {
+          headers: getAuthHeaders(),
+        })
 
         this.subjects = response.data.data ?? []
 
@@ -109,12 +102,9 @@ export const useAccountStore = defineStore('account', {
       this.error = null
 
       try {
-        const response = await axios.get<BaseResponse<Users>>(
-          `${baseAccountUrl}/${profileId}`,
-          {
-            headers: getAuthHeaders(),
-          },
-        )
+        const response = await axios.get<BaseResponse<Users>>(`${baseAccountUrl}/${profileId}`, {
+          headers: getAuthHeaders(),
+        })
 
         const account = response.data.data ?? null
 
@@ -184,9 +174,7 @@ export const useAccountStore = defineStore('account', {
           return null
         }
 
-        const index = this.accounts.findIndex(
-          (account) => account.id === updatedAccount.id,
-        )
+        const index = this.accounts.findIndex((account) => account.id === updatedAccount.id)
 
         if (index !== -1) {
           this.accounts[index] = updatedAccount
