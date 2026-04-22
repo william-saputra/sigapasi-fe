@@ -51,6 +51,8 @@ function teacherOnly() {
   }
 }
 
+
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -188,6 +190,11 @@ const router = createRouter({
       component: () => import('@/views/schedules/TeacherAvailabilitySummaryView.vue'),
       meta: { requiresTeacher: true },
     },
+    {
+      path: '/notifications',
+      name: 'notifications',
+      component: () => import('@/views/notifications/ListNotificationView.vue'),
+    },
         {
       // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
       path: '/persetujuan-jadwal', 
@@ -235,3 +242,12 @@ router.beforeEach(async (to, from, next) => {
 })
 
 export default router
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem('token')
+
+  if (to.name === 'login' && token) {
+    next({ name: 'landing' })
+  } else {
+    next()
+  }
+})

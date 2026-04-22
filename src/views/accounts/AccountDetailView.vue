@@ -135,8 +135,18 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
+const isAdmin = computed(() => account.value?.role === 'ADMIN')
+
 function goBack() {
-  router.push('/home')
+  const previousPath = window.history.state?.back
+
+  if (isAdmin.value) {
+    router.push('/accounts')
+  } else if (previousPath && previousPath.includes('/edit')) {
+    router.push('/home')
+  } else {
+    router.back()
+  }
 }
 
 onMounted(() => {
@@ -162,7 +172,11 @@ onBeforeUnmount(() => {
           <p class="detail-account-subtitle">ID : {{ displayId }}</p>
         </div>
 
-        <div ref="optionsRef" class="detail-account-actions">
+        <div
+          v-if="account?.role !== 'ADMIN'"
+          ref="optionsRef"
+          class="detail-account-actions"
+        >
           <button class="options-button" @click.stop="toggleOptionsMenu">
             <i class="fa-solid fa-ellipsis"></i>
             Lainnya
