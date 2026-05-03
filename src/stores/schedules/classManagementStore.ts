@@ -44,7 +44,15 @@ export const useClassManagementStore = defineStore('classManagement', () => {
     try {
       loading.value = true
       clearError()
-      schoolLevels.value = await classManagementService.getSchoolLevels()
+      const levels = await classManagementService.getSchoolLevels()
+      schoolLevels.value = levels.sort((a, b) => {
+        const order = ['SD', 'SMP', 'SMA']
+        let indexA = order.indexOf(a.name)
+        let indexB = order.indexOf(b.name)
+        if (indexA === -1) indexA = 999
+        if (indexB === -1) indexB = 999
+        return indexA - indexB
+      })
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Gagal memuat jenjang sekolah.'
     } finally {
@@ -117,7 +125,7 @@ export const useClassManagementStore = defineStore('classManagement', () => {
       }
       return true
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Gagal menyimpan detail kelas.'
+      const errorMsg = (err.response?.data?.message || 'Gagal menyimpan detail kelas.').replace(/\bJP\b/g, 'Jam Pelajaran')
       if (toast) toast.error(errorMsg)
       return false
     } finally {
@@ -136,7 +144,7 @@ export const useClassManagementStore = defineStore('classManagement', () => {
       activeTargets.value = []
       return true
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Gagal menghapus kelas.'
+      const errorMsg = (err.response?.data?.message || 'Gagal menghapus kelas.').replace(/\bJP\b/g, 'Jam Pelajaran')
       if (toast) toast.error(errorMsg)
       return false
     } finally {
@@ -182,7 +190,7 @@ export const useClassManagementStore = defineStore('classManagement', () => {
       await fetchTargetsForSelectedClass()
       return true
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+      const errorMsg = (err.response?.data?.message || 'Gagal menyimpan target mapel.').replace(/\bJP\b/g, 'Jam Pelajaran')
       if (toast) toast.error(errorMsg)
       return false
     } finally {
@@ -232,7 +240,7 @@ export const useClassManagementStore = defineStore('classManagement', () => {
       await fetchTargetsForSelectedClass()
       return true
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Gagal menyimpan target mapel.'
+      const errorMsg = (err.response?.data?.message || 'Gagal menyimpan target mapel.').replace(/\bJP\b/g, 'Jam Pelajaran')
       if (toast) toast.error(errorMsg)
       return false
     } finally {
@@ -248,7 +256,7 @@ export const useClassManagementStore = defineStore('classManagement', () => {
       await fetchTargetsForSelectedClass()
       return true
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || 'Gagal menghapus target mata pelajaran.'
+      const errorMsg = (err.response?.data?.message || 'Gagal menghapus target mata pelajaran.').replace(/\bJP\b/g, 'Jam Pelajaran')
       if (toast) toast.error(errorMsg)
       return false
     } finally {
