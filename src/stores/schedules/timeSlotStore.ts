@@ -208,7 +208,15 @@ export const useTimeSlotStore = defineStore('timeSlot', () => {
           uniqueMap.set(level.id, level)
         }
       })
-      schoolLevels.value = Array.from(uniqueMap.values())
+      const sortedLevels = Array.from(uniqueMap.values()).sort((a, b) => {
+        const order = ['SD', 'SMP', 'SMA']
+        let indexA = order.indexOf(a.name)
+        let indexB = order.indexOf(b.name)
+        if (indexA === -1) indexA = 999
+        if (indexB === -1) indexB = 999
+        return indexA - indexB
+      })
+      schoolLevels.value = sortedLevels
 
       if (schoolLevels.value.length > 0 && !activeSchoolLevelId.value) {
         const firstData = schoolLevels.value[0]

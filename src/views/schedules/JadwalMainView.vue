@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
+import { Settings, CalendarDays, LayoutTemplate, BookOpen, Lock } from 'lucide-vue-next'
 import { getCurrentUser, isAdmin, isStaff } from '@/lib/rbac'
 
 const user = getCurrentUser()
@@ -13,8 +14,8 @@ const cards = computed(() => [
   {
     title: 'Pengaturan Slot Waktu',
     description:
-      'Konfigurasi jumlah jam pelajaran, istirahat, dan durasinya untuk masing-masing jenjang.',
-    icon: '⚙️',
+      'Konfigurasi jumlah jam pelajaran, istirahat, dan durasinya untuk masing-asing jenjang.',
+    icon: Settings,
     link: '/pengaturan-slot-waktu',
     color: 'emerald',
     show: canConfigure.value,
@@ -22,7 +23,7 @@ const cards = computed(() => [
   {
     title: 'Penyusunan Jadwal',
     description: 'Atur jadwal mata pelajaran pada slot waktu yang telah ditentukan.',
-    icon: '📅',
+    icon: CalendarDays,
     link: '/penyusunan-jadwal',
     color: 'teal',
     show: canConfigure.value,
@@ -31,7 +32,7 @@ const cards = computed(() => [
     title: 'Master Slot Waktu',
     description:
       'Lihat seluruh struktur slot waktu dari seluruh jenjang pendidikan dalam satu tampilan.',
-    icon: '📋',
+    icon: LayoutTemplate,
     link: '/slot-waktu',
     color: 'sky',
     show: true,
@@ -39,19 +40,11 @@ const cards = computed(() => [
   {
     title: 'Kelola Kelas & Target Jam',
     description: 'Manajemen daftar kelas dan alokasi jam mata pelajaran untuk setiap kelas.',
-    icon: '🏫',
+    icon: BookOpen,
     link: '/jadwal/kelola-kelas',
     color: 'indigo',
     show: canConfigure.value,
   },
-  // {
-  //   title: 'Kelola Mata Pelajaran',
-  //   description: 'Manajemen daftar mata pelajaran untuk setiap jenjang pendidikan.',
-  //   icon: '📚',
-  //   link: '/jadwal/mata-pelajaran',
-  //   color: 'rose',
-  //   show: canConfigure.value,
-  // },
 ])
 
 // Filter out cards the user doesn't have access to
@@ -73,7 +66,7 @@ const visibleCards = computed(() => cards.value.filter((c) => c.show))
       <!-- Cards Grid -->
       <div
         v-if="visibleCards.length > 0"
-        class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        class="grid grid-cols-1 gap-6 md:grid-cols-2"
       >
         <RouterLink
           v-for="card in visibleCards"
@@ -88,9 +81,9 @@ const visibleCards = computed(() => cards.value.filter((c) => c.show))
 
           <div class="relative z-10 w-full">
             <div
-              :class="`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-${card.color}-100 text-2xl text-${card.color}-700 ring-4 ring-${card.color}-50`"
+              :class="`mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-${card.color}-100 text-${card.color}-700 ring-4 ring-${card.color}-50`"
             >
-              {{ card.icon }}
+              <component :is="card.icon" class="h-6 w-6" :stroke-width="2" />
             </div>
 
             <h3 class="mb-2 text-lg font-bold text-gray-900 group-hover:text-emerald-700">
@@ -129,7 +122,7 @@ const visibleCards = computed(() => cards.value.filter((c) => c.show))
         v-else
         class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white p-12 text-center text-gray-500"
       >
-        <span class="mb-3 text-4xl">🔒</span>
+        <span class="mb-3 text-4xl text-gray-400"><Lock class="h-12 w-12 mx-auto" /></span>
         <p class="font-semibold">Akses Terbatas</p>
         <p class="mt-1 text-sm">Anda tidak memiliki akses ke fitur manajemen jadwal.</p>
       </div>

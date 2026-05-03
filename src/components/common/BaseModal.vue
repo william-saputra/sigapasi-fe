@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   show: boolean
+  maxWidthClass?: string
 }>()
 
 const emit = defineEmits<{
@@ -22,7 +23,7 @@ function onOverlayClick(e: MouseEvent) {
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
         @click="onOverlayClick"
       >
-        <div class="w-full max-w-[400px] rounded-xl bg-white p-8 text-center shadow-2xl animate-in">
+        <div class="w-full rounded-xl bg-white p-8 text-center shadow-2xl animate-in" :class="maxWidthClass || 'max-w-[400px]'">
           <slot name="header" />
           <slot name="body" />
           <slot name="footer" />
