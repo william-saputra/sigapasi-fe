@@ -2,8 +2,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceStore'
-import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
-import type { DayOfWeek } from '@/interfaces/schedules/timeSlot.types'
+import { ALL_DAYS, DAY_LABELS, type DayOfWeek } from '@/interfaces/schedules/timeSlot.types'
 import type { DragPayload, ScheduleEntryDTO } from '@/interfaces/schedules/schedule.types'
 import TimeSlotCell from './components/TimeSlotCell.vue'
 
@@ -31,7 +30,6 @@ const maxSlotCount = computed(() => {
   return max
 })
 
-// Menghitung hari apa saja yang memiliki minimal 1 slot waktu
 const activeDays = computed(() => {
   return ALL_DAYS.filter((day) => {
     const slots = workspaceStore.filteredTimeSlots[day]
@@ -82,6 +80,10 @@ function isEdgePullTarget(day: DayOfWeek, rowIndex: number): boolean {
   const slot = getSlotAt(day, rowIndex)
   if (!slot?.id) return false
   return workspaceStore.edgePull.previewSlotIds.has(slot.id)
+}
+
+function onDayHeaderClick(day: DayOfWeek) {
+  workspaceStore.setDayFilter(day)
 }
 
 async function onDrop(slotId: string, payload: DragPayload) {
@@ -275,6 +277,11 @@ onUnmounted(() => {
     </div>
 
     <div v-else ref="gridBodyRef" class="overflow-x-auto">
+      
+      <p class="mb-3 text-xs text-gray-500">
+        💡 Klik header hari untuk memfilter guru. Klik ulang untuk mereset filter.
+      </p>
+
       <table class="w-full border-collapse text-sm">
         <thead>
           <tr>
@@ -283,10 +290,18 @@ onUnmounted(() => {
             >
               Waktu
             </th>
-            <th
+           <th
               v-for="day in activeDays"
               :key="day"
-              class="border border-gray-200 bg-emerald-800 px-3 py-2.5 text-center text-xs font-semibold text-white"
+              :class="[
+                'border border-gray-200 px-3 py-3 text-center text-xs transition-all duration-300 cursor-pointer select-none',
+                workspaceStore.activeDayFilter === day
+                  ? 'bg-emerald-700 text-white font-extrabold border-b-4 border-b-emerald-900 shadow-md ring-2 ring-emerald-500 ring-inset scale-105 z-10 relative'
+                  : workspaceStore.activeDayFilter === null
+                    ? 'bg-slate-100 text-slate-700 font-semibold hover:bg-emerald-100 hover:text-emerald-800 border-b-4 border-b-slate-300'
+                    : 'bg-slate-200 text-slate-400 font-medium hover:bg-slate-300 border-b-4 border-b-transparent opacity-40 grayscale'
+              ]"
+              @click="onDayHeaderClick(day)"
             >
               {{ DAY_LABELS[day] }}
             </th>
@@ -327,6 +342,16 @@ onUnmounted(() => {
               :is-edge-pull-target="isEdgePullTarget(day, rowIndex - 1)"
               :is-edge-pull-preview="isEdgePullTarget(day, rowIndex - 1)"
               :block-position="getBlockPosition(day, rowIndex - 1)"
+              :highlight-status="
+                getSlotAt(day, rowIndex - 1)?.id
+                  ? workspaceStore.highlightedSlots.get(getSlotAt(day, rowIndex - 1)!.id!)?.status ?? null
+                  : null
+              "
+              :blocked-reason="
+                getSlotAt(day, rowIndex - 1)?.id
+                  ? workspaceStore.highlightedSlots.get(getSlotAt(day, rowIndex - 1)!.id!)?.blockedReason ?? null
+                  : null
+              "
               @drop="onDrop"
               @remove-entry="onRemoveEntry"
               @start-edge-pull="onStartEdgePull"

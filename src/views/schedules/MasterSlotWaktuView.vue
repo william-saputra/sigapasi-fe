@@ -17,8 +17,13 @@ const selectedSchoolLevelId = ref<string>('ALL')
 // Evaluation to check if all grades view is selected
 const isAllLevels = computed(() => selectedSchoolLevelId.value === 'ALL')
 
-// Returns the array of available grades
-const visibleSchoolLevels = computed(() => store.schoolLevels)
+// Returns the array of available grades (sorted by education hierarchy: SD → SMP → SMA)
+const visibleSchoolLevels = computed(() =>
+  [...store.schoolLevels].sort((a, b) => {
+    const order: Record<string, number> = { SD: 1, SMP: 2, SMA: 3 }
+    return (order[a.name] ?? 99) - (order[b.name] ?? 99)
+  })
+)
 
 // Condition to check if there are any slots across all available days
 const hasData = computed(() => ALL_DAYS.some((day) => (store.schedules[day]?.length ?? 0) > 0))
@@ -284,16 +289,18 @@ onMounted(async () => {
         class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm"
       >
         <table class="w-full border-collapse text-xs">
-          <!-- Table Header -->
-          <thead>
-            <tr class="bg-emerald-800 text-white uppercase tracking-wide">
-              <th class="border border-emerald-700 px-3 py-3 text-center whitespace-nowrap w-16">
+<!-- Table Header -->
+          <thead
+            class="sticky top-0 z-10 bg-emerald-50 text-emerald-900 uppercase tracking-wide"
+          >
+            <tr class="bg-emerald-50 text-emerald-900 uppercase tracking-wide">
+              <th class="border border-emerald-200 px-3 py-3 text-center align-middle whitespace-nowrap w-16">
                 HARI
               </th>
               <th
                 v-for="level in visibleSchoolLevels"
                 :key="level.id"
-                class="border border-emerald-700 px-4 py-3 text-center whitespace-nowrap min-w-[180px]"
+                class="border border-emerald-200 px-4 py-3 text-center align-middle whitespace-nowrap min-w-[180px]"
               >
                 {{ level.name }}
               </th>
@@ -302,10 +309,18 @@ onMounted(async () => {
 
           <tbody>
             <!-- Table Row For Each Day -->
-            <tr v-for="day in ALL_DAYS" :key="day" class="border-b border-gray-200 align-top">
+            <tr
+              v-for="(day, index) in ALL_DAYS"
+              :key="day"
+              :class="[index % 2 === 0 ? 'bg-white' : 'bg-gray-50', 'border-b border-gray-200 align-top']"
+            >
               <!-- Day Identifier Cell -->
               <td
-                class="border border-gray-200 bg-emerald-50 px-2 py-3 text-center font-bold text-emerald-900 whitespace-nowrap"
+                :class="[
+                  'border border-gray-200 px-2 py-3 whitespace-nowrap sticky left-0 z-20',
+                  index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
+                  'align-middle text-center font-bold text-gray-700'
+                ]"
               >
                 {{ DAY_LABELS[day] }}
               </td>

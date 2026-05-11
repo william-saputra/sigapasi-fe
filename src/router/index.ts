@@ -121,12 +121,6 @@ const router = createRouter({
       beforeEnter: adminStaffOnly,
     },
     {
-      path: '/jadwal/draft/:draftId/validation',
-      name: 'draft-validation',
-      component: () => import('@/views/schedules/DraftValidationView.vue'),
-      beforeEnter: adminStaffOnly,
-    },
-    {
       path: '/slot-waktu',
       name: 'MasterSlotWaktu',
       component: () => import('@/views/schedules/MasterSlotWaktuView.vue'),
@@ -224,7 +218,6 @@ router.beforeEach(async (to, from, next) => {
     'kelola-mata-pelajaran',
     'pengaturan-slot-waktu',
     'penyusunan-jadwal',
-    'draft-validation',
     'MasterSlotWaktu',
     'ketersediaan-mengajar',
     'ketersediaan-ringkasan',
@@ -237,12 +230,12 @@ router.beforeEach(async (to, from, next) => {
       await academicSetupStore.fetchActiveSetup()
     }
 
-    if (!academicSetupStore.activeSemester) {
-      if (to.path !== '/setup-academic') {
-        // Peringatkan user atau redirect
-        return next({ path: '/setup-academic' })
-      }
-    }
+    // if (!academicSetupStore.activeSemester) {
+    //   if (to.path !== '/setup-academic') {
+    //     // Peringatkan user atau redirect
+    //     return next({ path: '/setup-academic' })
+    //   }
+    // }
   }
 
   next()

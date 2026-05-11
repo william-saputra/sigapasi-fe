@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import type { DayOfWeek } from '@/interfaces/schedules/timeSlot.types'
-import type { ScheduleEntryDTO, DragPayload } from '@/interfaces/schedules/schedule.types'
+import type { ScheduleEntryDTO, DragPayload, SlotAvailabilityStatus, BlockedReason } from '@/interfaces/schedules/schedule.types'
+import { BLOCKED_REASON_MESSAGES } from '@/interfaces/schedules/schedule.types'
 import EntryCard from './EntryCard.vue'
 
 const props = defineProps<{
@@ -12,6 +13,8 @@ const props = defineProps<{
   isEdgePullTarget: boolean
   isEdgePullPreview: boolean
   blockPosition: 'start' | 'middle' | 'end' | 'single'
+  highlightStatus: SlotAvailabilityStatus | null
+  blockedReason: BlockedReason | null
 }>()
 
 const emit = defineEmits<{
@@ -24,29 +27,36 @@ const isDroppable = computed(() => {
   return !!props.slot.id && props.slot.slot_type === 'LESSON' && !props.slot.is_locked
 })
 
-// Anti-flickering drag counter
 const dragCounter = ref(0)
 const isDragOver = computed(() => dragCounter.value > 0)
 
 const cellBaseClass = computed(() => {
   if (!props.slot) return 'bg-gray-100'
-  // FIX: Jadikan sel BLANK transparan tanpa border
   if (props.slot.slot_type === 'BLANK') return 'bg-gray-50/50 text-transparent border-transparent'
-
   if (props.slot.slot_type === 'BREAK') return 'bg-amber-50 text-amber-600'
   if (props.slot.is_locked) return 'bg-gray-100 text-gray-400'
-  if (props.isEdgePullPreview)
+
+  if (props.highlightStatus === 'AVAILABLE') {
+    return 'bg-emerald-100 ring-2 ring-inset ring-emerald-500'
+  }
+  if (props.highlightStatus === 'OVERRIDABLE') {
+    return 'bg-yellow-50 ring-2 ring-inset ring-dashed ring-emerald-400'
+  }
+
+  if (props.isEdgePullPreview) {
     return 'bg-emerald-100 ring-2 ring-inset ring-emerald-400 ring-dashed'
-  if (isDragOver.value && isDroppable.value)
+  }
+  if (isDragOver.value && isDroppable.value) {
     return 'bg-emerald-50 ring-2 ring-inset ring-emerald-300'
+  }
   return 'bg-white'
 })
 
 const contentPointerEvents = computed(() => (isDragOver.value ? 'pointer-events-none' : ''))
 
 function onDragEnter(event: DragEvent) {
-  if (!isDroppable.value) return
-  event.preventDefault() // FIX KRITIS: Wajib ada agar browser tidak membatalkan drop!
+  if (!isDroppable.value && props.highlightStatus !== 'BLOCKED') return
+  event.preventDefault()
   dragCounter.value++
 }
 
@@ -55,13 +65,18 @@ function onDragLeave() {
 }
 
 function onDragOver(event: DragEvent) {
-  if (!isDroppable.value) return
+  if (!isDroppable.value && props.highlightStatus !== 'BLOCKED') return
   event.preventDefault()
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy'
 }
 
 function onDrop(event: DragEvent) {
   dragCounter.value = 0
+
+  if (props.highlightStatus === 'BLOCKED') {
+    event.preventDefault()
+    return
+  }
 
   if (!isDroppable.value) return
   event.preventDefault()
@@ -74,7 +89,6 @@ function onDrop(event: DragEvent) {
 
   try {
     const payload: DragPayload = JSON.parse(raw)
-    // Pastikan emit menggunakan id yang sudah divalidasi
     emit('drop', props.slot.id!, payload)
   } catch {
     console.error('Drag failed: Format JSON tidak valid.')
@@ -108,6 +122,7 @@ onUnmounted(() => {
       'border border-gray-200 px-2 py-2 text-center text-xs transition-colors',
       cellBaseClass,
     ]"
+    :title="props.highlightStatus === 'BLOCKED' && props.blockedReason ? BLOCKED_REASON_MESSAGES[props.blockedReason] : ''"
     @dragenter="onDragEnter"
     @dragleave="onDragLeave"
     @dragover="onDragOver"
