@@ -52,8 +52,7 @@ export const useAssignmentStore = defineStore('assignment', () => {
       isFetchingTeachers.value = true
       availableTeachers.value = []
 
-      // PERBAIKAN 1: Sesuaikan query parameter menjadi time_slot_id agar sama dengan Backend
-      const response = await fetch(`${API_BASE_URL}/available-teachers?date=${date}&time_slot_id=${timeSlotId}`, {
+      const response = await fetch(`${API_BASE_URL}/available-teachers?date=${date}&timeSlotId=${timeSlotId}`, {
         headers: getAuthHeaders(),
       })
 
