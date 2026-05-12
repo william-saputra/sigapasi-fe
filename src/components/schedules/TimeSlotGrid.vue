@@ -40,7 +40,7 @@ function onDragEnd() {
   dragIndex.value = null
 }
 
-/** 
+/**
 
  * Prepares the target slot configuration before showing the lock modal.
  * Adjusts lock state indicators based on current status.
