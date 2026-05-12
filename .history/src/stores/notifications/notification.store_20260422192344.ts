@@ -209,7 +209,9 @@ export const useNotificationStore = defineStore('notification', {
         const createdNotification = response.data.data ?? null
 
         if (createdNotification) {
-          const exists = this.notifications.some((notif) => notif.id === createdNotification.id)
+          const exists = this.notifications.some(
+            (notif) => notif.id === createdNotification.id,
+          )
           if (!exists) {
             this.notifications.unshift(createdNotification)
           }
@@ -307,7 +309,9 @@ export const useNotificationStore = defineStore('notification', {
         }
 
         const deletedIds = deletedNotifications.map((notif) => notif.id)
-        this.notifications = this.notifications.filter((notif) => !deletedIds.includes(notif.id))
+        this.notifications = this.notifications.filter(
+          (notif) => !deletedIds.includes(notif.id),
+        )
 
         showSuccess(response.data.message || 'Notifications deleted successfully')
         return deletedNotifications

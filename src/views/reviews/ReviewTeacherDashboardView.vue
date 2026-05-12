@@ -6,14 +6,21 @@ import AppLayout from '@/components/common/AppLayout.vue'
 import AppCard from '@/components/common/AppCard.vue'
 import PageHeader from '@/components/header/PageHeader.vue'
 import ReviewTaskCard from '@/components/reviews/ReviewTaskCard.vue'
+import ReviewRadarChart from '@/components/reviews/ReviewRadarChart.vue'
 import type { ReviewTask } from '@/interfaces/reviews/review-task.interface'
 import apiService from '@/services/api.service'
+import { useReviewChart } from '@/composables/useReviewChart'
+import { getCurrentUser } from '@/lib/auth'
 
 const router = useRouter()
 
 const tasks = ref<ReviewTask[]>([])
 const isLoading = ref(false)
 const fetchError = ref<string | null>(null)
+
+const { chartData, periods, selectedPeriodId, isLoading: chartLoading, init: initChart } = useReviewChart()
+
+const currentUserId = computed(() => getCurrentUser()?.id ?? null)
 
 const completedCount = computed(
   () => tasks.value.filter((task) => (task.status ?? '').toLowerCase() === 'completed').length,
@@ -60,7 +67,10 @@ function openTaskForm(payload: { taskId: string; readOnly: boolean }) {
   })
 }
 
-onMounted(fetchReviewTasks)
+onMounted(() => {
+  fetchReviewTasks()
+  initChart()
+})
 </script>
 
 <template>
@@ -95,39 +105,54 @@ onMounted(fetchReviewTasks)
       </div>
     </AppCard>
 
-    <section class="task-section">
-      <div class="task-section-head">
-        <h3 class="task-section-title">Daftar Tugas Evaluasi</h3>
-        <p class="task-section-subtitle">
-          Pilih tugas untuk mengisi evaluasi atau melihat jawaban.
-        </p>
-      </div>
-
-      <AppCard v-if="isLoading">
-        <div class="task-state">⏳ Memuat daftar tugas...</div>
-      </AppCard>
-
-      <AppCard v-else-if="fetchError">
-        <div class="task-state task-state--error">
-          <p class="task-state-title">Gagal memuat tugas evaluasi.</p>
-          <p class="task-state-text">{{ fetchError }}</p>
-          <button type="button" class="retry-btn" @click="fetchReviewTasks">Coba Lagi</button>
+    <div class="main-grid">
+      <!-- Left: task list -->
+      <section class="task-section">
+        <div class="task-section-head">
+          <h3 class="task-section-title">Daftar Tugas Evaluasi</h3>
+          <p class="task-section-subtitle">
+            Pilih tugas untuk mengisi evaluasi atau melihat jawaban.
+          </p>
         </div>
-      </AppCard>
 
-      <AppCard v-else-if="tasks.length === 0">
-        <div class="task-state">📭 Belum ada tugas evaluasi untuk Anda saat ini.</div>
-      </AppCard>
+        <AppCard v-if="isLoading">
+          <div class="task-state">⏳ Memuat daftar tugas...</div>
+        </AppCard>
 
-      <div v-else class="task-list">
-        <ReviewTaskCard
-          v-for="task in tasks"
-          :key="task.taskId"
-          :task="task"
-          @open="openTaskForm"
+        <AppCard v-else-if="fetchError">
+          <div class="task-state task-state--error">
+            <p class="task-state-title">Gagal memuat tugas evaluasi.</p>
+            <p class="task-state-text">{{ fetchError }}</p>
+            <button type="button" class="retry-btn" @click="fetchReviewTasks">Coba Lagi</button>
+          </div>
+        </AppCard>
+
+        <AppCard v-else-if="tasks.length === 0">
+          <div class="task-state">📭 Belum ada tugas evaluasi untuk Anda saat ini.</div>
+        </AppCard>
+
+        <div v-else class="task-list">
+          <ReviewTaskCard
+            v-for="task in tasks"
+            :key="task.taskId"
+            :task="task"
+            @open="openTaskForm"
+          />
+        </div>
+      </section>
+
+      <!-- Right: radar chart -->
+      <aside class="chart-aside">
+        <ReviewRadarChart
+          :chart-data="chartData"
+          :periods="periods"
+          :selected-period-id="selectedPeriodId"
+          :loading="chartLoading"
+          :teacher-id="currentUserId"
+          @update:selected-period-id="selectedPeriodId = $event"
         />
-      </div>
-    </section>
+      </aside>
+    </div>
   </AppLayout>
 </template>
 
@@ -203,10 +228,20 @@ onMounted(fetchReviewTasks)
   font-weight: 800;
 }
 
+/* ── Two-column grid ── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── Task section ── */
 .task-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
 }
 
 .task-section-head {
@@ -282,7 +317,23 @@ onMounted(fetchReviewTasks)
   outline-offset: 2px;
 }
 
-@media (max-width: 768px) {
+/* ── Chart aside ── */
+.chart-aside {
+  position: sticky;
+  top: 24px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-aside {
+    position: static;
+    order: -1;
+  }
+
   .greeting-title {
     font-size: 28px;
   }
