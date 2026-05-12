@@ -15,20 +15,20 @@
 
       <div class="page-header-actions">
         <template v-if="filteredItems.length > 0">
-          <button 
-            v-if="!isSelectionMode" 
-            class="btn btn-ghost" 
+          <button
+            v-if="!isSelectionMode"
+            class="btn btn-ghost"
             @click="isSelectionMode = true"
           >
             Pilih
           </button>
-          
+
           <template v-else>
             <button class="btn btn-ghost" @click="toggleSelectAll">
               {{ isAllSelected ? 'Batal Semua' : 'Pilih Semua' }}
             </button>
-            <button 
-              class="btn btn-danger" 
+            <button
+              class="btn btn-danger"
               :disabled="selectedIds.length === 0 || loading"
               @click="handleDeleteSelected"
             >
@@ -106,9 +106,9 @@
             @click="handleItemClick(item)"
           >
             <div v-if="isSelectionMode" class="card-checkbox" @click.stop>
-              <input 
-                type="checkbox" 
-                :value="item.id" 
+              <input
+                type="checkbox"
+                :value="item.id"
                 v-model="selectedIds"
               />
             </div>
@@ -256,6 +256,9 @@ async function handleItemClick(item: Notifications) {
 
   if (!item.read) {
     await notificationStore.markAsRead(item.id)
+  }
+  if (item.actionUrl) {
+    router.push(item.actionUrl)
   }
 }
 

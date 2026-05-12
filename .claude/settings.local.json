@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(ls -r \"c:\\\\Users\\\\willi\\\\Documents\\\\UI\\\\SEM 6\\\\Propensi\\\\vue-sigap\\\\src\")",
+      "PowerShell(head -50)",
+      "Bash(grep -E \"\\\\.ts$\")"
+    ]
+  }
+}

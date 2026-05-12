@@ -45,11 +45,19 @@ function headAdminStaffOnly() {
 
 function teacherOnly() {
   const role = getRoleFromToken()
-  // Kita gunakan toUpperCase agar lebih aman terhadap perbedaan case dari backend
   if (role?.toUpperCase() !== 'TEACHER') {
-    return { path: '/' } // Tendang ke home kalau bukan teacher
+    return { path: '/' }
   }
 }
+
+function teacherOrHeadOnly() {
+  const role = getRoleFromToken()?.toUpperCase()
+  if (role !== 'TEACHER' && role !== 'HEAD') {
+    return { path: '/' }
+  }
+}
+
+
 
 
 
@@ -164,13 +172,19 @@ const router = createRouter({
       path: '/reviews',
       name: 'reviews-home',
       component: () => import('@/views/reviews/ReviewTeacherDashboardView.vue'),
-      beforeEnter: teacherOnly,
+      beforeEnter: teacherOrHeadOnly,
     },
     {
       path: '/reviews/:taskId/form',
       name: 'reviews-task-form',
       component: () => import('@/views/reviews/ReviewTaskFormView.vue'),
-      beforeEnter: teacherOnly,
+      beforeEnter: teacherOrHeadOnly,
+    },
+    {
+      path: '/reviews/:teacherId/results',
+      name: 'reviews-detail',
+      component: () => import('@/views/reviews/ReviewResultDetailView.vue'),
+      beforeEnter: teacherOrHeadOnly,
     },
     {
       path: '/reviews/periods/:periodId',
@@ -242,6 +256,12 @@ router.beforeEach(async (to, from, next) => {
       await academicSetupStore.fetchActiveSetup()
     }
 
+    // if (!academicSetupStore.activeSemester) {
+    //   if (to.path !== '/setup-academic') {
+    //     // Peringatkan user atau redirect
+    //     return next({ path: '/setup-academic' })
+    //   }
+    // }
     // if (!academicSetupStore.activeSemester) {
     //   if (to.path !== '/setup-academic') {
     //     // Peringatkan user atau redirect

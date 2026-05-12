@@ -133,7 +133,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: '360 Review',
       desc: 'Pantau progres dan hasil evaluasi guru.',
-      to: '/review',
+      to: '/reviews/periods',
       icon: 'fa-solid fa-chart-line',
     },
     {
@@ -174,6 +174,12 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       to: '/guru',
       icon: 'fa-solid fa-chalkboard-user',
     },
+    {
+      title: 'Atur Reviews',
+      desc: 'Kelola periode dan penugasan evaluasi 360 derajat.',
+      to: '/reviews/periods',
+      icon: 'fa-solid fa-star-half-stroke',
+    },
   ],
   HEAD: [
     {
@@ -191,7 +197,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Hasil Review',
       desc: 'Lihat rekap evaluasi 360 derajat guru.',
-      to: '/review',
+      to: '/reviews',
       icon: 'fa-solid fa-star-half-stroke',
     },
     {

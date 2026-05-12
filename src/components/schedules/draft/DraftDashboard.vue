@@ -291,23 +291,17 @@ function closeCreateModal() {
         :key="draft.scheduleId"
         class="flex flex-col h-full min-h-[12rem] rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-600 hover:shadow-md"
       >
-<div class="cursor-pointer" @click="emit('open-draft', draft)">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="text-base font-semibold text-gray-800">{{ draft.name }}</h3>
-              <span
-                :class="[
-                  'inline-block rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap',
-                  statusBadge(draft.status),
-                ]"
-              >
-                {{ statusLabel(draft.status) }}
-              </span>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-slate-500">
-              <Calendar class="w-4 h-4" />
-              {{ new Date(draft.createdAt).toLocaleDateString('id-ID') }}
-            </div>
+        <div class="cursor-pointer" @click="emit('open-draft', draft)">
+          <h3 class="mb-1 text-base font-bold text-gray-800">{{ draft.name }}</h3>
+          <span
+            :class="['inline-block rounded-full px-3 py-0.5 text-xs font-semibold', statusBadge(draft.status)]"
+          >
+            {{ statusLabel(draft.status) }}
+          </span>
+          <div class="mt-2 text-xs text-gray-400">
+            Dibuat: {{ new Date(draft.createdAt).toLocaleDateString('id-ID') }}
           </div>
+        </div>
 
         <div class="mt-auto flex flex-col gap-3 border-t border-gray-100 pt-4">
 <div
