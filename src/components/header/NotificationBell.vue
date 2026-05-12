@@ -134,12 +134,10 @@ type IconVariant = 'info' | 'success' | 'warning' | 'error' | 'default'
 
 function resolveVariant(item: Notifications): IconVariant {
   const text = `${item.title ?? ''} ${item.message ?? ''}`.toLowerCase()
-
   if (/sukses|berhasil|approved|selesai|completed/.test(text)) return 'success'
   if (/gagal|ditolak|rejected|failed|error/.test(text)) return 'error'
   if (/perhatian|warning|peringatan/.test(text)) return 'warning'
   if (/info|diperbarui|update|baru/.test(text)) return 'info'
-
   return 'default'
 }
 
@@ -151,7 +149,6 @@ function getIcon(item: Notifications) {
     info: 'fa-solid fa-circle-info',
     default: 'fa-solid fa-bell',
   }
-
   return map[resolveVariant(item)]
 }
 
@@ -223,9 +220,7 @@ function formatRelativeTime(dateString: string) {
   const date = new Date(dateString)
   const now = new Date()
 
-  if (Number.isNaN(date.getTime())) {
-    return '-'
-  }
+  if (Number.isNaN(date.getTime())) return '-'
 
   const diffMs = now.getTime() - date.getTime()
   const diffMinutes = Math.floor(diffMs / 60_000)
@@ -248,7 +243,6 @@ function formatRelativeTime(dateString: string) {
 
 onMounted(async () => {
   window.addEventListener('click', onWindowClick)
-
   await notificationStore.getMyNotification()
   notificationStore.connectNotificationStream()
 })
@@ -290,9 +284,7 @@ onBeforeUnmount(() => {
   transition: background 0.15s;
   transition: background 0.15s;
 }
-.notification-bell:hover {
-  background: var(--bg-light);
-}
+.notification-bell:hover { background: var(--bg-light); }
 
 .notification-dot {
   position: absolute;
@@ -345,11 +337,6 @@ onBeforeUnmount(() => {
 }
 .notif-header h3 {
   margin: 0;
-  font-size: 15px;
-  color: var(--text-dark);
-}
-.notif-header h3 {
-  margin: 0;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-dark);
@@ -368,9 +355,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   white-space: nowrap;
 }
-.mark-read-btn:hover {
-  text-decoration: underline;
-}
+.mark-read-btn:hover { text-decoration: underline; }
 
 /* ── Body ── */
 /* ── Body ── */
