@@ -137,9 +137,21 @@ const router = createRouter({
       beforeEnter: teacherOnly,
     },
     {
+      path: '/leaves/request/edit/:id',
+      name: 'leave-edit',
+      component: () => import('@/views/leaves/LeaveRequestFormView.vue'),
+      beforeEnter: teacherOnly,
+    },
+    {
       path: '/leaves/approvals',
       name: 'leave-approvals',
       component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
+      beforeEnter: headAdminStaffOnly,
+    },
+    {
+      path: '/assignments',
+      name: 'assignment-dashboard',
+      component: () => import('@/views/leaves/AssignmentsDashboard.vue'),
       beforeEnter: headAdminStaffOnly,
     },
     {
@@ -199,7 +211,7 @@ const router = createRouter({
     },
         {
       // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
-      path: '/persetujuan-jadwal', 
+      path: '/persetujuan-jadwal',
       name: 'schedule-approval-detail',
       component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
       // beforeEnter: headOnly,

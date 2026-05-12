@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { PencilLine, Trash2, Plus } from 'lucide-vue-next'
 
 import AppLayout from '@/components/common/AppLayout.vue'
 import PageHeader from '@/components/header/PageHeader.vue'
@@ -19,16 +20,51 @@ onMounted(() => {
   leaveStore.fetchAllLeaves()
 })
 
+// State untuk Modal Cancel
+const showCancelModal = ref(false)
+const selectedLeaveId = ref<string | null>(null)
+
+// Penyesuaian lebar kolom agar total 100% setelah ditambah kolom Aksi
 const columns = [
-  { key: 'createdAt', label: 'TGL DIAJUKAN', thStyle: 'width: 16%;' },
-  { key: 'detail', label: 'DETAIL IZIN', thStyle: 'width: 20%;' },
-  { key: 'period', label: 'WAKTU PELAKSANAAN', thStyle: 'width: 24%;' },
-  { key: 'status', label: 'STATUS', thStyle: 'width: 14%;' },
-  { key: 'note', label: 'ALASAN / REJECTION NOTE', thStyle: 'width: 26%;' },
+  { key: 'createdAt', label: 'TGL DIAJUKAN', thStyle: 'width: 14%;' },
+  { key: 'detail', label: 'DETAIL IZIN', thStyle: 'width: 18%;' },
+  { key: 'period', label: 'WAKTU PELAKSANAAN', thStyle: 'width: 22%;' },
+  { key: 'status', label: 'STATUS', thStyle: 'width: 12%;' },
+  { key: 'note', label: 'ALASAN / REJECTION NOTE', thStyle: 'width: 20%;' },
+  { key: 'actions', label: 'AKSI', thStyle: 'width: 14%; text-align: center;' },
 ]
 
 function onNewLeave() {
   router.push({ name: 'leave-request' })
+}
+
+function onEditLeave(id: string) {
+  router.push({ name: 'leave-edit', params: { id } })
+}
+
+function openCancelModal(id: string) {
+  selectedLeaveId.value = id
+  showCancelModal.value = true
+}
+
+function closeCancelModal() {
+  showCancelModal.value = false
+  selectedLeaveId.value = null
+}
+
+async function confirmCancel() {
+  if (!selectedLeaveId.value) return
+
+  try {
+    await leaveStore.cancelLeaveRequest(selectedLeaveId.value)
+    closeCancelModal()
+    await leaveStore.fetchAllLeaves()
+    alert('Pengajuan cuti berhasil dibatalkan.')
+  } catch (error) {
+    console.error('Gagal membatalkan pengajuan:', error)
+    alert(leaveStore.error || 'Gagal membatalkan pengajuan karena sudah diproses admin.')
+    closeCancelModal()
+  }
 }
 
 function formatCategory(category: string): string {
@@ -65,15 +101,17 @@ function formatStatus(status: string): string {
     PENDING: 'Pending',
     APPROVED: 'Approved',
     REJECTED: 'Rejected',
+    CANCELED: 'Canceled',
   }
   return map[status] || status
 }
 
-function getStatusVariant(status: string): 'pending' | 'success' | 'danger' {
-  const map: Record<string, 'pending' | 'success' | 'danger'> = {
+function getStatusVariant(status: string): 'pending' | 'success' | 'danger' | 'secondary' {
+  const map: Record<string, 'pending' | 'success' | 'danger' | 'secondary'> = {
     PENDING: 'pending',
     APPROVED: 'success',
     REJECTED: 'danger',
+    CANCELED: 'secondary',
   }
   return map[status] || 'pending'
 }
@@ -172,7 +210,10 @@ function getNoteMode(status: string): 'waiting' | 'rejected' | 'normal' {
       subtitle="Pantau status perizinan dan cuti Anda di sini."
     >
       <template #actions>
-        <AppButton @click="onNewLeave">➕ Ajukan Cuti Baru</AppButton>
+        <AppButton @click="onNewLeave" class="btn-with-icon">
+          <Plus :size="18" />
+          <span>Ajukan Cuti Baru</span>
+        </AppButton>
       </template>
     </PageHeader>
 
@@ -233,8 +274,49 @@ function getNoteMode(status: string): 'waiting' | 'rejected' | 'normal' {
             </div>
           </template>
         </template>
+
+        <!-- Kolom Aksi dengan Icon Lucide -->
+        <template #cell:actions="{ row }">
+          <div class="action-buttons">
+            <template v-if="row.status === 'PENDING'">
+              <button
+                class="btn-action edit"
+                title="Edit Pengajuan"
+                @click="onEditLeave(row.id)"
+              >
+                <PencilLine :size="16" />
+                <span>Edit</span>
+              </button>
+              <button
+                class="btn-action cancel"
+                title="Batalkan Pengajuan"
+                @click="openCancelModal(row.id)"
+              >
+                <Trash2 :size="16" />
+                <span>Batal</span>
+              </button>
+            </template>
+            <template v-else>
+              <span class="muted-text">-</span>
+            </template>
+          </div>
+        </template>
       </DataTable>
     </AppCard>
+
+    <!-- Modal Konfirmasi Pembatalan -->
+    <div v-if="showCancelModal" class="modal-overlay">
+      <div class="modal-container">
+        <h3 class="modal-title">Batalkan Pengajuan?</h3>
+        <p class="modal-desc">
+          Apakah Anda yakin ingin membatalkan pengajuan cuti ini? Tindakan ini tidak dapat diurungkan dan status akan berubah menjadi <strong>CANCELED</strong>.
+        </p>
+        <div class="modal-actions">
+          <AppButton variant="secondary" @click="closeCancelModal">Kembali</AppButton>
+          <AppButton variant="danger" @click="confirmCancel">Ya, Batalkan</AppButton>
+        </div>
+      </div>
+    </div>
   </AppLayout>
 </template>
 
@@ -315,5 +397,97 @@ function getNoteMode(status: string): 'waiting' | 'rejected' | 'normal' {
   border-color: #fca5a5;
   background: #fef2f2;
   color: #7f1d1d;
+}
+
+/* Custom button alignment with icon */
+:deep(.btn-with-icon) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Action Buttons Styling */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn-action {
+  background: none;
+  border: 1px solid var(--border, #e5e7eb);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  color: #4b5563;
+}
+
+.btn-action.edit:hover {
+  background-color: #e0e7ff;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.btn-action.cancel:hover {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.muted-text {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  margin: 0 0 12px;
+  font-size: 18px;
+  color: #111827;
+}
+
+.modal-desc {
+  margin: 0 0 24px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }
 </style>
