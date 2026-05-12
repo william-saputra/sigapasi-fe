@@ -38,7 +38,10 @@ export const useLeaveStore = defineStore('leave', () => {
     })
   })
 
-  // Actions
+  // ==========================================
+  // ACTIONS
+  // ==========================================
+
   // Fetch Sisa Kuota Cuti
   const fetchLeaveQuota = async () => {
     try {
@@ -68,10 +71,32 @@ export const useLeaveStore = defineStore('leave', () => {
         headers: getAuthHeaders(),
       })
 
+      if (response.status === 404) {
+        leaves.value = []
+        error.value = null
+        return
+      }
+
       const result = await handleApiResponse(response)
       leaves.value = result.data || []
     } catch (err) {
       console.error('Error fetching leaves:', err)
+
+      const message =
+        err instanceof Error
+          ? err.message.toLowerCase()
+          : ''
+
+      if (
+        message.includes('not found') ||
+        message.includes('tidak ditemukan') ||
+        message.includes('no leave') ||
+        message.includes('belum ada')
+      ) {
+        leaves.value = []
+        error.value = null
+        return
+      }
 
       error.value =
         err instanceof Error
@@ -83,6 +108,30 @@ export const useLeaveStore = defineStore('leave', () => {
     }
   }
 
+  // Fetch Leave By ID (Untuk Form Edit)
+  const fetchLeaveRequestById = async (id: string) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await fetch(`${API_BASE_URL}/requests/${id}`, {
+        headers: getAuthHeaders(),
+      })
+
+      const result = await handleApiResponse(response)
+      currentLeave.value = result.data
+
+      return result.data
+    } catch (err) {
+      console.error('Error fetching leave by ID:', err)
+      error.value = err instanceof Error ? err.message : 'Gagal mengambil data cuti.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Create Leave Request
   const createLeaveRequest = async (payload: CreateLeaveRequestDTO) => {
     try {
       isLoading.value = true
@@ -121,6 +170,68 @@ export const useLeaveStore = defineStore('leave', () => {
     }
   }
 
+  // Update Leave Request (Edit PBI-40)
+  const updateLeaveRequest = async (id: string, payload: CreateLeaveRequestDTO) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const formData = new FormData()
+      formData.append('type', payload.type)
+      formData.append('category', payload.category)
+      formData.append('startDate', payload.startDate)
+      formData.append('endDate', payload.endDate)
+      formData.append('reason', payload.reason)
+
+      if (payload.startTime) formData.append('startTime', payload.startTime)
+      if (payload.endTime) formData.append('endTime', payload.endTime)
+      if (payload.attachment) formData.append('attachment', payload.attachment)
+
+      const response = await fetch(`${API_BASE_URL}/requests/${id}`, {
+        method: 'PUT',
+        headers: getMultipartAuthHeaders(),
+        body: formData,
+      })
+
+      const result = await handleApiResponse(response)
+
+      await fetchAllLeaves()
+
+      return result.data
+    } catch (err) {
+      console.error('Error updating leave request:', err)
+
+      error.value =
+        err instanceof Error ? err.message : 'Gagal memperbarui pengajuan cuti.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Cancel Leave Request (Delete PBI-41)
+  const cancelLeaveRequest = async (id: string) => {
+    try {
+      isLoading.value = true
+      error.value = null
+
+      const response = await fetch(`${API_BASE_URL}/requests/${id}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      })
+
+      const result = await handleApiResponse(response)
+
+      return result.data
+    } catch (err) {
+      console.error('Error canceling leave request:', err)
+      error.value = err instanceof Error ? err.message : 'Gagal membatalkan pengajuan cuti.'
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     // State
     leaves,
@@ -135,6 +246,9 @@ export const useLeaveStore = defineStore('leave', () => {
     // Actions
     fetchLeaveQuota,
     fetchAllLeaves,
+    fetchLeaveRequestById,
     createLeaveRequest,
+    updateLeaveRequest,
+    cancelLeaveRequest,
   }
 })

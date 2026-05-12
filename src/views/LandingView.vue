@@ -127,7 +127,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Guru Pengganti',
       desc: 'Cari dan tetapkan guru pengganti kelas kosong.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-rotate',
     },
     {
@@ -165,7 +165,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Guru Pengganti',
       desc: 'Koordinasi penugasan guru pengganti.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-rotate',
     },
     {
@@ -229,7 +229,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Kelas Pengganti',
       desc: 'Cek jadwal penggantian yang ditugaskan.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-person-chalkboard',
     },
   ],
