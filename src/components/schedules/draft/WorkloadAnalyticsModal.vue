@@ -168,7 +168,7 @@ function onManualHoursChange() {
       
       <div class="mb-4 flex items-center justify-between border-b pb-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-800">Statistik Beban Jam Mengajar</h2>
+          <h2 class="text-2xl font-bold text-gray-800">Statistik Beban Jam Mengajar Tiap Minggu</h2>
           <p class="text-sm text-gray-500">Pantau distribusi jam mengajar guru agar seimbang.</p>
         </div>
         <button @click="emit('close')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
