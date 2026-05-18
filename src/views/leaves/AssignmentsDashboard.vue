@@ -76,7 +76,7 @@ function openAssignModal(row: SubstituteAssignmentsCardDTO) {
   }
   validationError.value = "" // Reset error saat buka modal
   showAssignModal.value = true
-  assignmentStore.fetchAvailableTeachers(selectedDate.value, row.timeSlotId)
+  assignmentStore.fetchAvailableTeachers(selectedDate.value, row.timeSlotId, row.leaveRequestId)
 }
 
 function closeAssignModal() {

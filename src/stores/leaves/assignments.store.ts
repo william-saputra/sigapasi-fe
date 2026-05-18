@@ -47,12 +47,12 @@ export const useAssignmentStore = defineStore('assignment', () => {
   }
 
   // Fetch guru available
-  const fetchAvailableTeachers = async (date: string, timeSlotId: string) => {
+  const fetchAvailableTeachers = async (date: string, timeSlotId: string, leaveRequestId: string) => {
     try {
       isFetchingTeachers.value = true
       availableTeachers.value = []
 
-      const response = await fetch(`${API_BASE_URL}/available-teachers?date=${date}&timeSlotId=${timeSlotId}`, {
+      const response = await fetch(`${API_BASE_URL}/available-teachers?date=${date}&timeSlotId=${timeSlotId}&leaveRequestId=${leaveRequestId}`, {
         headers: getAuthHeaders(),
       })
 
