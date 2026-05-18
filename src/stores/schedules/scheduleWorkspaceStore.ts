@@ -272,6 +272,19 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
   ): Promise<{ success?: string; warning?: string; error?: string }> {
     if (!activeDraft.value) return { error: 'Tidak ada draf aktif.' }
 
+    // Validasi kuota JP di frontend sebelum hit API
+    const targetItem = sidebarItems.value.find(
+      (item) => item.subjectId === payload.subjectId && item.teacherId === payload.teacherId
+    )
+
+    if (targetItem && targetItem.targetHours > 0) {
+      if (targetItem.currentHours + payload.timeSlotIds.length > targetItem.targetHours) {
+        const errorMsg = `Gagal menetapkan jadwal: Melebihi batas kuota jam pelajaran (${targetItem.targetHours} JP).`
+        if (toast) toast.error(errorMsg)
+        return { error: errorMsg }
+      }
+    }
+
     payload.timeSlotIds.forEach((id) => pendingCells.value.add(id))
 
     try {

@@ -98,7 +98,9 @@ async function onDrop(slotId: string, payload: DragPayload) {
     teacherId: payload.teacherId,
   })
 
-  if (result.warning) {
+  if (result.error) {
+    return
+  } else if (result.warning) {
     emit('show-toast', result.warning, 'warning')
   } else if (result.success) {
     emit('show-toast', result.success, 'success')
@@ -171,14 +173,29 @@ function onMouseMove(event: MouseEvent) {
   const daySlots = workspaceStore.filteredTimeSlots[sourceDay] ?? []
   const sourceIndex = daySlots.findIndex((s: { id: any }) => s.id === sourceSlotId)
 
-  const minIndex = Math.min(sourceIndex, targetRowIndex)
-  const maxIndex = Math.max(sourceIndex, targetRowIndex)
+  const targetItem = workspaceStore.sidebarItems.find(
+    (item) =>
+      item.subjectId === workspaceStore.edgePull.sourceEntry?.subjectId &&
+      item.teacherId === workspaceStore.edgePull.sourceEntry?.teacherId
+  )
+  
+  let maxAllowed = 999
+  if (targetItem && targetItem.targetHours > 0) {
+    maxAllowed = targetItem.targetHours - targetItem.currentHours
+    if (maxAllowed < 0) maxAllowed = 0
+  }
 
+  const step = targetRowIndex > sourceIndex ? 1 : -1
   const targetSlots: string[] = []
-  for (let i = minIndex; i <= maxIndex; i++) {
+
+  for (let i = sourceIndex + step; step > 0 ? i <= targetRowIndex : i >= targetRowIndex; i += step) {
     const slot = daySlots[i]
     if (slot?.id && slot.id !== sourceSlotId && slot.slot_type === 'LESSON' && !slot.is_locked) {
-      targetSlots.push(slot.id)
+      if (targetSlots.length < maxAllowed) {
+        targetSlots.push(slot.id)
+      } else {
+        break
+      }
     }
   }
 
