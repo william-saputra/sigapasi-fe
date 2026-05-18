@@ -6,14 +6,13 @@ import type { CreateLeaveRequestDTO } from '@/interfaces/leaves/leaverequest.int
 import { CheckCircle, AlertTriangle, Calendar, Clock } from 'lucide-vue-next'
 
 const router = useRouter()
-const route = useRoute() // Gunakan useRoute untuk mengecek parameter
+const route = useRoute()
 const leaveStore = useLeaveStore()
 
 const showSuccess = ref(false)
 const uploadedFile = ref<File | null>(null)
 const isLoadingData = ref(false)
 
-// [BARU] Deteksi mode Edit berdasarkan parameter ID di URL
 const leaveId = computed(() => route.params.id as string | undefined)
 const isEditMode = computed(() => !!leaveId.value)
 
@@ -50,7 +49,6 @@ const isSakit = computed(() => form.category === 'SAKIT')
 
 const isFormInvalid = computed(() => {
   if (!form.category || !form.reason.trim()) return true
-  // Saat edit, file tidak wajib jika kategori sakit dan sudah ada file sebelumnya (bisa disesuaikan)
   if (!isEditMode.value && isSakit.value && !uploadedFile.value) return true
 
   if (isHarian.value) {
@@ -64,7 +62,6 @@ const isFormInvalid = computed(() => {
 onMounted(async () => {
   await leaveStore.fetchLeaveQuota()
 
-  // [BARU] Jika mode Edit, ambil data existing dan masukkan ke form
   if (isEditMode.value && leaveId.value) {
     isLoadingData.value = true
     try {
@@ -79,7 +76,6 @@ onMounted(async () => {
         form.endDate = data.endDate ? data.endDate.split('T')[0] : data.startDate.split('T')[0]
       } else {
         form.singleDate = data.startDate.split('T')[0]
-        // Potong detik pada string time agar sesuai format input="time" (HH:mm)
         form.startTime = data.startTime ? data.startTime.substring(0, 5) : ''
         form.endTime = data.endTime ? data.endTime.substring(0, 5) : ''
       }
@@ -144,7 +140,6 @@ function validateForm() {
         hasError = true
       }
 
-      // Validasi past date (lewati jika mode edit agar tidak error saat edit pengajuan lama)
       if (!isEditMode.value) {
         if (!isSakit.value && (start < today || end < today)) {
           errors.pastDate = true
@@ -244,7 +239,6 @@ function goBack() {
   <div class="container">
     <div class="request-card">
       <div class="request-card__header">
-        <!-- [BARU] Teks Header Berubah Secara Dinamis -->
         <h2>{{ isEditMode ? 'Edit Pengajuan Cuti' : 'Pengajuan Cuti Guru' }}</h2>
         <div v-if="isHarian" class="quota-badge">
           Sisa Jatah Cuti: <span>{{ leaveStore.leaveQuota }}</span> Hari
@@ -252,7 +246,6 @@ function goBack() {
       </div>
 
       <div class="request-card__body">
-        <!-- Tampilkan loading jika sedang ambil data edit -->
         <div v-if="isLoadingData" class="alert-info" style="text-align: center; margin-bottom: 20px;">
           Memuat data pengajuan...
         </div>
@@ -268,225 +261,222 @@ function goBack() {
         </div>
 
         <form @submit.prevent="submitForm" v-if="!isLoadingData">
-          <form @submit.prevent="submitForm">
-            <div class="form-group">
-              <label class="form-label">Tipe Izin</label>
-
-              <div class="radio-group-container">
-                <label class="radio-card">
-                  <input v-model="form.leaveType" type="radio" value="FULL_DAY" />
-                  <div class="radio-card-content">
-                    <Calendar :size="18" class="icon-radio" />
-                    <span>Cuti Harian (Full Day)</span>
-                  </div>
-                </label>
-
-                <label class="radio-card">
-                  <input v-model="form.leaveType" type="radio" value="PARTIAL" />
-                  <div class="radio-card-content">
-                    <Clock :size="18" class="icon-radio" />
-                    <span>Izin Parsial (Jam)</span>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div v-if="isHarian" id="sectionHarian">
-              <div class="form-group">
-                <div class="row">
-                  <div class="col">
-                    <label class="form-label">
-                      Tanggal Mulai <span class="required-star">*</span>
-                    </label>
-                    <input
-                      v-model="form.startDate"
-                      type="date"
-                      class="form-control"
-                      :class="{
-              'is-invalid':
-                errors.startDate ||
-                errors.dateRange ||
-                errors.pastDate ||
-                errors.quota ||
-                errors.onlyWeekend,
-            }"
-                    />
-                  </div>
-
-                  <div class="col">
-                    <label class="form-label">
-                      Tanggal Selesai <span class="required-star">*</span>
-                    </label>
-                    <input
-                      v-model="form.endDate"
-                      type="date"
-                      class="form-control"
-                      :class="{
-              'is-invalid':
-                errors.endDate ||
-                errors.dateRange ||
-                errors.pastDate ||
-                errors.quota ||
-                errors.onlyWeekend,
-            }"
-                    />
-                  </div>
+          <div class="form-group">
+            <label class="form-label">Tipe Izin</label>
+            <div class="radio-group-container">
+              <label class="radio-card">
+                <input v-model="form.leaveType" type="radio" value="FULL_DAY" />
+                <div class="radio-card-content">
+                  <Calendar :size="18" class="icon-radio" />
+                  <span>Cuti Harian (Full Day)</span>
                 </div>
-
-                <div v-if="errors.dateRange" class="error-message show">
-                  Tanggal selesai tidak boleh lebih awal dari tanggal mulai.
-                </div>
-                <div v-if="errors.pastDate" class="error-message show">
-                  Cuti tidak dapat diajukan untuk tanggal yang sudah lewat. Khusus kategori Sakit,
-                  maksimal pengajuan adalah 7 hari ke belakang.
-                </div>
-                <div v-if="errors.quota" class="error-message show">
-                  Jatah cuti Anda tidak mencukupi untuk jumlah hari yang diajukan.
-                </div>
-                <div v-if="errors.onlyWeekend" class="error-message show">
-                  Pengajuan ditolak: Tanggal yang Anda pilih jatuh sepenuhnya pada hari libur
-                  (Sabtu/Minggu).
-                </div>
-
-                <div class="note">
-                  Pilih tanggal yang sama jika hanya cuti 1 hari full. (Hari libur tidak memotong
-                  jatah cuti).
-                </div>
-              </div>
-            </div>
-
-            <div v-else id="sectionParsial">
-              <div class="form-group">
-                <label class="form-label"> Tanggal Izin <span class="required-star">*</span> </label>
-                <input
-                  v-model="form.singleDate"
-                  type="date"
-                  class="form-control"
-                  :class="{
-          'is-invalid': errors.singleDate || errors.pastDate || errors.onlyWeekend,
-        }"
-                />
-                <div v-if="errors.pastDate" class="error-message show">
-                  Tidak dapat mengajukan izin parsial pada tanggal yang sudah lewat (Kecuali kategori
-                  Sakit).
-                </div>
-                <div v-if="errors.onlyWeekend" class="error-message show">
-                  Pengajuan ditolak: Anda tidak dapat mengajukan izin parsial di hari libur.
-                </div>
-              </div>
-
-              <div class="form-group">
-                <div class="row">
-                  <div class="col">
-                    <label class="form-label"> Jam Mulai <span class="required-star">*</span> </label>
-                    <input
-                      v-model="form.startTime"
-                      type="time"
-                      class="form-control"
-                      :class="{
-              'is-invalid': errors.startTime || errors.timeRange || errors.maxHours,
-            }"
-                    />
-                  </div>
-
-                  <div class="col">
-                    <label class="form-label">
-                      Jam Selesai <span class="required-star">*</span>
-                    </label>
-                    <input
-                      v-model="form.endTime"
-                      type="time"
-                      class="form-control"
-                      :class="{ 'is-invalid': errors.endTime || errors.timeRange || errors.maxHours }"
-                    />
-                  </div>
-                </div>
-
-                <div v-if="errors.timeRange" class="error-message show">
-                  Jam selesai harus lebih besar dari jam mulai.
-                </div>
-                <div v-if="errors.maxHours" class="error-message show">
-                  Izin parsial maksimal 4 jam. Jika lebih, silakan ubah tipe izin menjadi Cuti Harian
-                  (Full Day).
-                </div>
-                <div class="note">Contoh: 08:00 - 10:00. Maksimal izin adalah 4 Jam.</div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label"> Kategori Izin <span class="required-star">*</span> </label>
-
-              <select
-                v-model="form.category"
-                class="form-control"
-                :class="{ 'is-invalid': errors.category }"
-              >
-                <option value="">Pilih kategori izin</option>
-                <option value="IZIN_PRIBADI">Izin Pribadi</option>
-                <option value="SAKIT">Sakit</option>
-                <option value="DINAS_LUAR">Keperluan Dinas Luar</option>
-                <option value="MELAHIRKAN">Melahirkan</option>
-              </select>
-              <div v-if="errors.category" class="error-message show">
-                Kategori izin wajib dipilih.
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">
-                Alasan / Keterangan <span class="required-star">*</span>
               </label>
-              <textarea
-                v-model="form.reason"
-                class="form-control textarea-control"
-                :class="{ 'is-invalid': errors.reason }"
-                rows="4"
-                placeholder="Tuliskan alasan pengajuan cuti / izin..."
-              />
-              <div v-if="errors.reason" class="error-message show">Alasan pengajuan wajib diisi.</div>
-            </div>
 
-            <div class="form-group">
-              <label class="form-label">
-                Unggah Dokumen Pendukung
-                <span v-if="!isEditMode && isSakit" class="required-star">*</span>
+              <label class="radio-card">
+                <input v-model="form.leaveType" type="radio" value="PARTIAL" />
+                <div class="radio-card-content">
+                  <Clock :size="18" class="icon-radio" />
+                  <span>Izin Parsial (Jam)</span>
+                </div>
               </label>
+            </div>
+          </div>
+
+          <div v-if="isHarian" id="sectionHarian">
+            <div class="form-group">
+              <div class="row">
+                <div class="col">
+                  <label class="form-label">
+                    Tanggal Mulai <span class="required-star">*</span>
+                  </label>
+                  <input
+                    v-model="form.startDate"
+                    type="date"
+                    class="form-control"
+                    :class="{
+                      'is-invalid':
+                        errors.startDate ||
+                        errors.dateRange ||
+                        errors.pastDate ||
+                        errors.quota ||
+                        errors.onlyWeekend,
+                    }"
+                  />
+                </div>
+
+                <div class="col">
+                  <label class="form-label">
+                    Tanggal Selesai <span class="required-star">*</span>
+                  </label>
+                  <input
+                    v-model="form.endDate"
+                    type="date"
+                    class="form-control"
+                    :class="{
+                      'is-invalid':
+                        errors.endDate ||
+                        errors.dateRange ||
+                        errors.pastDate ||
+                        errors.quota ||
+                        errors.onlyWeekend,
+                    }"
+                  />
+                </div>
+              </div>
+
+              <div v-if="errors.dateRange" class="error-message show">
+                Tanggal selesai tidak boleh lebih awal dari tanggal mulai.
+              </div>
+              <div v-if="errors.pastDate" class="error-message show">
+                Cuti tidak dapat diajukan untuk tanggal yang sudah lewat. Khusus kategori Sakit,
+                maksimal pengajuan adalah 7 hari ke belakang.
+              </div>
+              <div v-if="errors.quota" class="error-message show">
+                Jatah cuti Anda tidak mencukupi untuk jumlah hari yang diajukan.
+              </div>
+              <div v-if="errors.onlyWeekend" class="error-message show">
+                Pengajuan ditolak: Tanggal yang Anda pilih jatuh sepenuhnya pada hari libur
+                (Sabtu/Minggu).
+              </div>
+
+              <div class="note">
+                Pilih tanggal yang sama jika hanya cuti 1 hari full. (Hari libur tidak memotong
+                jatah cuti).
+              </div>
+            </div>
+          </div>
+
+          <div v-else id="sectionParsial">
+            <div class="form-group">
+              <label class="form-label"> Tanggal Izin <span class="required-star">*</span> </label>
               <input
-                type="file"
+                v-model="form.singleDate"
+                type="date"
                 class="form-control"
-                accept=".jpg,.jpeg,.png,.pdf"
-                @change="handleFileChange"
-                :class="{ 'is-invalid': errors.document }"
+                :class="{
+                  'is-invalid': errors.singleDate || errors.pastDate || errors.onlyWeekend,
+                }"
               />
-              <div v-if="errors.document" class="error-message show">
-                Dokumen pendukung wajib diunggah.
+              <div v-if="errors.pastDate" class="error-message show">
+                Tidak dapat mengajukan izin parsial pada tanggal yang sudah lewat (Kecuali kategori
+                Sakit).
               </div>
-              <div class="note" v-if="isEditMode">
-                Kosongkan jika tidak ingin mengubah dokumen pendukung sebelumnya.
-              </div>
-              <div class="note" v-else>
-                Format: PDF/JPG/PNG. Maks 2MB. Wajib untuk kategori Sakit.
+              <div v-if="errors.onlyWeekend" class="error-message show">
+                Pengajuan ditolak: Anda tidak dapat mengajukan izin parsial di hari libur.
               </div>
             </div>
 
-            <div class="action-row">
-              <button
-                type="button"
-                class="btn-secondary"
-                @click="goBack"
-                :disabled="leaveStore.isLoading"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                class="btn-primary"
-                :disabled="isFormInvalid || leaveStore.isLoading"
-              >
-                {{ leaveStore.isLoading ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Ajukan Permohonan') }}
-              </button>
+            <div class="form-group">
+              <div class="row">
+                <div class="col">
+                  <label class="form-label"> Jam Mulai <span class="required-star">*</span> </label>
+                  <input
+                    v-model="form.startTime"
+                    type="time"
+                    class="form-control"
+                    :class="{
+                      'is-invalid': errors.startTime || errors.timeRange || errors.maxHours,
+                    }"
+                  />
+                </div>
+
+                <div class="col">
+                  <label class="form-label">
+                    Jam Selesai <span class="required-star">*</span>
+                  </label>
+                  <input
+                    v-model="form.endTime"
+                    type="time"
+                    class="form-control"
+                    :class="{ 'is-invalid': errors.endTime || errors.timeRange || errors.maxHours }"
+                  />
+                </div>
+              </div>
+
+              <div v-if="errors.timeRange" class="error-message show">
+                Jam selesai harus lebih besar dari jam mulai.
+              </div>
+              <div v-if="errors.maxHours" class="error-message show">
+                Izin parsial maksimal 4 jam. Jika lebih, silakan ubah tipe izin menjadi Cuti Harian
+                (Full Day).
+              </div>
+              <div class="note">Contoh: 08:00 - 10:00. Maksimal izin adalah 4 Jam.</div>
             </div>
-          </form>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label"> Kategori Izin <span class="required-star">*</span> </label>
+
+            <select
+              v-model="form.category"
+              class="form-control"
+              :class="{ 'is-invalid': errors.category }"
+            >
+              <option value="">Pilih kategori izin</option>
+              <option value="IZIN_PRIBADI">Izin Pribadi</option>
+              <option value="SAKIT">Sakit</option>
+              <option value="DINAS_LUAR">Keperluan Dinas Luar</option>
+              <option value="MELAHIRKAN">Melahirkan</option>
+            </select>
+            <div v-if="errors.category" class="error-message show">
+              Kategori izin wajib dipilih.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Alasan / Keterangan <span class="required-star">*</span>
+            </label>
+            <textarea
+              v-model="form.reason"
+              class="form-control textarea-control"
+              :class="{ 'is-invalid': errors.reason }"
+              rows="4"
+              placeholder="Tuliskan alasan pengajuan cuti / izin..."
+            />
+            <div v-if="errors.reason" class="error-message show">Alasan pengajuan wajib diisi.</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Unggah Dokumen Pendukung
+              <span v-if="!isEditMode && isSakit" class="required-star">*</span>
+            </label>
+            <input
+              type="file"
+              class="form-control"
+              accept=".jpg,.jpeg,.png,.pdf"
+              @change="handleFileChange"
+              :class="{ 'is-invalid': errors.document }"
+            />
+            <div v-if="errors.document" class="error-message show">
+              Dokumen pendukung wajib diunggah.
+            </div>
+            <div class="note" v-if="isEditMode">
+              Kosongkan jika tidak ingin mengubah dokumen pendukung sebelumnya.
+            </div>
+            <div class="note" v-else>
+              Format: PDF/JPG/PNG. Maks 2MB. Wajib untuk kategori Sakit.
+            </div>
+          </div>
+
+          <div class="action-row">
+            <button
+              type="button"
+              class="btn-secondary"
+              @click="goBack"
+              :disabled="leaveStore.isLoading"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              class="btn-primary"
+              :disabled="isFormInvalid || leaveStore.isLoading"
+            >
+              {{ leaveStore.isLoading ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Ajukan Permohonan') }}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -631,7 +621,7 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* [BARU] Jarak antara icon dan teks */
+  gap: 8px;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
