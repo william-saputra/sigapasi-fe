@@ -34,7 +34,7 @@ const cards = computed(() => [
       'Lihat seluruh struktur slot waktu dari seluruh jenjang pendidikan dalam satu tampilan.',
     icon: LayoutTemplate,
     link: '/slot-waktu',
-    color: 'sky',
+    color: 'teal',
     show: true,
   },
   {
@@ -42,7 +42,7 @@ const cards = computed(() => [
     description: 'Manajemen daftar kelas dan alokasi jam mata pelajaran untuk setiap kelas.',
     icon: BookOpen,
     link: '/jadwal/kelola-kelas',
-    color: 'indigo',
+    color: 'emerald',
     show: canConfigure.value,
   },
 ])

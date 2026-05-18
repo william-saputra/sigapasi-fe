@@ -31,8 +31,11 @@ const emit = defineEmits<{
       <h3 class="mb-2 text-lg font-bold text-gray-800">
         {{ summary === null ? 'Memvalidasi...' : 'Validasi Jadwal' }}
       </h3>
-      <p v-if="summary" class="text-sm text-gray-500">
-        {{ summary.completeCount }} dari {{ summary.totalClasses }} kelas lengkap
+      <p v-if="summary && summary.incompleteClasses.length > 0" class="text-sm text-gray-500">
+        Terdapat <span class="font-bold text-red-600">{{ summary.totalClasses - summary.completeCount }} kelas</span> yang belum memenuhi target jam pelajaran.
+      </p>
+      <p v-else-if="summary" class="text-sm text-gray-500">
+        Seluruh {{ summary.totalClasses }} kelas telah lengkap.
       </p>
     </template>
     <template #body>
@@ -51,13 +54,17 @@ const emit = defineEmits<{
             <span :class="cls.isFeasible === false ? 'font-bold text-red-800' : 'font-semibold text-amber-800'">{{ cls.className }}</span>
           </div>
           <template v-if="cls.isFeasible === false">
-            <p class="text-sm font-semibold text-red-800">
-              Kapasitas Waktu Tidak Mencukupi — Total target melebihi batas fisik sebesar {{ cls.deficit }} Jam Pelajaran.
-            </p>
+            <ul class="list-disc space-y-1 pl-6 text-xs text-red-800">
+              <li><b>Kapasitas Waktu Tidak Mencukupi</b></li>
+              <li>Total target melebihi batas fisik sebesar <b>{{ cls.deficit }}</b> Jam Pelajaran</li>
+            </ul>
           </template>
-          <ul v-else class="space-y-1 pl-6 text-xs text-amber-700">
+          <ul v-else class="list-disc space-y-1 pl-6 text-xs text-amber-800">
             <li v-for="subj in cls.missingSubjects" :key="subj.subjectName">
-              {{ subj.subjectName }}: kurang {{ subj.missingHours }} Jam Pelajaran
+              <span class="font-semibold">{{ subj.subjectName }}</span>: kurang {{ subj.missingHours }} Jam Pelajaran
+            </li>
+            <li v-if="cls.missingSubjects.length === 0">
+              Terdapat kekurangan Jam Pelajaran (Rincian tidak tersedia)
             </li>
           </ul>
         </div>

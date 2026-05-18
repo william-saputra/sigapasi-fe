@@ -15,6 +15,7 @@ const props = defineProps<{
   blockPosition: 'start' | 'middle' | 'end' | 'single'
   highlightStatus: SlotAvailabilityStatus | null
   blockedReason: BlockedReason | null
+  isPublished: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,7 +25,7 @@ const emit = defineEmits<{
 }>()
 
 const isDroppable = computed(() => {
-  return !!props.slot.id && props.slot.slot_type === 'LESSON' && !props.slot.is_locked
+  return !!props.slot.id && props.slot.slot_type === 'LESSON' && !props.slot.is_locked && !props.isPublished
 })
 
 const dragCounter = ref(0)
@@ -153,6 +154,7 @@ onUnmounted(() => {
         :slot-id="slot.id"
         :position="blockPosition"
         :is-pending="false"
+        :is-published="isPublished"
         @remove="onRemoveEntry"
         @start-edge-pull="onStartEdgePull"
       />

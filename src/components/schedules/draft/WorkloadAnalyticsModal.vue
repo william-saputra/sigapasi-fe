@@ -102,16 +102,24 @@ async function fetchSubjects() {
 
 // Fetch Analytics
 async function fetchAnalytics() {
-  if (!props.scheduleId || !selectedSubjectId.value) return
+  // Hanya return jika scheduleId kosong. subjectId sekarang boleh kosong
+  if (!props.scheduleId) return
 
   isLoading.value = true
   try {
     const params = new URLSearchParams({
       scheduleId: props.scheduleId,
-      subjectId: selectedSubjectId.value,
       useAverage: useAverage.value.toString()
     })
     
+    // Kalau ada mapel yang dipilih, baru kirim subjectId
+    if (selectedSubjectId.value) {
+        params.append('subjectId', selectedSubjectId.value)
+    }
+
+    if (!useAverage.value) {
+      params.append('idealHours', customIdealHours.value.toString())
+    }    
     if (!useAverage.value) {
       params.append('idealHours', customIdealHours.value.toString())
     }
@@ -160,7 +168,7 @@ function onManualHoursChange() {
       
       <div class="mb-4 flex items-center justify-between border-b pb-4">
         <div>
-          <h2 class="text-2xl font-bold text-gray-800">📊 Statistik Beban Jam Mengajar</h2>
+          <h2 class="text-2xl font-bold text-gray-800">Statistik Beban Jam Mengajar Tiap Minggu</h2>
           <p class="text-sm text-gray-500">Pantau distribusi jam mengajar guru agar seimbang.</p>
         </div>
         <button @click="emit('close')" class="text-gray-400 hover:text-red-500 text-2xl font-bold transition">&times;</button>
@@ -173,6 +181,7 @@ function onManualHoursChange() {
             v-model="selectedSubjectId"
             class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-emerald-500 focus:outline-none"
           >
+          <option value="">Semua Mata Pelajaran</option>
             <option v-for="sub in subjects" :key="sub.id" :value="sub.id">{{ sub.name }}</option>
           </select>
         </div>
