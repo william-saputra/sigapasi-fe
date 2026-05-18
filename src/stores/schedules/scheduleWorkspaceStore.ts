@@ -499,9 +499,19 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     if (!results) return
     
     const incompleteClasses: IncompleteClassDetail[] = []
+    let actualCompleteCount = 0
+
     for (const cls of results) {
-      if (!cls.isValid && cls.incompleteSubjects && cls.incompleteSubjects.length > 0) {
-        const classSummary = classSummaries.value.find((c) => c.classId === cls.classId)
+      const classSummary = classSummaries.value.find((c) => c.classId === cls.classId)
+      
+      // Frontend Override: Validate against our local summary
+      const isComplete = classSummary 
+        ? classSummary.completionStatus === 'COMPLETE' || classSummary.filledHours >= classSummary.targetHours
+        : cls.isValid
+
+      if (isComplete) {
+        actualCompleteCount++
+      } else {
         const isFeasible = classSummary?.isFeasible ?? true
         const deficit = classSummary?.deficit ?? 0
         
@@ -517,7 +527,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
           incompleteClasses.push({
             classId: cls.classId,
             className: cls.className,
-            missingSubjects: cls.incompleteSubjects.map((s) => ({
+            missingSubjects: (cls.incompleteSubjects || []).map((s) => ({
               subjectName: s.subjectName,
               missingHours: s.shortfall,
             })),
@@ -530,7 +540,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     
     validationSummary.value = {
       totalClasses: results.length,
-      completeCount: results.filter((r) => r.isValid).length,
+      completeCount: actualCompleteCount,
       incompleteClasses,
     }
   }
