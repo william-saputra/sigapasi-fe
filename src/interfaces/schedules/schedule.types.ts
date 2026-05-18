@@ -224,3 +224,20 @@ export interface ValidationSummary {
   completeCount: number
   incompleteClasses: IncompleteClassDetail[]
 }
+
+export interface TeacherWorkload {
+  teacherId: string;
+  teacherName: string;
+  totalHours: number;
+  status: 'IDEAL' | 'UNDERLOAD' | 'OVERLOAD';
+}
+
+export interface WorkloadAnalyticsResponse {
+  subjectName: string;
+  idealHoursUsed: number;
+  totalTeachers: number;
+  totalIdeal: number;
+  totalUnderload: number;
+  totalOverload: number;
+  teacherWorkloads: TeacherWorkload[];
+}
