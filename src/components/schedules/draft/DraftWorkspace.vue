@@ -10,7 +10,7 @@ import ClassDropdown from './ClassDropdown.vue'
 import ValidationModal from './ValidationModal.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
-import { Trash2, AlertTriangle } from 'lucide-vue-next'
+import { Trash2, AlertTriangle, ClipboardList, Lock, Edit3 } from 'lucide-vue-next'
 
 const props = defineProps<{ draft: ScheduleDraftDTO }>()
 
@@ -128,8 +128,10 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
         </button>
         <div>
           <h2 class="text-xl font-bold text-emerald-800">{{ draft.name }}</h2>
-          <span class="text-xs text-gray-400">
-            {{ draft.status === 'PUBLISHED' ? '🔒 Terpublikasi' : '✏️ Draft Mode' }}
+          <span class="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
+            <Lock v-if="draft.status === 'PUBLISHED'" class="h-3 w-3" />
+            <Edit3 v-else class="h-3 w-3" />
+            {{ draft.status === 'PUBLISHED' ? 'Terpublikasi' : 'Draft Mode' }}
           </span>
         </div>
       </div>
@@ -193,7 +195,9 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
     </div>
 
     <div v-else class="rounded-xl border border-gray-200 bg-white py-16 text-center shadow-sm">
-      <div class="mb-3 text-5xl">📋</div>
+      <div class="mb-4 flex justify-center text-gray-300">
+        <ClipboardList class="h-14 w-14" />
+      </div>
       <h3 class="mb-2 text-lg font-bold text-gray-700">Pilih Kelas Terlebih Dahulu</h3>
       <p class="text-sm text-gray-400">
         Gunakan dropdown di atas untuk memilih kelas sebelum menyusun jadwal.

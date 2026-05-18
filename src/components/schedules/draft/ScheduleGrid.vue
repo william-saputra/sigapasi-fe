@@ -5,6 +5,7 @@ import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceS
 import { ALL_DAYS, DAY_LABELS, type DayOfWeek } from '@/interfaces/schedules/timeSlot.types'
 import type { DragPayload, ScheduleEntryDTO } from '@/interfaces/schedules/schedule.types'
 import TimeSlotCell from './components/TimeSlotCell.vue'
+import { CalendarX } from 'lucide-vue-next'
 
 const props = defineProps<{
   isGridReady?: boolean
@@ -20,6 +21,8 @@ const workspaceStore = useScheduleWorkspaceStore()
 const dragOverCell = ref<string | null>(null)
 const confirmDeleteEntryId = ref<string | null>(null)
 const gridBodyRef = ref<HTMLElement | null>(null)
+
+const isPublished = computed(() => workspaceStore.activeDraft?.status === 'PUBLISHED')
 
 // STATE BARU: Untuk melacak baris mana yang sedang di-hover 
 // tanpa menggunakan class="group" yang bocor ke sel lain
@@ -173,16 +176,17 @@ function onMouseMove(event: MouseEvent) {
   const daySlots = workspaceStore.filteredTimeSlots[sourceDay] ?? []
   const sourceIndex = daySlots.findIndex((s: { id: any }) => s.id === sourceSlotId)
 
-  const targetItem = workspaceStore.sidebarItems.find(
+  const targetItem = workspaceStore.filteredSidebarItems.find(
     (item) =>
       item.subjectId === workspaceStore.edgePull.sourceEntry?.subjectId &&
       item.teacherId === workspaceStore.edgePull.sourceEntry?.teacherId
   )
   
   let maxAllowed = 999
-  if (targetItem && targetItem.targetHours > 0) {
-    maxAllowed = targetItem.targetHours - targetItem.currentHours
-    if (maxAllowed < 0) maxAllowed = 0
+  if (targetItem) {
+    const teacherAllowed = targetItem.targetHours > 0 ? Math.max(0, targetItem.targetHours - targetItem.currentHours) : 999;
+    const subjectAllowed = (targetItem as any).subjectTargetHours > 0 ? Math.max(0, (targetItem as any).subjectTargetHours - (targetItem as any).subjectCurrentHours) : 999;
+    maxAllowed = Math.min(teacherAllowed, subjectAllowed);
   }
 
   const step = targetRowIndex > sourceIndex ? 1 : -1
@@ -300,7 +304,9 @@ onUnmounted(() => {
     </div>
 
     <div v-else-if="maxSlotCount === 0" class="py-16 text-center">
-      <div class="mb-4 text-5xl">🗓️</div>
+      <div class="mb-4 flex justify-center text-slate-300">
+        <CalendarX class="h-12 w-12" />
+      </div>
       <h4 class="mb-2 text-lg font-bold text-slate-700">Belum ada slot waktu</h4>
       <p class="text-sm text-slate-500">
         Silakan atur master slot waktu di halaman
@@ -400,6 +406,7 @@ onUnmounted(() => {
                   ? workspaceStore.highlightedSlots.get(getSlotAt(day, rowIndex - 1)!.id!)?.blockedReason ?? null
                   : null
               "
+              :is-published="isPublished"
               @drop="onDrop"
               @remove-entry="onRemoveEntry"
               @start-edge-pull="onStartEdgePull"

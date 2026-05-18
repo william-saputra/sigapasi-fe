@@ -8,6 +8,7 @@ const props = defineProps<{
   slotId: string
   position: BlockPosition
   isPending: boolean
+  isPublished: boolean
 }>()
 
 const emit = defineEmits<{
@@ -69,13 +70,13 @@ function onStartEdgePull() {
     </div>
 
     <button
-      v-if="entry.entryId"
+      v-if="entry.entryId && !isPublished"
       class="absolute -top-1 -right-1 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[8px] text-white hover:bg-red-600 group-hover:flex z-10"
       @click.stop="onRemove"
     >
       ✕
     </button>
 
-    <EdgePullHandle @start-pull="onStartEdgePull" />
+    <EdgePullHandle v-if="!isPublished" @start-pull="onStartEdgePull" />
   </div>
 </template>

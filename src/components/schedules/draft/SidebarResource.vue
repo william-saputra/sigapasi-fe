@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceStore'
 import { useJpBadge } from '@/composables/useJpBadge'
 import { DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
+import { ChevronRight, User, Mailbox } from 'lucide-vue-next'
 
 const store = useScheduleWorkspaceStore()
 const { getBadgeClass } = useJpBadge()
@@ -23,7 +24,7 @@ function onDragStart(
     subjectKode: string
   },
 ) {
-  const fullItem = store.sidebarItems.find((s: { teacherId: string }) => s.teacherId === item.teacherId)
+  const fullItem = store.filteredSidebarItems.find((s: { teacherId: string; subjectId: string }) => s.teacherId === item.teacherId && s.subjectId === item.subjectId)
   if (fullItem) {
     store.startDrag(fullItem)
   }
@@ -47,13 +48,13 @@ function onDragEnd() {
 }
 
 function groupCurrentHours(subjectId: string): number {
-  return store.sidebarItems
-    .filter((s: { subjectId: string }) => s.subjectId === subjectId)
-    .reduce((sum: any, s: { currentHours: any }) => sum + s.currentHours, 0)
+  return store.gridEntries.filter((e: any) => e.subjectId === subjectId).length
 }
 
 function groupTargetHours(subjectId: string): number {
-  return store.sidebarItems.find((s: { subjectId: string }) => s.subjectId === subjectId)?.targetHours ?? 0
+  const activeClass = store.classSummaries.find((c: any) => c.classId === store.activeClassId)
+  const subjectCompletion = activeClass?.subjectCompletions?.find((s: any) => s.subjectId === subjectId)
+  return subjectCompletion?.targetJp ?? 0
 }
 
 const activeClassId = computed(() => store.activeClassId)
@@ -85,7 +86,9 @@ const activeClassId = computed(() => store.activeClassId)
       v-else-if="store.sidebarBySubject.length === 0 && store.activeDayFilter"
       class="py-10 text-center text-sm text-gray-500"
     >
-      <div class="mb-3 text-3xl opacity-60">📭</div>
+      <div class="mb-4 flex justify-center text-gray-300">
+        <Mailbox class="h-12 w-12 opacity-60" />
+      </div>
       <p>
         Tidak ada guru yang tersedia untuk diisi pada hari 
         <strong class="text-emerald-700">{{ DAY_LABELS[store.activeDayFilter] }}</strong>.
@@ -109,11 +112,10 @@ const activeClassId = computed(() => store.activeClassId)
           @click="toggleSubject(group.subjectId)"
         >
           <div class="flex items-center gap-2">
-            <span
-              class="text-xs transition-transform"
+            <ChevronRight
+              class="h-4 w-4 transition-transform text-gray-400"
               :class="openSubjects[group.subjectId] ? 'rotate-90' : ''"
-              >▶</span
-            >
+            />
             <span
               class="text-sm font-semibold uppercase text-gray-800"
               :title="group.subjectName"
@@ -157,7 +159,7 @@ const activeClassId = computed(() => store.activeClassId)
             @dragend="onDragEnd"
           >
             <div class="flex items-center gap-2">
-              <span class="text-base">👤</span>
+              <User class="h-4 w-4 text-gray-400" />
               <span :class="['font-medium', teacher.isDimmed ? 'text-gray-400' : 'text-gray-700']">
                 {{ teacher.teacherName }}
               </span>
