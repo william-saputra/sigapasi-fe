@@ -157,12 +157,6 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       icon: 'fa-solid fa-calendar-days',
     },
     {
-      title: 'Proses Cuti',
-      desc: 'Bantu proses administrasi pengajuan cuti.',
-      to: '/leaves',
-      icon: 'fa-solid fa-file-lines',
-    },
-    {
       title: 'Guru Pengganti',
       desc: 'Koordinasi penugasan guru pengganti.',
       to: '/assignments',
