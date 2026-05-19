@@ -50,16 +50,19 @@ function teacherOnly() {
   }
 }
 
+function headOnly() {
+  const role = getRoleFromToken()
+  if (role?.toUpperCase() !== 'HEAD') {
+    return { path: '/' }
+  }
+}
+
 function teacherOrHeadOnly() {
   const role = getRoleFromToken()?.toUpperCase()
   if (role !== 'TEACHER' && role !== 'HEAD') {
     return { path: '/' }
   }
 }
-
-
-
-
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -154,7 +157,7 @@ const router = createRouter({
       path: '/leaves/approvals',
       name: 'leave-approvals',
       component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
-      beforeEnter: headAdminStaffOnly,
+      beforeEnter: headOnly,
     },
     {
       path: '/assignments',
@@ -211,11 +214,10 @@ const router = createRouter({
       meta: { requiresTeacher: true },
     },
     {
-      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
       path: '/persetujuan-jadwal',
       name: 'schedule-approval-detail',
       component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
-      // beforeEnter: headOnly,
+      beforeEnter: headOnly,
       meta: { title: 'Detail Persetujuan Jadwal' },
     },
     {
@@ -223,15 +225,6 @@ const router = createRouter({
       name: 'notifications',
       component: () => import('@/views/notifications/ListNotificationView.vue'),
     },
-        {
-      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
-      path: '/persetujuan-jadwal',
-      name: 'schedule-approval-detail',
-      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
-      // beforeEnter: headOnly,
-      meta: { title: 'Detail Persetujuan Jadwal' }
-    },
-
   ],
 })
 
