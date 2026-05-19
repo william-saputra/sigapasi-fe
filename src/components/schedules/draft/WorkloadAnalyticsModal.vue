@@ -67,6 +67,13 @@ const chartOptions = {
     }
   },
   scales: {
+    x: {
+      ticks: {
+        autoSkip: false, // Paksa semua nama guru muncul
+        maxRotation: 45, // Miringkan teks 45 derajat
+        minRotation: 45
+      }
+    },
     y: {
       beginAtZero: true,
       ticks: { stepSize: 2 }
@@ -74,32 +81,50 @@ const chartOptions = {
   }
 }
 
-// Fetch Master Subjects
+// Menghitung lebar chart secara dinamis. 
+// Asumsinya: 1 guru butuh ruang minimal 40px agar grafiknya tidak gepeng.
+const chartContainerWidth = computed(() => {
+  if (!analyticsData.value) return '100%';
+  const totalTeachers = analyticsData.value.teacherWorkloads.length;
+  const minWidthRequired = totalTeachers * 40; // 40px per bar
+  
+  // Kalau butuh ruang lebih besar dari 100% layar, gunakan ukuran piksel
+  return minWidthRequired > 800 ? `${minWidthRequired}px` : '100%';
+})
 // Fetch Master Subjects
 async function fetchSubjects() {
   try {
     const res = await apiService.get<any>('/subjects') 
     
-    // Perbaikan: Handle berbagai jenis response wrapper dari backend Spring Boot
+    // 1. Ambil data mentahnya dulu
+    let rawData = []
     if (res.data && Array.isArray(res.data)) {
-        subjects.value = res.data
+        rawData = res.data
     } else if (res.data && res.data.content && Array.isArray(res.data.content)) {
-        subjects.value = res.data.content
+        rawData = res.data.content
     } else if (Array.isArray(res)) {
-        subjects.value = res
-    } else {
-        subjects.value = []
+        rawData = res
     }
 
-    if (subjects.value.length > 0) {
-      selectedSubjectId.value = subjects.value[0].id
+    // 2. Filter duplikat berdasarkan NAMA mapel
+    const uniqueSubjects: any[] = []
+    const seenNames = new Set<string>()
+
+    for (const sub of rawData) {
+      if (sub.name && !seenNames.has(sub.name)) {
+        seenNames.add(sub.name)
+        uniqueSubjects.push(sub)
+      }
     }
+
+    // 3. Masukkan data yang sudah bersih ke state
+    subjects.value = uniqueSubjects
+
   } catch (error) {
     console.error("Gagal memuat mata pelajaran", error)
     toast.error('Gagal mengambil daftar mata pelajaran')
   }
 }
-
 // Fetch Analytics
 async function fetchAnalytics() {
   // Hanya return jika scheduleId kosong. subjectId sekarang boleh kosong
@@ -238,13 +263,16 @@ function onManualHoursChange() {
           </div>
         </div>
 
-        <div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm min-h-[350px]">
+<div class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm min-h-[350px]">
           <h3 class="font-bold text-gray-700 mb-4 text-center">Grafik Jam Mengajar Guru: {{ analyticsData.subjectName }}</h3>
-          <div class="h-[300px]">
-            <Bar :data="chartData" :options="chartOptions" />
+          
+          <div class="overflow-x-auto pb-4 custom-scrollbar">
+            <div class="h-[350px]" :style="{ width: chartContainerWidth }">
+              <Bar :data="chartData" :options="chartOptions" />
+            </div>
           </div>
-        </div>
-      </div>
+          
+        </div>      </div>
       
     </div>
   </div>
