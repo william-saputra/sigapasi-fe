@@ -17,7 +17,7 @@ const router = useRouter()
 
 const timeSlotStore = useTimeSlotStore()
 const previewStore = useSchedulePreviewStore()
-const authStore = useAuthStore() // <-- Inisialisasi Auth Store
+const authStore = useAuthStore()
 
 const {
   preview,
@@ -36,7 +36,6 @@ const {
 const showExportModal = ref(false)
 const showExportSuccessModal = ref(false)
 
-// <-- MODIFIED: modeOptions sekarang adalah computed property
 const modeOptions = computed(() => {
   if (authStore.user?.role === 'TEACHER') {
     return [{ label: 'Per Guru', value: 'TEACHER' }]
@@ -47,7 +46,6 @@ const modeOptions = computed(() => {
   ]
 })
 
-// <-- NEW: Computed property untuk memfilter guru jika role adalah TEACHER
 const availableTeachers = computed(() => {
   if (authStore.user?.role === 'TEACHER') {
     return teachers.value.filter(
@@ -202,7 +200,6 @@ function getSecondaryCellText(row: SchedulePreviewRow, cell?: SchedulePreviewCel
   return cell.subjectName || ''
 }
 
-// <-- NEW: Helper untuk otomatis memilih guru jika role adalah TEACHER
 function autoAssignTeacherIfApplicable() {
   if (authStore.user?.role === 'TEACHER') {
     const myTeacher = teachers.value.find(
@@ -214,21 +211,24 @@ function autoAssignTeacherIfApplicable() {
   }
 }
 
-// <-- MODIFIED: onMounted disesuaikan agar tidak error 403 untuk guru
 onMounted(async () => {
   await timeSlotStore.fetchAcademicYears()
 
-  // Paksa mode ke TEACHER jika rolenya guru
+  // NEW: Force reset selected class and teacher for non-TEACHER users on load.
+  // This clears any cached Pinia state so it defaults to the placeholder options.
+  if (authStore.user?.role !== 'TEACHER') {
+    previewStore.setSelectedClassId(null)
+    previewStore.setSelectedTeacherId(null)
+  }
+
   if (authStore.user?.role === 'TEACHER' && selectedMode.value !== 'TEACHER') {
     previewStore.setMode('TEACHER')
   }
 
   const fetchPromises = []
   
-  // Semua role butuh data guru
   fetchPromises.push(previewStore.getTeachers())
 
-  // Hanya non-guru yang diizinkan mengambil data kelas
   if (authStore.user?.role !== 'TEACHER') {
     fetchPromises.push(previewStore.getClasses())
   }
@@ -239,7 +239,6 @@ onMounted(async () => {
     previewStore.setSemesterId(timeSlotStore.activeSemesterId)
   }
 
-  // Trigger auto assignment
   autoAssignTeacherIfApplicable()
 })
 
@@ -247,6 +246,12 @@ watch(
   () => selectedMode.value,
   async () => {
     previewStore.clearPreview()
+    
+    // NEW: Force reset selected item when modes switch for non-TEACHER users.
+    if (authStore.user?.role !== 'TEACHER') {
+      previewStore.setSelectedClassId(null)
+      previewStore.setSelectedTeacherId(null)
+    }
 
     if (selectedMode.value === 'TEACHER') {
       if (teachers.value.length === 0) {

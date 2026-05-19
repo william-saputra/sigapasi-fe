@@ -234,7 +234,7 @@ const router = createRouter({
       meta: { title: 'Detail Persetujuan Jadwal' }
     },
     {
-      path: '/git add .ringkasan-jadwal',
+      path: '/ringkasan-jadwal',
       name: 'RingkasanJadwal',
       component: () => import('@/views/schedules/SchedulePreviewView.vue'),
     },
