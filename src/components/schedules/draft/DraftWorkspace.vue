@@ -186,7 +186,7 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
         <div class="text-sm">
           <p class="font-semibold">Kapasitas Waktu Tidak Mencukupi</p>
           <p>
-            Total target ({{ workspaceStore.activeClassFeasibility.totalTargetJp }} Jam Pelajaran) melebihi slot fisik yang tersedia ({{ workspaceStore.activeClassFeasibility.availableLessonSlots }} slot). Mohon kurangi target sebesar {{ workspaceStore.activeClassFeasibility.deficit }} Jam Pelajaran.
+            Total target ({{ workspaceStore.activeClassFeasibility.totalTargetJp }} Jam Pelajaran) melebihi slot yang tersedia ({{ workspaceStore.activeClassFeasibility.availableLessonSlots }} slot). Mohon kurangi target sebesar {{ workspaceStore.activeClassFeasibility.deficit }} Jam Pelajaran.
           </p>
         </div>
       </div>

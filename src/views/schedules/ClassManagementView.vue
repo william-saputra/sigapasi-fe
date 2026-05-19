@@ -6,6 +6,7 @@ import VButton from '@/components/common/VButton.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import { useClassManagementStore } from '@/stores/schedules/classManagementStore'
+import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
@@ -14,10 +15,14 @@ const store = useClassManagementStore()
 const { classes, schoolLevels, allSubjectsByLevel, selectedClass, activeTargets, activeTargetSummary, loading } =
   storeToRefs(store)
 
+const timeSlotStore = useTimeSlotStore()
+
 // Fetch initial data
-onMounted(() => {
+onMounted(async () => {
   store.fetchClasses()
   store.fetchSchoolLevels()
+  await timeSlotStore.fetchAcademicYears()
+  await timeSlotStore.fetchSlotStructureForAll()
 })
 
 const searchQuery = ref('')
@@ -142,8 +147,17 @@ const totalHours = computed(() => {
   return activeTargets.value.reduce((total, target) => total + (Number(target.targetHours) || 0), 0)
 })
 
-const maxCapacity = computed(() => {
-  return activeTargetSummary.value?.availableLessonSlots ?? 0
+  const maxCapacity = computed(() => {
+  if (!selectedClass.value?.schoolLevelId) return 0
+  
+  const levelId = selectedClass.value.schoolLevelId
+  let count = 0
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+  for (const day of days) {
+    const dailySlots = timeSlotStore.schedules[day as keyof typeof timeSlotStore.schedules] || []
+    count += dailySlots.filter((s) => s.school_level_id === levelId && s.slot_type !== 'BREAK' && !s.is_locked).length
+  }
+  return count
 })
 
 const isOverCapacity = computed(() => {
@@ -217,6 +231,11 @@ const saveConfig = async () => {
   const hasEmptySubject = activeTargets.value.some((t) => !t.subjectId || t.subjectId === '')
   if (hasEmptySubject) {
     toast.error('Mohon pilih mata pelajaran pada baris yang masih kosong, atau klik ikon hapus jika tidak diperlukan.')
+    return
+  }
+
+  if (isOverCapacity.value) {
+    toast.error(`Total alokasi waktu melebihi kapasitas maksimal (${maxCapacity.value} Jam Pelajaran per Minggu).`)
     return
   }
 
@@ -403,7 +422,7 @@ const deleteClass = () => {
                 {{ selectedClass.id ? 'Edit Kelas: ' + selectedClass.name : 'Buat Kelas Baru' }}
               </h1>
               <p class="text-gray-500 text-sm mt-1">
-                Atur informasi dasar dan kebutuhan jam mengajar.
+                Atur informasi dasar dan kebutuhan jam mengajar
               </p>
             </div>
             <button

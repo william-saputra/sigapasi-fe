@@ -177,7 +177,7 @@ function onMouseMove(event: MouseEvent) {
   const sourceIndex = daySlots.findIndex((s: { id: any }) => s.id === sourceSlotId)
 
   const targetItem = workspaceStore.filteredSidebarItems.find(
-    (item) =>
+    (item: { subjectId: any; teacherId: any }) =>
       item.subjectId === workspaceStore.edgePull.sourceEntry?.subjectId &&
       item.teacherId === workspaceStore.edgePull.sourceEntry?.teacherId
   )

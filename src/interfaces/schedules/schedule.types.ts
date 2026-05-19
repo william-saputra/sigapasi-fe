@@ -1,5 +1,6 @@
 // ─── Legacy types (used by scheduleStore.ts — do NOT remove) ────────────────
 import type { DayOfWeek } from './timeSlot.types'
+export type { DayOfWeek }
 
 export interface ScheduleDraft {
   id: string

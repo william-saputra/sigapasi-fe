@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { ALL_DAYS, DAY_LABELS } from '@/interfaces/schedules/timeSlot.types'
 import type { DayOfWeekEnum, UISlot } from '@/interfaces/schedules/timeSlot.types'
+import { Calendar, AlertTriangle, Coffee } from 'lucide-vue-next'
 
 // --- Storage & Routing ---
 const router = useRouter()
@@ -22,7 +23,7 @@ const visibleSchoolLevels = computed(() =>
   [...store.schoolLevels].sort((a, b) => {
     const order: Record<string, number> = { SD: 1, SMP: 2, SMA: 3 }
     return (order[a.name] ?? 99) - (order[b.name] ?? 99)
-  })
+  }),
 )
 
 // Condition to check if there are any slots across all available days
@@ -172,7 +173,7 @@ onMounted(async () => {
         v-if="store.error"
         class="mb-5 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800"
       >
-        <span>⚠️</span>
+        <AlertTriangle class="h-5 w-5 text-red-600 shrink-0" />
         <span class="flex-1">{{ store.error }}</span>
         <button class="text-xs font-semibold underline" @click="store.clearError()">Tutup</button>
       </div>
@@ -208,12 +209,17 @@ onMounted(async () => {
       <!-- Empty View -->
       <div
         v-else-if="!hasData && !store.isLoading"
-        class="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-white py-20 text-center"
+        class="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16 px-6 text-center shadow-sm"
       >
-        <span class="mb-4 text-6xl">📋</span>
-        <p class="text-base font-semibold text-gray-500">Tidak ada data struktur jadwal</p>
-        <p class="mt-1 text-sm text-gray-400">
-          Pilih Semester dan pastikan slot waktu sudah dikonfigurasi.
+        <div
+          class="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-800"
+        >
+          <Calendar class="h-7 w-7" stroke-width="2" />
+        </div>
+        <h3 class="text-lg font-bold text-gray-900">Struktur Slot Waktu Belum Tersedia</h3>
+        <p class="mx-auto mt-2 max-w-sm text-sm text-gray-500">
+          Silakan pilih Semester yang sesuai atau pastikan konfigurasi slot waktu sudah dibuat pada
+          menu pengaturan.
         </p>
       </div>
 
@@ -289,12 +295,12 @@ onMounted(async () => {
         class="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm"
       >
         <table class="w-full border-collapse text-xs">
-<!-- Table Header -->
-          <thead
-            class="sticky top-0 z-10 bg-emerald-50 text-emerald-900 uppercase tracking-wide"
-          >
+          <!-- Table Header -->
+          <thead class="sticky top-0 z-10 bg-emerald-50 text-emerald-900 uppercase tracking-wide">
             <tr class="bg-emerald-50 text-emerald-900 uppercase tracking-wide">
-              <th class="border border-emerald-200 px-3 py-3 text-center align-middle whitespace-nowrap w-16">
+              <th
+                class="border border-emerald-200 px-3 py-3 text-center align-middle whitespace-nowrap w-16"
+              >
                 HARI
               </th>
               <th
@@ -312,14 +318,17 @@ onMounted(async () => {
             <tr
               v-for="(day, index) in ALL_DAYS"
               :key="day"
-              :class="[index % 2 === 0 ? 'bg-white' : 'bg-gray-50', 'border-b border-gray-200 align-top']"
+              :class="[
+                index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
+                'border-b border-gray-200 align-top',
+              ]"
             >
               <!-- Day Identifier Cell -->
               <td
                 :class="[
                   'border border-gray-200 px-2 py-3 whitespace-nowrap sticky left-0 z-20',
                   index % 2 === 0 ? 'bg-white' : 'bg-gray-50',
-                  'align-middle text-center font-bold text-gray-700'
+                  'align-middle text-center font-bold text-gray-700',
                 ]"
               >
                 {{ DAY_LABELS[day] }}
@@ -378,7 +387,12 @@ onMounted(async () => {
                       <template v-if="slot.is_locked && slot.locked_label">{{
                         slot.locked_label
                       }}</template>
-                      <template v-else-if="slot.slot_type === 'BREAK'">☕ Istirahat</template>
+                      <template v-else-if="slot.slot_type === 'BREAK'">
+                        <span class="inline-flex items-center gap-1 text-amber-700">
+                          <Coffee class="h-3 w-3" />
+                          <span>Istirahat</span>
+                        </span>
+                      </template>
                       <template v-else>JP {{ slot.session_number }}</template>
                     </div>
                   </div>
