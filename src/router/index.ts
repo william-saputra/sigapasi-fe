@@ -225,6 +225,20 @@ const router = createRouter({
       name: 'notifications',
       component: () => import('@/views/notifications/ListNotificationView.vue'),
     },
+    {
+      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
+      path: '/persetujuan-jadwal',
+      name: 'schedule-approval-detail',
+      component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
+      // beforeEnter: headOnly,
+      meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+    {
+      path: '/git add .ringkasan-jadwal',
+      name: 'RingkasanJadwal',
+      component: () => import('@/views/schedules/SchedulePreviewView.vue'),
+    },
+
   ],
 })
 
