@@ -7,7 +7,6 @@ import { AlertTriangle, Calendar } from 'lucide-vue-next'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { useSchedulePreviewStore } from '@/stores/schedules/schedule-preview.store'
 import { useAuthStore } from '@/stores/accounts/auth.store'
-
 import type {
   SchedulePreviewCell,
   SchedulePreviewMode,
@@ -18,7 +17,7 @@ const router = useRouter()
 
 const timeSlotStore = useTimeSlotStore()
 const previewStore = useSchedulePreviewStore()
-const authStore = useAuthStore()
+const authStore = useAuthStore() // <-- Inisialisasi Auth Store
 
 const {
   preview,
@@ -37,21 +36,23 @@ const {
 const showExportModal = ref(false)
 const showExportSuccessModal = ref(false)
 
-// Mode pilihan dikembalikan penuh agar Teacher tetap bisa melihat jadwal "Per Kelas"
-const modeOptions = [
-  { label: 'Per Kelas', value: 'CLASS' },
-  { label: 'Per Guru', value: 'TEACHER' },
-]
+// <-- MODIFIED: modeOptions sekarang adalah computed property
+const modeOptions = computed(() => {
+  if (authStore.user?.role === 'TEACHER') {
+    return [{ label: 'Per Guru', value: 'TEACHER' }]
+  }
+  return [
+    { label: 'Per Kelas', value: 'CLASS' },
+    { label: 'Per Guru', value: 'TEACHER' },
+  ]
+})
 
-// Whitelist Guru: Hanya berlaku JIKA yang login adalah TEACHER
+// <-- NEW: Computed property untuk memfilter guru jika role adalah TEACHER
 const availableTeachers = computed(() => {
   if (authStore.user?.role === 'TEACHER') {
-    return [
-      {
-        id: authStore.user.id,
-        name: authStore.user.fullName,
-      },
-    ]
+    return teachers.value.filter(
+      (t) => t.id === authStore.user?.id || t.name === authStore.user?.fullName
+    )
   }
   return teachers.value
 })
@@ -66,7 +67,6 @@ const displaySubtitle = computed(() => {
   if (!preview.value) {
     return 'Pilih semester dan data jadwal untuk melihat preview.'
   }
-
   return `Tahun Pelajaran ${preview.value.academicYear || '-'} · ${preview.value.semesterName || '-'} · ${preview.value.scheduleName || '-'}`
 })
 
@@ -74,21 +74,15 @@ const displayTitle = computed(() => {
   if (!preview.value) {
     return selectedMode.value === 'CLASS' ? 'Jadwal Kelas' : 'Jadwal Mengajar Guru'
   }
-
   if (preview.value.mode === 'CLASS') {
     return `Jadwal ${preview.value.selectedClassName || 'Kelas'}`
   }
-
   return `Jadwal Mengajar: ${preview.value.selectedTeacherName || 'Guru'}`
 })
 
 const emptyStateTitle = computed(() => {
   if (!selectedSemesterId.value) return 'Pilih Semester'
-
-  if (selectedMode.value === 'CLASS') {
-    return 'Pilih Kelas'
-  }
-
+  if (selectedMode.value === 'CLASS') return 'Pilih Kelas'
   return 'Pilih Guru'
 })
 
@@ -96,11 +90,9 @@ const emptyStateDescription = computed(() => {
   if (!selectedSemesterId.value) {
     return 'Gunakan dropdown semester untuk memilih periode jadwal.'
   }
-
   if (selectedMode.value === 'CLASS') {
     return 'Preview akan menggunakan jadwal PUBLISHED terbaru pada semester dan kelas yang dipilih.'
   }
-
   return 'Preview akan menggunakan jadwal PUBLISHED terbaru pada semester dan guru yang dipilih.'
 })
 
@@ -163,14 +155,8 @@ async function exportSchedule(format: 'PDF' | 'EXCEL') {
 }
 
 function getRowLabel(row: SchedulePreviewRow): string {
-  if (row.breakTime) {
-    return row.breakLabel || 'Istirahat'
-  }
-
-  if (row.sessionNumber && row.sessionNumber > 0) {
-    return `JP ${row.sessionNumber}`
-  }
-
+  if (row.breakTime) return row.breakLabel || 'Istirahat'
+  if (row.sessionNumber && row.sessionNumber > 0) return `JP ${row.sessionNumber}`
   return 'Sesi'
 }
 
@@ -191,10 +177,7 @@ function isCellEmpty(cell?: SchedulePreviewCell | null): boolean {
 }
 
 function getCellClass(row: SchedulePreviewRow, cell?: SchedulePreviewCell | null) {
-  const isDashCell =
-    !isCellBreak(row, cell) &&
-    !isCellLocked(cell) &&
-    isCellEmpty(cell)
+  const isDashCell = !isCellBreak(row, cell) && !isCellLocked(cell) && isCellEmpty(cell)
 
   return {
     'preview-cell': true,
@@ -206,50 +189,58 @@ function getCellClass(row: SchedulePreviewRow, cell?: SchedulePreviewCell | null
 }
 
 function getPrimaryCellText(row: SchedulePreviewRow, cell?: SchedulePreviewCell | null): string {
-  if (isCellBreak(row, cell)) {
-    return row.breakLabel || cell?.label || 'Istirahat'
-  }
-
-  if (isCellLocked(cell)) {
-    return cell?.label || 'Terkunci'
-  }
-
-  if (isCellEmpty(cell)) {
-    return '-'
-  }
-
-  if (preview.value?.mode === 'CLASS') {
-    return cell?.subjectName || cell?.label || '-'
-  }
-
+  if (isCellBreak(row, cell)) return row.breakLabel || cell?.label || 'Istirahat'
+  if (isCellLocked(cell)) return cell?.label || 'Terkunci'
+  if (isCellEmpty(cell)) return '-'
+  if (preview.value?.mode === 'CLASS') return cell?.subjectName || cell?.label || '-'
   return cell?.className || cell?.label || '-'
 }
 
 function getSecondaryCellText(row: SchedulePreviewRow, cell?: SchedulePreviewCell | null): string {
-  if (!cell || cell.empty || isCellBreak(row, cell) || isCellLocked(cell)) {
-    return ''
-  }
-
-  if (preview.value?.mode === 'CLASS') {
-    return cell.teacherName || ''
-  }
-
+  if (!cell || cell.empty || isCellBreak(row, cell) || isCellLocked(cell)) return ''
+  if (preview.value?.mode === 'CLASS') return cell.teacherName || ''
   return cell.subjectName || ''
 }
 
+// <-- NEW: Helper untuk otomatis memilih guru jika role adalah TEACHER
+function autoAssignTeacherIfApplicable() {
+  if (authStore.user?.role === 'TEACHER') {
+    const myTeacher = teachers.value.find(
+      (t) => t.id === authStore.user?.id || t.name === authStore.user?.fullName
+    )
+    if (myTeacher && selectedTeacherId.value !== myTeacher.id) {
+      previewStore.setSelectedTeacherId(myTeacher.id)
+    }
+  }
+}
+
+// <-- MODIFIED: onMounted disesuaikan agar tidak error 403 untuk guru
 onMounted(async () => {
   await timeSlotStore.fetchAcademicYears()
 
-  // Inisialisasi awal untuk semua role
-  await previewStore.getClasses()
-
-  if (authStore.user?.role !== 'TEACHER') {
-    await previewStore.getTeachers()
+  // Paksa mode ke TEACHER jika rolenya guru
+  if (authStore.user?.role === 'TEACHER' && selectedMode.value !== 'TEACHER') {
+    previewStore.setMode('TEACHER')
   }
+
+  const fetchPromises = []
+  
+  // Semua role butuh data guru
+  fetchPromises.push(previewStore.getTeachers())
+
+  // Hanya non-guru yang diizinkan mengambil data kelas
+  if (authStore.user?.role !== 'TEACHER') {
+    fetchPromises.push(previewStore.getClasses())
+  }
+
+  await Promise.all(fetchPromises)
 
   if (!selectedSemesterId.value && timeSlotStore.activeSemesterId) {
     previewStore.setSemesterId(timeSlotStore.activeSemesterId)
   }
+
+  // Trigger auto assignment
+  autoAssignTeacherIfApplicable()
 })
 
 watch(
@@ -257,18 +248,11 @@ watch(
   async () => {
     previewStore.clearPreview()
 
-    // Jika ganti ke mode kelas, reset class ID biar user milih ulang kelas mana yang mau diintip
-    if (selectedMode.value === 'CLASS') {
-      previewStore.setSelectedClassId(null)
-    }
-
-    // Fetch data guru pelengkap jika ditukar oleh Admin/Staff
-    if (
-      selectedMode.value === 'TEACHER' &&
-      authStore.user?.role !== 'TEACHER' &&
-      teachers.value.length === 0
-    ) {
-      await previewStore.getTeachers()
+    if (selectedMode.value === 'TEACHER') {
+      if (teachers.value.length === 0) {
+        await previewStore.getTeachers()
+      }
+      autoAssignTeacherIfApplicable()
     }
   },
 )
@@ -358,9 +342,11 @@ watch(
 
             <select
               :value="selectedMode"
-              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10 focus:outline-none"
+              :disabled="authStore.user?.role === 'TEACHER'"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10 focus:outline-none disabled:bg-gray-100 disabled:font-semibold disabled:text-gray-600"
               @change="onModeChange"
             >
+              <!-- MODIFIED: loop modeOptions dari computed -->
               <option
                 v-for="option in modeOptions"
                 :key="option.value"
@@ -371,7 +357,7 @@ watch(
             </select>
           </div>
 
-          <!-- Class Dropdown -->
+          <!-- Class Dropdown (Hanya muncul jika mode = CLASS) -->
           <div v-if="selectedMode === 'CLASS'">
             <label class="mb-1 block text-xs font-semibold text-gray-500">
               Kelas
@@ -395,19 +381,20 @@ watch(
             </select>
           </div>
 
-          <!-- Teacher Dropdown -->
+          <!-- Teacher Dropdown (Hanya muncul jika mode = TEACHER) -->
           <div v-if="selectedMode === 'TEACHER'">
             <label class="mb-1 block text-xs font-semibold text-gray-500">
               Guru
             </label>
 
+            <!-- MODIFIED: dropdown dimatikan untuk role TEACHER dan data diloop dari availableTeachers -->
             <select
               :value="selectedTeacherId || ''"
-              :disabled="loadingOptions"
-              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10 focus:outline-none disabled:bg-gray-100"
+              :disabled="loadingOptions || authStore.user?.role === 'TEACHER'"
+              class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10 focus:outline-none disabled:bg-gray-100 disabled:font-semibold disabled:text-gray-600"
               @change="onTeacherChange"
             >
-              <option value="">
+              <option value="" disabled v-if="authStore.user?.role !== 'TEACHER'">
                 -- Pilih Guru --
               </option>
 
@@ -614,7 +601,7 @@ watch(
           <button
             type="button"
             :disabled="exporting"
-            class="mt-8 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-8 text-sm font-bold rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             @click="closeExportModal"
           >
             {{ exporting ? 'Menyiapkan file...' : 'Batal' }}
