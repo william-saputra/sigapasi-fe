@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Settings, CalendarDays, LayoutTemplate, BookOpen, Lock } from 'lucide-vue-next'
+import { Settings, CalendarDays, LayoutTemplate, BookOpen, Lock, ClipboardList } from 'lucide-vue-next'
 import { getCurrentUser, isAdmin, isStaff } from '@/lib/rbac'
 
 const user = getCurrentUser()
@@ -11,6 +11,15 @@ const canConfigure = computed(() => {
 })
 
 const cards = computed(() => [
+  {
+    title: 'Ringkasan Jadwal',
+    description:
+      'Lihat dan ekspor ringkasan jadwal mingguan kelas.',
+    icon: ClipboardList,
+    link: '/ringkasan-jadwal',
+    color: 'teal',
+    show: true,
+  },
   {
     title: 'Pengaturan Slot Waktu',
     description:
@@ -25,7 +34,7 @@ const cards = computed(() => [
     description: 'Atur jadwal mata pelajaran pada slot waktu yang telah ditentukan.',
     icon: CalendarDays,
     link: '/penyusunan-jadwal',
-    color: 'teal',
+    color: 'emerald',
     show: canConfigure.value,
   },
   {
@@ -42,7 +51,7 @@ const cards = computed(() => [
     description: 'Manajemen daftar kelas dan alokasi jam mata pelajaran untuk setiap kelas.',
     icon: BookOpen,
     link: '/jadwal/kelola-kelas',
-    color: 'emerald',
+    color: 'teal',
     show: canConfigure.value,
   },
 ])
