@@ -240,6 +240,13 @@ function getSecondaryCellText(row: SchedulePreviewRow, cell?: SchedulePreviewCel
 onMounted(async () => {
   await timeSlotStore.fetchAcademicYears()
 
+  // Inisialisasi awal untuk semua role
+  await previewStore.getClasses()
+
+  if (authStore.user?.role !== 'TEACHER') {
+    await previewStore.getTeachers()
+  }
+
   if (!selectedSemesterId.value && timeSlotStore.activeSemesterId) {
     previewStore.setSemesterId(timeSlotStore.activeSemesterId)
   }
