@@ -18,7 +18,7 @@ const cards = computed(() => [
     icon: ClipboardList,
     link: '/ringkasan-jadwal',
     color: 'teal',
-    show: canConfigure.value,
+    show: true,
   },
   {
     title: 'Pengaturan Slot Waktu',

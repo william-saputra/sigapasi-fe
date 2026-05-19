@@ -6,6 +6,8 @@ import { AlertTriangle, Calendar } from 'lucide-vue-next'
 
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { useSchedulePreviewStore } from '@/stores/schedules/schedule-preview.store'
+import { useAuthStore } from '@/stores/accounts/auth.store'
+
 import type {
   SchedulePreviewCell,
   SchedulePreviewMode,
@@ -16,6 +18,7 @@ const router = useRouter()
 
 const timeSlotStore = useTimeSlotStore()
 const previewStore = useSchedulePreviewStore()
+const authStore = useAuthStore()
 
 const {
   preview,
@@ -34,16 +37,24 @@ const {
 const showExportModal = ref(false)
 const showExportSuccessModal = ref(false)
 
+// Mode pilihan dikembalikan penuh agar Teacher tetap bisa melihat jadwal "Per Kelas"
 const modeOptions = [
-  {
-    label: 'Per Kelas',
-    value: 'CLASS',
-  },
-  {
-    label: 'Per Guru',
-    value: 'TEACHER',
-  },
+  { label: 'Per Kelas', value: 'CLASS' },
+  { label: 'Per Guru', value: 'TEACHER' },
 ]
+
+// Whitelist Guru: Hanya berlaku JIKA yang login adalah TEACHER
+const availableTeachers = computed(() => {
+  if (authStore.user?.role === 'TEACHER') {
+    return [
+      {
+        id: authStore.user.id,
+        name: authStore.user.fullName,
+      },
+    ]
+  }
+  return teachers.value
+})
 
 const canLoadPreview = computed(() => previewStore.canLoadPreview)
 
@@ -229,11 +240,6 @@ function getSecondaryCellText(row: SchedulePreviewRow, cell?: SchedulePreviewCel
 onMounted(async () => {
   await timeSlotStore.fetchAcademicYears()
 
-  await Promise.all([
-    previewStore.getClasses(),
-    previewStore.getTeachers(),
-  ])
-
   if (!selectedSemesterId.value && timeSlotStore.activeSemesterId) {
     previewStore.setSemesterId(timeSlotStore.activeSemesterId)
   }
@@ -244,7 +250,17 @@ watch(
   async () => {
     previewStore.clearPreview()
 
-    if (selectedMode.value === 'TEACHER' && teachers.value.length === 0) {
+    // Jika ganti ke mode kelas, reset class ID biar user milih ulang kelas mana yang mau diintip
+    if (selectedMode.value === 'CLASS') {
+      previewStore.setSelectedClassId(null)
+    }
+
+    // Fetch data guru pelengkap jika ditukar oleh Admin/Staff
+    if (
+      selectedMode.value === 'TEACHER' &&
+      authStore.user?.role !== 'TEACHER' &&
+      teachers.value.length === 0
+    ) {
       await previewStore.getTeachers()
     }
   },
@@ -384,10 +400,12 @@ watch(
               class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm transition-all focus:border-emerald-800 focus:ring-2 focus:ring-emerald-800/10 focus:outline-none disabled:bg-gray-100"
               @change="onTeacherChange"
             >
-              <option value="" disabled>-- Pilih Guru --</option>
+              <option value="">
+                -- Pilih Guru --
+              </option>
 
               <option
-                v-for="teacher in teachers"
+                v-for="teacher in availableTeachers"
                 :key="teacher.id"
                 :value="teacher.id"
               >
@@ -589,7 +607,7 @@ watch(
           <button
             type="button"
             :disabled="exporting"
-            class="mt-8 text-sm font-bold rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            class="mt-8 rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             @click="closeExportModal"
           >
             {{ exporting ? 'Menyiapkan file...' : 'Batal' }}
