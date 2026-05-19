@@ -20,7 +20,7 @@ watch(
   () => props.summary,
   (newSummary) => {
     if (newSummary && newSummary.incompleteClasses.length > 0) {
-      selectedClassId.value = newSummary.incompleteClasses[0].classId
+      selectedClassId.value = newSummary.incompleteClasses[0]?.classId ?? null
     } else {
       selectedClassId.value = null
     }
