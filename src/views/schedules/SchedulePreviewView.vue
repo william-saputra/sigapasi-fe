@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { AlertTriangle, Calendar } from 'lucide-vue-next'
@@ -27,8 +27,12 @@ const {
   teachers,
   loading,
   loadingOptions,
+  exporting,
   error,
 } = storeToRefs(previewStore)
+
+const showExportModal = ref(false)
+const showExportSuccessModal = ref(false)
 
 const modeOptions = [
   {
@@ -42,6 +46,10 @@ const modeOptions = [
 ]
 
 const canLoadPreview = computed(() => previewStore.canLoadPreview)
+
+const canExport = computed(() => {
+  return !!preview.value && !loading.value && !exporting.value
+})
 
 const displaySubtitle = computed(() => {
   if (!preview.value) {
@@ -118,6 +126,29 @@ function onTeacherChange(event: Event) {
 async function loadPreview() {
   if (!canLoadPreview.value) return
   await previewStore.getPreview()
+}
+
+function openExportModal() {
+  if (!canExport.value) return
+  showExportModal.value = true
+}
+
+function closeExportModal() {
+  if (exporting.value) return
+  showExportModal.value = false
+}
+
+function closeExportSuccessModal() {
+  showExportSuccessModal.value = false
+}
+
+async function exportSchedule(format: 'PDF' | 'EXCEL') {
+  const success = await previewStore.exportSchedule(format)
+
+  if (success) {
+    showExportModal.value = false
+    showExportSuccessModal.value = true
+  }
 }
 
 function getRowLabel(row: SchedulePreviewRow): string {
@@ -262,10 +293,11 @@ watch(
 
         <button
           type="button"
-          class="inline-flex items-center justify-center rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800"
-          disabled
+          :disabled="!canExport"
+          class="inline-flex items-center justify-center rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+          @click="openExportModal"
         >
-          Export Jadwal
+          {{ exporting ? 'Mengekspor...' : 'Export Jadwal' }}
         </button>
       </div>
 
@@ -505,6 +537,98 @@ watch(
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <!-- Export Modal -->
+      <div
+        v-if="showExportModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4"
+        @click.self="closeExportModal"
+      >
+        <div class="w-full max-w-[520px] rounded-2xl bg-white px-10 py-9 text-center shadow-2xl">
+          <h3 class="text-2xl font-bold text-emerald-900">
+            Export Jadwal
+          </h3>
+
+          <p class="mt-3 text-sm text-gray-500">
+            Pilih format dokumen untuk jadwal yang telah dipilih.
+          </p>
+
+          <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <button
+              type="button"
+              :disabled="exporting"
+              class="rounded-xl border border-gray-200 bg-white px-6 py-8 transition hover:border-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+              @click="exportSchedule('PDF')"
+            >
+              <div class="text-4xl">📄</div>
+              <div class="mt-4 text-base font-bold text-gray-900">
+                Dokumen PDF
+              </div>
+              <div class="mt-2 text-xs font-medium text-gray-500">
+                Siap cetak & rapi
+              </div>
+            </button>
+
+            <button
+              type="button"
+              :disabled="exporting"
+              class="rounded-xl border border-gray-200 bg-white px-6 py-8 transition hover:border-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+              @click="exportSchedule('EXCEL')"
+            >
+              <div class="text-4xl">📊</div>
+              <div class="mt-4 text-base font-bold text-gray-900">
+                File Excel
+              </div>
+              <div class="mt-2 text-xs font-medium text-gray-500">
+                Olah data digital
+              </div>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            :disabled="exporting"
+            class="mt-8 text-sm font-bold rounded-lg border border-emerald-700 bg-emerald-700 px-4 py-2 text-sm text-white shadow-sm transition hover:border-emerald-800 hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            @click="closeExportModal"
+          >
+            {{ exporting ? 'Menyiapkan file...' : 'Batal' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Export Success Modal -->
+      <div
+        v-if="showExportSuccessModal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 px-4"
+        @click.self="closeExportSuccessModal"
+      >
+        <div class="w-full max-w-[420px] rounded-2xl bg-white px-9 py-9 text-center shadow-2xl">
+          <div
+            class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 text-4xl text-emerald-700"
+          >
+            ✓
+          </div>
+
+          <h3 class="mt-6 text-2xl font-bold text-emerald-900">
+            Ekspor Berhasil!
+          </h3>
+
+          <p class="mt-4 text-sm leading-6 text-gray-500">
+            File jadwal Anda sedang disiapkan dan akan terunduh secara otomatis dalam beberapa detik.
+            Silakan periksa folder unduhan Anda.
+          </p>
+
+          <button
+            type="button"
+            class="mt-7 w-full rounded-lg bg-emerald-800 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-900"
+            @click="closeExportSuccessModal"
+          >
+            Kembali
+          </button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 

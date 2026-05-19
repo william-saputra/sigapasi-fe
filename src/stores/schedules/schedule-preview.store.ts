@@ -14,6 +14,7 @@ import { getAuthToken } from '@/lib/auth'
 
 const baseSchedulePreviewUrl = `${import.meta.env.VITE_API_URL}/schedules/preview`
 const baseSchedulePreviewOptionUrl = `${import.meta.env.VITE_API_URL}/schedules/preview/options`
+const baseScheduleExportUrl = `${import.meta.env.VITE_API_URL}/schedules/export`
 
 function getAuthHeaders() {
   const token = getAuthToken()
@@ -55,6 +56,7 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
 
     loading: false,
     loadingOptions: false,
+    exporting: false,
     error: null as string | null,
   }),
 
@@ -65,6 +67,11 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
     selectedClass: (state) => {
       if (!state.selectedClassId) return null
       return state.classes.find((cls) => cls.id === state.selectedClassId) ?? null
+    },
+
+    selectedTeacher: (state) => {
+      if (!state.selectedTeacherId) return null
+      return state.teachers.find((teacher) => teacher.id === state.selectedTeacherId) ?? null
     },
 
     canLoadPreview: (state) => {
@@ -103,7 +110,6 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
 
     setSelectedClassId(classId: string | null) {
       this.selectedClassId = classId
-      this.selectedTeacherId = null
       this.preview = null
       this.error = null
     },
@@ -201,10 +207,6 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
       return this.getTeacherPreview()
     },
 
-    /**
-     * Sesuaikan endpoint classes ini dengan endpoint yang sudah ada di project kamu.
-     * Response harus BaseResponse<ClassResponseDTO[]>.
-     */
     async getClasses() {
       this.loadingOptions = true
       this.error = null
@@ -225,21 +227,14 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
       }
     },
 
-    async getTeachers(schoolLevelId?: string | null) {
+    async getTeachers() {
       this.loadingOptions = true
       this.error = null
 
       try {
-        const params = schoolLevelId
-          ? { schoolLevelId }
-          : undefined
-
         const response = await axios.get<BaseResponse<SchedulePreviewOption[]>>(
           `${baseSchedulePreviewOptionUrl}/teachers`,
-          {
-            headers: getAuthHeaders(),
-            params,
-          },
+          { headers: getAuthHeaders() },
         )
 
         this.teachers = response.data.data ?? []
@@ -250,6 +245,93 @@ export const useSchedulePreviewStore = defineStore('schedulePreview', {
       } finally {
         this.loadingOptions = false
       }
+    },
+
+    async exportSchedule(format: 'PDF' | 'EXCEL') {
+      if (!this.selectedSemesterId) {
+        this.error = 'Semester belum dipilih'
+        toast.warning(this.error)
+        return false
+      }
+
+      if (this.selectedMode === 'CLASS' && !this.selectedClassId) {
+        this.error = 'Kelas belum dipilih'
+        toast.warning(this.error)
+        return false
+      }
+
+      if (this.selectedMode === 'TEACHER' && !this.selectedTeacherId) {
+        this.error = 'Guru belum dipilih'
+        toast.warning(this.error)
+        return false
+      }
+
+      this.exporting = true
+      this.error = null
+
+      try {
+        const endpoint =
+          this.selectedMode === 'CLASS'
+            ? `${baseScheduleExportUrl}/semester/${this.selectedSemesterId}/class/${this.selectedClassId}`
+            : `${baseScheduleExportUrl}/semester/${this.selectedSemesterId}/teacher/${this.selectedTeacherId}`
+
+        const response = await axios.get(endpoint, {
+          params: { format },
+          responseType: 'blob',
+          headers: getAuthHeaders(),
+        })
+
+        const extension = format === 'PDF' ? 'pdf' : 'xlsx'
+        const filename = this.buildExportFilename(extension)
+
+        const blob = new Blob([response.data])
+        const downloadUrl = window.URL.createObjectURL(blob)
+
+        const link = document.createElement('a')
+        link.href = downloadUrl
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+
+        window.URL.revokeObjectURL(downloadUrl)
+
+        return true
+      } catch (error) {
+        this.error = showError(error)
+        return false
+      } finally {
+        this.exporting = false
+      }
+    },
+
+    buildExportFilename(extension: 'pdf' | 'xlsx') {
+      const targetName =
+        this.selectedMode === 'CLASS'
+          ? this.preview?.selectedClassName || this.getSelectedClassName()
+          : this.preview?.selectedTeacherName || this.getSelectedTeacherName()
+
+      const safeName = this.sanitizeFilename(targetName || 'Jadwal')
+
+      return `RingkasanJadwal_${safeName}.${extension}`
+    },
+
+    getSelectedClassName() {
+      if (!this.selectedClassId) return null
+      return this.classes.find((cls) => cls.id === this.selectedClassId)?.name ?? null
+    },
+
+    getSelectedTeacherName() {
+      if (!this.selectedTeacherId) return null
+      return this.teachers.find((teacher) => teacher.id === this.selectedTeacherId)?.name ?? null
+    },
+
+    sanitizeFilename(value: string) {
+      return value
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_\-.]/g, '')
+        .replace(/_+/g, '_')
     },
   },
 })
