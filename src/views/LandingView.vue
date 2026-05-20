@@ -24,70 +24,10 @@ const roleGreetings: Record<Role, string> = {
 }
 
 const statsMap: Record<Role, { label: string; value: string; note: string; icon: string }[]> = {
-  ADMIN: [
-    {
-      label: 'Jadwal Aktif',
-      value: '24',
-      note: '2 perlu penyesuaian',
-      icon: 'fa-solid fa-calendar-days',
-    },
-    {
-      label: 'Pengajuan Cuti',
-      value: '5',
-      note: '3 menunggu approval',
-      icon: 'fa-solid fa-file-lines',
-    },
-    {
-      label: 'Guru Pengganti',
-      value: '3',
-      note: 'Slot perlu ditugaskan',
-      icon: 'fa-solid fa-rotate',
-    },
-    {
-      label: 'Review Guru',
-      value: '12',
-      note: '4 evaluasi pending',
-      icon: 'fa-solid fa-star-half-stroke',
-    },
-  ],
-  STAFF: [
-    {
-      label: 'Jadwal Hari Ini',
-      value: '24',
-      note: '2 perlu penyesuaian',
-      icon: 'fa-solid fa-calendar-days',
-    },
-    {
-      label: 'Kehadiran Guru',
-      value: '87%',
-      note: 'Dari total guru aktif',
-      icon: 'fa-solid fa-circle-check',
-    },
-    {
-      label: 'Cuti Pending',
-      value: '3',
-      note: 'Menunggu diproses',
-      icon: 'fa-solid fa-hourglass-half',
-    },
-    { label: 'Notifikasi', value: '7', note: 'Belum ditindaklanjuti', icon: 'fa-solid fa-bell' },
-  ],
+  ADMIN: [],
+  STAFF: [],
   HEAD: [],
-  TEACHER: [
-    { label: 'Kelas Hari Ini', value: '3', note: '1 kelas tersisa', icon: 'fa-solid fa-book-open' },
-    {
-      label: 'Sisa Cuti',
-      value: '9',
-      note: 'Hari dari jatah tahunan',
-      icon: 'fa-solid fa-umbrella-beach',
-    },
-    {
-      label: 'Tugas Pengganti',
-      value: '1',
-      note: 'Jadwal besok pagi',
-      icon: 'fa-solid fa-person-chalkboard',
-    },
-    { label: 'Skor Review', value: '4.5', note: 'Periode Januari', icon: 'fa-solid fa-star' },
-  ],
+  TEACHER: [],
 }
 
 const menusMap: Record<Role, { title: string; desc: string; to: string; icon: string }[]> = {
