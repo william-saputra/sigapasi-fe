@@ -92,13 +92,18 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     const groups = Array.from(map.values()).filter(group => group.teachers.length > 0)
     
     groups.sort((a, b) => {
-      const calcRatio = (teachers: SidebarItemDTO[]) => {
-        const totalCurrent = teachers.reduce((sum, t) => sum + t.currentHours, 0)
-        const totalTarget = teachers.reduce((sum, t) => sum + t.targetHours, 0)
-        return totalTarget > 0 ? totalCurrent / totalTarget : 1
+      const activeClass = classSummaries.value.find((c) => c.classId === activeClassId.value)
+      
+      const getSubjectRatio = (subjectId: string) => {
+        const subjectCompletion = activeClass?.subjectCompletions?.find((s: any) => s.subjectId === subjectId)
+        const target = subjectCompletion?.targetJp ?? 0
+        const current = gridEntries.value.filter((e) => e.subjectId === subjectId).length
+        return target > 0 ? current / target : 1
       }
-      const ratioA = calcRatio(a.teachers)
-      const ratioB = calcRatio(b.teachers)
+
+      const ratioA = getSubjectRatio(a.subjectId)
+      const ratioB = getSubjectRatio(b.subjectId)
+      
       if (ratioA < 1 && ratioB >= 1) return -1
       if (ratioA >= 1 && ratioB < 1) return 1
       return a.subjectName.localeCompare(b.subjectName)
@@ -148,13 +153,32 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
         
         const daySlots = item.availableSlotsByDay[activeDayFilter.value] ?? []
         return daySlots.some(
-          (s) => s.status === 'AVAILABLE' || s.status === 'OVERRIDABLE'
+          (s: any) => s.status === 'AVAILABLE' || s.status === 'OVERRIDABLE'
         )
       })
       .map((item) => {
-        // Dimming hanya diperuntukkan bagi guru yang target JP-nya sudah penuh
-        const isJpFull = item.targetHours > 0 && item.currentHours >= item.targetHours
-        return { ...item, isDimmed: isJpFull }
+        const teacherCurrentHours = gridEntries.value.filter(
+          (entry) => entry.teacherId === item.teacherId && entry.subjectId === item.subjectId
+        ).length;
+
+        const subjectCurrentHours = gridEntries.value.filter(
+          (entry) => entry.subjectId === item.subjectId
+        ).length;
+
+        const activeClass = classSummaries.value.find((c) => c.classId === activeClassId.value);
+        const subjectCompletion = activeClass?.subjectCompletions?.find((s: any) => s.subjectId === item.subjectId);
+        const subjectTargetHours = subjectCompletion?.targetJp ?? 0;
+        
+        const isTeacherFull = item.targetHours > 0 && teacherCurrentHours >= item.targetHours;
+        const isSubjectFull = subjectTargetHours > 0 && subjectCurrentHours >= subjectTargetHours;
+
+        return { 
+          ...item, 
+          currentHours: teacherCurrentHours,
+          subjectCurrentHours,
+          subjectTargetHours,
+          isDimmed: isTeacherFull || isSubjectFull 
+        };
       })
   })
 
@@ -198,7 +222,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     try {
       const data = await scheduleService.getClassesSummary(activeDraft.value.scheduleId)
       const rawSummaries = Array.isArray(data) ? data : ((data as any)?.data ?? [])
-      classSummaries.value = rawSummaries.map((cls) => ({
+      classSummaries.value = rawSummaries.map((cls: any) => ({
         ...cls,
         subjectCompletions: cls.subjectCompletions || [],
         completionStatus: (cls.completionStatus as any) || _computeCompletionStatus(cls),
@@ -271,6 +295,37 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     payload: BulkAssignRequestDTO,
   ): Promise<{ success?: string; warning?: string; error?: string }> {
     if (!activeDraft.value) return { error: 'Tidak ada draf aktif.' }
+
+    // Validasi kuota JP di frontend sebelum hit API
+    const targetItem = sidebarItems.value.find(
+      (item) => item.subjectId === payload.subjectId && item.teacherId === payload.teacherId
+    )
+
+    if (targetItem) {
+      const teacherCurrentHours = gridEntries.value.filter(
+        (entry) => entry.teacherId === payload.teacherId && entry.subjectId === payload.subjectId
+      ).length;
+
+      const subjectCurrentHours = gridEntries.value.filter(
+        (entry) => entry.subjectId === payload.subjectId
+      ).length;
+
+      const activeClass = classSummaries.value.find((c) => c.classId === activeClassId.value);
+      const subjectCompletion = activeClass?.subjectCompletions?.find((s: any) => s.subjectId === payload.subjectId);
+      const subjectTargetHours = subjectCompletion?.targetJp ?? 0;
+
+      if (subjectTargetHours > 0 && subjectCurrentHours + payload.timeSlotIds.length > subjectTargetHours) {
+        const errorMsg = `Gagal menetapkan jadwal: Melebihi batas kuota mata pelajaran (${subjectTargetHours} JP).`
+        if (toast) toast.error(errorMsg)
+        return { error: errorMsg }
+      }
+
+      if (targetItem.targetHours > 0 && teacherCurrentHours + payload.timeSlotIds.length > targetItem.targetHours) {
+        const errorMsg = `Gagal menetapkan jadwal: Melebihi batas kuota jam mengajar guru (${targetItem.targetHours} JP).`
+        if (toast) toast.error(errorMsg)
+        return { error: errorMsg }
+      }
+    }
 
     payload.timeSlotIds.forEach((id) => pendingCells.value.add(id))
 
@@ -467,7 +522,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     activeDragItem.value = item
     highlightedSlots.value.clear()
     if (activeDayFilter.value) {
-      const daySlots = item.availableSlotsByDay[activeDayFilter.value]
+      const daySlots = (item.availableSlotsByDay as any)[activeDayFilter.value as any]
       if (daySlots) {
         for (const slot of daySlots) {
           highlightedSlots.value.set(slot.slotId, { status: slot.status, blockedReason: slot.blockedReason })
@@ -475,7 +530,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
       }
     } else {
       for (const day of ALL_DAYS) {
-        const slots = item.availableSlotsByDay[day] ?? []
+        const slots = (item.availableSlotsByDay as any)[day as any] ?? []
         for (const slot of slots) {
           highlightedSlots.value.set(slot.slotId, { status: slot.status, blockedReason: slot.blockedReason })
         }
@@ -499,9 +554,19 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     if (!results) return
     
     const incompleteClasses: IncompleteClassDetail[] = []
+    let actualCompleteCount = 0
+
     for (const cls of results) {
-      if (!cls.isValid && cls.incompleteSubjects && cls.incompleteSubjects.length > 0) {
-        const classSummary = classSummaries.value.find((c) => c.classId === cls.classId)
+      const classSummary = classSummaries.value.find((c) => c.classId === cls.classId)
+      
+      // Frontend Override: Validate against our local summary
+      const isComplete = classSummary 
+        ? classSummary.completionStatus === 'COMPLETE' || classSummary.filledHours >= classSummary.targetHours
+        : cls.isValid
+
+      if (isComplete) {
+        actualCompleteCount++
+      } else {
         const isFeasible = classSummary?.isFeasible ?? true
         const deficit = classSummary?.deficit ?? 0
         
@@ -517,7 +582,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
           incompleteClasses.push({
             classId: cls.classId,
             className: cls.className,
-            missingSubjects: cls.incompleteSubjects.map((s) => ({
+            missingSubjects: (cls.incompleteSubjects || []).map((s) => ({
               subjectName: s.subjectName,
               missingHours: s.shortfall,
             })),
@@ -530,7 +595,7 @@ export const useScheduleWorkspaceStore = defineStore('scheduleWorkspace', () => 
     
     validationSummary.value = {
       totalClasses: results.length,
-      completeCount: results.filter((r) => r.isValid).length,
+      completeCount: actualCompleteCount,
       incompleteClasses,
     }
   }

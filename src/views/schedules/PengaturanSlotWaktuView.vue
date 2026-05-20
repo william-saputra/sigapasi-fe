@@ -235,7 +235,6 @@ onMounted(async () => {
       >
         <div>
           <h2 class="mb-1 text-3xl font-bold text-emerald-800">Pengaturan Slot Waktu</h2>
-          <p class="text-gray-500">Arsitektur Jadwal</p>
         </div>
 
         <!-- Controls and Master View Action -->

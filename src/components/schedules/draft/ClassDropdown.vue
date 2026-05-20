@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { AlertTriangle } from 'lucide-vue-next'
 import type { ClassSummaryDTO, CompletionStatus } from '@/interfaces/schedules/schedule.types'
 
-defineProps<{
+const props = defineProps<{
   modelValue: string | null
   classes: ClassSummaryDTO[]
 }>()
@@ -55,6 +55,33 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+
+const getGradeLevel = (name: string): number => {
+  const match = name.match(/^(\d+)/)
+  return match && match[1] ? parseInt(match[1], 10) : 0
+}
+
+const compareClasses = (a: ClassSummaryDTO, b: ClassSummaryDTO) => {
+  const levelA = getGradeLevel(a.className)
+  const levelB = getGradeLevel(b.className)
+
+  if (levelA !== levelB) {
+    return levelA - levelB
+  }
+  return a.className.localeCompare(b.className, undefined, { numeric: true, sensitivity: 'base' })
+}
+
+const incompleteClasses = computed(() => {
+  return props.classes
+    .filter((cls) => cls.completionStatus !== 'COMPLETE')
+    .sort(compareClasses)
+})
+
+const completeClasses = computed(() => {
+  return props.classes
+    .filter((cls) => cls.completionStatus === 'COMPLETE')
+    .sort(compareClasses)
+})
 </script>
 
 <template>
@@ -100,23 +127,53 @@ onUnmounted(() => {
         v-if="isOpen"
         class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
       >
-        <li
-          v-for="cls in classes"
-          :key="cls.classId"
-          class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-emerald-50"
-          :class="{
-            'bg-emerald-50': cls.classId === modelValue,
-            'border-l-4 border-emerald-500 pl-3': cls.classId === modelValue
-          }"
-          @click="selectClass(cls.classId)"
-        >
-          <span
-            :class="['h-2.5 w-2.5 flex-shrink-0 rounded-full', getStatusDotClass(cls.completionStatus)]"
-          ></span>
-          <span class="flex-1 truncate text-gray-700">{{ cls.className }}</span>
-          <AlertTriangle v-if="cls.isFeasible === false" class="h-4 w-4 flex-shrink-0 text-red-500" />
-          <span class="text-xs text-gray-400">{{ cls.filledHours }}/{{ cls.targetHours }} Jam Pelajaran</span>
-        </li>
+        <!-- Belum Lengkap Section -->
+        <template v-if="incompleteClasses.length > 0">
+          <li class="bg-gray-50 px-4 py-1.5 text-xs font-bold text-gray-500 border-b border-gray-100 select-none">
+            Belum Lengkap ({{ incompleteClasses.length }})
+          </li>
+          <li
+            v-for="cls in incompleteClasses"
+            :key="cls.classId"
+            class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-emerald-50"
+            :class="{
+              'bg-emerald-50': cls.classId === modelValue,
+              'border-l-4 border-emerald-500 pl-3': cls.classId === modelValue
+            }"
+            @click="selectClass(cls.classId)"
+          >
+            <span
+              :class="['h-2.5 w-2.5 flex-shrink-0 rounded-full', getStatusDotClass(cls.completionStatus)]"
+            ></span>
+            <span class="flex-1 truncate text-gray-700">{{ cls.className }}</span>
+            <AlertTriangle v-if="cls.isFeasible === false" class="h-4 w-4 flex-shrink-0 text-red-500" />
+            <span class="text-xs text-gray-400">{{ cls.filledHours }}/{{ cls.targetHours }} Jam Pelajaran</span>
+          </li>
+        </template>
+
+        <!-- Sudah Lengkap Section -->
+        <template v-if="completeClasses.length > 0">
+          <li class="bg-gray-50 px-4 py-1.5 text-xs font-bold text-gray-500 border-b border-gray-100 select-none" :class="{ 'mt-2': incompleteClasses.length > 0 }">
+            Sudah Lengkap ({{ completeClasses.length }})
+          </li>
+          <li
+            v-for="cls in completeClasses"
+            :key="cls.classId"
+            class="flex cursor-pointer items-center gap-2 px-4 py-2 text-sm hover:bg-emerald-50"
+            :class="{
+              'bg-emerald-50': cls.classId === modelValue,
+              'border-l-4 border-emerald-500 pl-3': cls.classId === modelValue
+            }"
+            @click="selectClass(cls.classId)"
+          >
+            <span
+              :class="['h-2.5 w-2.5 flex-shrink-0 rounded-full', getStatusDotClass(cls.completionStatus)]"
+            ></span>
+            <span class="flex-1 truncate text-gray-700">{{ cls.className }}</span>
+            <AlertTriangle v-if="cls.isFeasible === false" class="h-4 w-4 flex-shrink-0 text-red-500" />
+            <span class="text-xs text-gray-400">{{ cls.filledHours }}/{{ cls.targetHours }} Jam Pelajaran</span>
+          </li>
+        </template>
       </ul>
     </Transition>
 

@@ -390,7 +390,7 @@ function confirmClearAll() {
           Apakah Anda yakin ingin mengosongkan seluruh baris slot di hari ini?
           <br /><br />
           <span class="text-xs text-red-500"
-            >(Perubahan ini akan permanen setelah Anda menekan tombol "Simpan Hari Ini")</span
+            >(Perubahan ini akan permanen setelah Anda menekan tombol "Simpan")</span
           >
         </p>
       </template>

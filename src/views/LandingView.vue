@@ -127,13 +127,13 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Guru Pengganti',
       desc: 'Cari dan tetapkan guru pengganti kelas kosong.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-rotate',
     },
     {
       title: '360 Review',
       desc: 'Pantau progres dan hasil evaluasi guru.',
-      to: '/review',
+      to: '/reviews/periods',
       icon: 'fa-solid fa-chart-line',
     },
     {
@@ -157,15 +157,9 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       icon: 'fa-solid fa-calendar-days',
     },
     {
-      title: 'Proses Cuti',
-      desc: 'Bantu proses administrasi pengajuan cuti.',
-      to: '/leaves',
-      icon: 'fa-solid fa-file-lines',
-    },
-    {
       title: 'Guru Pengganti',
       desc: 'Koordinasi penugasan guru pengganti.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-rotate',
     },
     {
@@ -173,6 +167,12 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       desc: 'Lihat dan perbarui data profil guru.',
       to: '/guru',
       icon: 'fa-solid fa-chalkboard-user',
+    },
+    {
+      title: 'Atur Reviews',
+      desc: 'Kelola periode dan penugasan evaluasi 360 derajat.',
+      to: '/reviews/periods',
+      icon: 'fa-solid fa-star-half-stroke',
     },
   ],
   HEAD: [
@@ -191,7 +191,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Hasil Review',
       desc: 'Lihat rekap evaluasi 360 derajat guru.',
-      to: '/review',
+      to: '/reviews',
       icon: 'fa-solid fa-star-half-stroke',
     },
     {
@@ -223,7 +223,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Kelas Pengganti',
       desc: 'Cek jadwal penggantian yang ditugaskan.',
-      to: '/guru-pengganti',
+      to: '/assignments',
       icon: 'fa-solid fa-person-chalkboard',
     },
   ],

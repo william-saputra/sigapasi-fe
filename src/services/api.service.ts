@@ -31,8 +31,8 @@ const apiService = {
   // Request GET dengan dukungan konfigurasi tambahan (params, headers, dsb)
   async get<T>(resource: string, config?: object): Promise<T> {
     try {
-      const response = await apiClient.get<BaseResponse<T>>(resource, config)
-      return response.data.data
+      const response = await apiClient.get<any>(resource, config)
+      return response.data?.data !== undefined ? response.data.data : response.data
     } catch (error) {
       console.error('API GET Error', error)
       throw error
@@ -42,8 +42,8 @@ const apiService = {
   // Request POST untuk membuat data baru
   async post<T>(resource: string, data: any, config?: object): Promise<T> {
     try {
-      const response = await apiClient.post<BaseResponse<T>>(resource, data, config)
-      return response.data.data
+      const response = await apiClient.post<any>(resource, data, config)
+      return response.data?.data !== undefined ? response.data.data : response.data
     } catch (error) {
       console.error('API POST Error', error)
       throw error
@@ -53,8 +53,8 @@ const apiService = {
   // Request PUT untuk memperbarui data
   async put<T>(resource: string, data: any, config?: object): Promise<T> {
     try {
-      const response = await apiClient.put<BaseResponse<T>>(resource, data, config)
-      return response.data.data
+      const response = await apiClient.put<any>(resource, data, config)
+      return response.data?.data !== undefined ? response.data.data : response.data
     } catch (error) {
       console.error('API PUT Error', error)
       throw error
@@ -64,8 +64,8 @@ const apiService = {
   // Request DELETE untuk menghapus data
   async delete<T>(resource: string, config?: object): Promise<T> {
     try {
-      const response = await apiClient.delete<BaseResponse<T>>(resource, config)
-      return response.data.data
+      const response = await apiClient.delete<any>(resource, config)
+      return response.data?.data !== undefined ? response.data.data : response.data
     } catch (error) {
       console.error('API DELETE Error', error)
       throw error
@@ -75,8 +75,8 @@ const apiService = {
   // Request PATCH untuk update parsial
   async patch<T>(resource: string, data: any, config?: object): Promise<T> {
     try {
-      const response = await apiClient.patch<BaseResponse<T>>(resource, data, config)
-      return response.data.data
+      const response = await apiClient.patch<any>(resource, data, config)
+      return response.data?.data !== undefined ? response.data.data : response.data
     } catch (error) {
       console.error('API PATCH Error', error)
       throw error

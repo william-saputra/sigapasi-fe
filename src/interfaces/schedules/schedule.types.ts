@@ -1,5 +1,6 @@
 // ─── Legacy types (used by scheduleStore.ts — do NOT remove) ────────────────
 import type { DayOfWeek } from './timeSlot.types'
+export type { DayOfWeek }
 
 export interface ScheduleDraft {
   id: string
@@ -223,4 +224,21 @@ export interface ValidationSummary {
   totalClasses: number
   completeCount: number
   incompleteClasses: IncompleteClassDetail[]
+}
+
+export interface TeacherWorkload {
+  teacherId: string;
+  teacherName: string;
+  totalHours: number;
+  status: 'IDEAL' | 'UNDERLOAD' | 'OVERLOAD';
+}
+
+export interface WorkloadAnalyticsResponse {
+  subjectName: string;
+  idealHoursUsed: number;
+  totalTeachers: number;
+  totalIdeal: number;
+  totalUnderload: number;
+  totalOverload: number;
+  teacherWorkloads: TeacherWorkload[];
 }

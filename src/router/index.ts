@@ -45,13 +45,24 @@ function headAdminStaffOnly() {
 
 function teacherOnly() {
   const role = getRoleFromToken()
-  // Kita gunakan toUpperCase agar lebih aman terhadap perbedaan case dari backend
   if (role?.toUpperCase() !== 'TEACHER') {
-    return { path: '/' } // Tendang ke home kalau bukan teacher
+    return { path: '/' }
   }
 }
 
+function headOnly() {
+  const role = getRoleFromToken()
+  if (role?.toUpperCase() !== 'HEAD') {
+    return { path: '/' }
+  }
+}
 
+function teacherOrHeadOnly() {
+  const role = getRoleFromToken()?.toUpperCase()
+  if (role !== 'TEACHER' && role !== 'HEAD') {
+    return { path: '/' }
+  }
+}
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -137,9 +148,21 @@ const router = createRouter({
       beforeEnter: teacherOnly,
     },
     {
+      path: '/leaves/request/edit/:id',
+      name: 'leave-edit',
+      component: () => import('@/views/leaves/LeaveRequestFormView.vue'),
+      beforeEnter: teacherOnly,
+    },
+    {
       path: '/leaves/approvals',
       name: 'leave-approvals',
       component: () => import('@/views/leaves/LeavesApprovalsView.vue'),
+      beforeEnter: headOnly,
+    },
+    {
+      path: '/assignments',
+      name: 'assignment-dashboard',
+      component: () => import('@/views/leaves/AssignmentsDashboard.vue'),
       beforeEnter: headAdminStaffOnly,
     },
     {
@@ -152,13 +175,19 @@ const router = createRouter({
       path: '/reviews',
       name: 'reviews-home',
       component: () => import('@/views/reviews/ReviewTeacherDashboardView.vue'),
-      beforeEnter: teacherOnly,
+      beforeEnter: teacherOrHeadOnly,
     },
     {
       path: '/reviews/:taskId/form',
       name: 'reviews-task-form',
       component: () => import('@/views/reviews/ReviewTaskFormView.vue'),
-      beforeEnter: teacherOnly,
+      beforeEnter: teacherOrHeadOnly,
+    },
+    {
+      path: '/reviews/:teacherId/results',
+      name: 'reviews-detail',
+      component: () => import('@/views/reviews/ReviewResultDetailView.vue'),
+      beforeEnter: teacherOrHeadOnly,
     },
     {
       path: '/reviews/periods/:periodId',
@@ -185,11 +214,10 @@ const router = createRouter({
       meta: { requiresTeacher: true },
     },
     {
-      // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
       path: '/persetujuan-jadwal',
       name: 'schedule-approval-detail',
       component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
-      // beforeEnter: headOnly,
+      beforeEnter: headOnly,
       meta: { title: 'Detail Persetujuan Jadwal' },
     },
     {
@@ -197,13 +225,18 @@ const router = createRouter({
       name: 'notifications',
       component: () => import('@/views/notifications/ListNotificationView.vue'),
     },
-        {
+    {
       // Tanda tanya (?) di belakang id membuatnya opsional (boleh kosong)
-      path: '/persetujuan-jadwal', 
+      path: '/persetujuan-jadwal',
       name: 'schedule-approval-detail',
       component: () => import('@/views/schedules/ScheduleApprovalListView.vue'),
       // beforeEnter: headOnly,
       meta: { title: 'Detail Persetujuan Jadwal' }
+    },
+    {
+      path: '/ringkasan-jadwal',
+      name: 'RingkasanJadwal',
+      component: () => import('@/views/schedules/SchedulePreviewView.vue'),
     },
 
   ],
@@ -230,6 +263,12 @@ router.beforeEach(async (to, from, next) => {
       await academicSetupStore.fetchActiveSetup()
     }
 
+    // if (!academicSetupStore.activeSemester) {
+    //   if (to.path !== '/setup-academic') {
+    //     // Peringatkan user atau redirect
+    //     return next({ path: '/setup-academic' })
+    //   }
+    // }
     // if (!academicSetupStore.activeSemester) {
     //   if (to.path !== '/setup-academic') {
     //     // Peringatkan user atau redirect

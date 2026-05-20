@@ -39,6 +39,9 @@ const isSubmitting = ref(false)
 const showApproveModal = ref(false)
 const isApproving = ref(false)
 
+import WorkloadAnalyticsModal from './WorkloadAnalyticsModal.vue'
+const showAnalyticsModal = ref(false)
+
 // ─── Computed ─────────────────────────────────────────────────────────────────
 const isGridReady = computed(() => {
   if (isInitializing.value) return false
@@ -239,15 +242,25 @@ function closeRevisionModal() {
       <p class="mt-4 text-sm font-medium text-gray-500">Memuat detail jadwal...</p>
     </div>
 
-    <div v-else class="flex gap-4 items-start">
+<div v-else class="flex gap-4 items-start">
       <div
         class="w-64 shrink-0 rounded-xl bg-white p-4 shadow-sm border border-gray-200 sticky top-4"
       >
-        <h3 class="mb-0.5 text-sm font-bold text-emerald-800">Pilih Kelas</h3>
-        <p class="mb-3 text-xs text-gray-400">Klik kartu untuk melihat jadwal.</p>
-
-        <div class="flex flex-col gap-2 max-h-[calc(100vh-240px)] overflow-y-auto pr-1">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h3 class="mb-0.5 text-sm font-bold text-emerald-800">Pilih Kelas</h3>
+            <p class="text-xs text-gray-400">Klik kartu untuk melihat jadwal.</p>
+          </div>
           <button
+            @click="showAnalyticsModal = true"
+            title="Lihat Statistik Beban Jam"
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+          >
+          📊
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-2 max-h-[calc(100vh-240px)] overflow-y-auto pr-1">          <button
             v-for="cls in workspaceStore.classSummaries"
             :key="cls.classId"
             class="flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm font-semibold transition text-left w-full"
@@ -406,7 +419,14 @@ function closeRevisionModal() {
             {{ isApproving ? 'Memproses...' : 'Ya, Terbitkan' }}
           </button>
         </div>
-      </div>
+</div>
     </div>
+
+    <WorkloadAnalyticsModal 
+      :show="showAnalyticsModal"
+      :schedule-id="approvalData.id" 
+      @close="showAnalyticsModal = false"
+    />
+
   </div>
 </template>

@@ -119,7 +119,7 @@ export const useNotificationStore = defineStore('notification', {
             }
           },
 
-          onmessage: (event: any) => {
+          onmessage(event: any) {
             console.log('[SSE] message:', event.event, event.data)
 
             if (event.event === 'connected') {
@@ -149,13 +149,13 @@ export const useNotificationStore = defineStore('notification', {
             }
           },
 
-          onclose: () => {
+          onclose() {
             console.warn('[SSE] connection closed by server')
             this.sseConnected = false
             this.sseStarting = false
           },
 
-          onerror: (error: any) => {
+          onerror(error: any) {
             console.error('[SSE] error:', error)
             this.sseConnected = false
             this.sseStarting = false
@@ -209,7 +209,9 @@ export const useNotificationStore = defineStore('notification', {
         const createdNotification = response.data.data ?? null
 
         if (createdNotification) {
-          const exists = this.notifications.some((notif) => notif.id === createdNotification.id)
+          const exists = this.notifications.some(
+            (notif) => notif.id === createdNotification.id,
+          )
           if (!exists) {
             this.notifications.unshift(createdNotification)
           }
@@ -307,7 +309,9 @@ export const useNotificationStore = defineStore('notification', {
         }
 
         const deletedIds = deletedNotifications.map((notif) => notif.id)
-        this.notifications = this.notifications.filter((notif) => !deletedIds.includes(notif.id))
+        this.notifications = this.notifications.filter(
+          (notif) => !deletedIds.includes(notif.id),
+        )
 
         showSuccess(response.data.message || 'Notifications deleted successfully')
         return deletedNotifications
