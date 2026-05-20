@@ -100,7 +100,7 @@ const chartOptions = {
         color: '#94a3b8',
         backdropColor: 'transparent',
       },
-      pointLabels: { font: { size: 11, weight: '600' as const }, color: '#374151' },
+      pointLabels: { font: { size: 11, weight: 600 }, color: '#374151' },
       grid: { color: 'rgba(148,163,184,0.25)' },
       angleLines: { color: 'rgba(148,163,184,0.35)' },
     },

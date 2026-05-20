@@ -251,12 +251,12 @@ function goBack() {
         </div>
 
         <div v-if="showSuccess" class="alert-success">
-          <CheckCircle class="icon-alert" size="20" />
+          <CheckCircle class="icon-alert" :size="20" />
           <span>Pengajuan berhasil {{ isEditMode ? 'diperbarui' : 'dikirim' }}! Mengalihkan halaman...</span>
         </div>
 
         <div v-if="leaveStore.error" class="alert-error">
-          <AlertTriangle class="icon-alert" size="20" />
+          <AlertTriangle class="icon-alert" :size="20" />
           <span>Gagal: {{ leaveStore.error }}</span>
         </div>
 

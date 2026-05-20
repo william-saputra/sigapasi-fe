@@ -325,10 +325,10 @@ function onSave() {
                     </td>
 
                     <td class="px-8 py-6 align-middle border-l border-gray-100">
-                      <template v-if="cls.unfulfilledTargets.length > 0">
+                      <template v-if="cls.incompleteSubjects.length > 0">
                         <div class="grid grid-cols-1 xl:grid-cols-2 gap-3">
                           <div
-                            v-for="target in cls.unfulfilledTargets"
+                            v-for="target in cls.incompleteSubjects"
                             :key="target.subjectName"
                             class="flex items-center justify-between rounded-lg border border-red-100 bg-red-50/40 p-3 transition-colors hover:bg-red-50"
                           >
@@ -358,7 +358,7 @@ function onSave() {
                               <span
                                 class="text-xs font-bold text-red-600 bg-red-100/80 px-2 py-1 rounded-md"
                               >
-                                {{ target.allocatedHours }} / {{ target.targetHours }} JP
+                                {{ target.currentJp }} / {{ target.targetJp }} JP
                               </span>
                             </div>
                           </div>

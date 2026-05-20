@@ -26,10 +26,10 @@ const assignmentStore = useAssignmentStore()
 // State Tanggal (Menggunakan waktu lokal)
 const now = new Date()
 const offset = now.getTimezoneOffset() * 60000
-const localISOTime = new Date(now.getTime() - offset).toISOString().split('T')[0]
+const localISOTime = new Date(now.getTime() - offset).toISOString().split('T')[0] ?? ''
 
-const todayStr = localISOTime
-const selectedDate = ref(todayStr)
+const todayStr: string = localISOTime
+const selectedDate = ref<string>(todayStr)
 const statusFilter = ref<string>('ALL')
 
 // State Modal & Validasi

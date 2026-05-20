@@ -106,7 +106,7 @@ const chartOptions = computed(() => ({
         backdropColor: 'transparent',
       },
       pointLabels: {
-        font: { size: 11, weight: '600' },
+        font: { size: 11, weight: 600 },
         color: '#374151',
       },
       grid: { color: 'rgba(148,163,184,0.3)' },

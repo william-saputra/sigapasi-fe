@@ -15,7 +15,7 @@ export function useReviewChart() {
       const raw = await apiService.get<{ id: string; semesterName: string }[]>('/reviews/periods')
       periods.value = raw.map((p) => ({ id: p.id, semesterName: p.semesterName }))
       if (periods.value.length > 0 && !selectedPeriodId.value) {
-        selectedPeriodId.value = periods.value[0].id
+        selectedPeriodId.value = periods.value[0]!.id
       }
     } catch {
       // periods unavailable — chart stays hidden
