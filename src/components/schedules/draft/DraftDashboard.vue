@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { AlertCircle, Calendar } from 'lucide-vue-next'
 import { useScheduleDraftStore } from '@/stores/schedules/scheduleDraftStore'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import ScheduleApprovalModal from './ScheduleApprovalModal.vue'
@@ -250,14 +251,14 @@ function closeCreateModal() {
     </div>
     <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h2 class="mb-1 text-2xl font-bold text-emerald-800">Daftar Draft Jadwal</h2>
-        <p class="text-sm text-gray-500">Pilih draft yang sudah ada atau buat yang baru.</p>
+        <h2 class="mb-1 text-2xl font-bold text-emerald-800">Draft Jadwal</h2>
+        <p class="text-sm text-gray-500">Kelola dan pantau rancangan jadwal sebelum diajukan.</p>
       </div>
       <button
         class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-800"
         @click="showCreateModal = true"
       >
-        + Buat Draft Baru
+        + Buat Draft
       </button>
     </div>
 
@@ -288,43 +289,53 @@ function closeCreateModal() {
       <div
         v-for="draft in mergedDrafts"
         :key="draft.scheduleId"
-        class="flex min-h-[160px] flex-col justify-between rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-600 hover:shadow-md"
+        class="flex flex-col h-full min-h-[12rem] rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-emerald-600 hover:shadow-md"
       >
-        <div class="cursor-pointer" @click="emit('open-draft', draft)">
-          <h3 class="mb-1 text-base font-bold text-gray-800">{{ draft.name }}</h3>
-          <span
-            :class="[
-              'inline-block rounded-full px-3 py-0.5 text-xs font-semibold',
-              statusBadge(draft.status),
-            ]"
-          >
-            {{ statusLabel(draft.status) }}
-          </span>
-          <div class="mt-2 text-xs text-gray-400">
-            Dibuat: {{ new Date(draft.createdAt).toLocaleDateString('id-ID') }}
-          </div>
-        </div>
-
-        <div class="mt-4 flex flex-col gap-2">
-          <div
-            v-if="draft.status === 'REVISION_REQUIRED' && draft.revisionNote"
-            class="rounded-lg bg-red-50 p-3 mb-2 border border-red-200 text-xs"
-          >
-            <strong class="text-red-800 block mb-1">⚠️ Catatan Revisi Atasan:</strong>
-            <p class="text-red-700">{{ draft.revisionNote }}</p>
+<div class="cursor-pointer" @click="emit('open-draft', draft)">
+            <div class="flex justify-between items-start mb-2">
+              <h3 class="text-base font-semibold text-gray-800">{{ draft.name }}</h3>
+              <span
+                :class="[
+                  'inline-block rounded-full px-3 py-0.5 text-xs font-semibold whitespace-nowrap',
+                  statusBadge(draft.status),
+                ]"
+              >
+                {{ statusLabel(draft.status) }}
+              </span>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-slate-500">
+              <Calendar class="w-4 h-4" />
+              {{ new Date(draft.createdAt).toLocaleDateString('id-ID') }}
+            </div>
           </div>
 
-          <div class="flex gap-2">
+        <div class="mt-auto flex flex-col gap-3 border-t border-gray-100 pt-4">
+<div
+              v-if="draft.status === 'REVISION_REQUIRED' && draft.revisionNote"
+              class="rounded-lg bg-red-50 p-3 border border-red-200 text-xs"
+              :title="draft.revisionNote"
+            >
+              <div class="flex items-center gap-2 mb-1">
+                <AlertCircle class="w-4 h-4 text-red-600" />
+                <strong class="text-red-800">Catatan Revisi Atasan:</strong>
+              </div>
+              <p class="text-red-700 line-clamp-2">{{ draft.revisionNote }}</p>
+            </div>
+            <div v-else class="py-1">
+              <p class="text-xs text-gray-400 italic">Tidak ada catatan revisi.</p>
+            </div>
+
+          <div class="flex gap-3 w-full">
             <button
               v-if="userRole === 'HEAD'"
-              class="flex-1 rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-teal-800"
+              class="flex-1 w-full rounded-lg bg-teal-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-teal-800"
               @click="emit('open-draft', draft)"
             >
               Lihat Detail Jadwal
             </button>
             <button
               v-else
-              class="flex-1 rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-800"
+              class="flex-1 w-full rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-800"
               @click="emit('open-draft', draft)"
             >
               {{ draft.status === 'PUBLISHED' ? 'Lihat Jadwal' : 'Edit Jadwal' }}
@@ -339,7 +350,7 @@ function closeCreateModal() {
                 (draftStore.isPublishing && publishingId === draft.scheduleId) ||
                 submittingId === draft.scheduleId
               "
-              class="flex-1 rounded-lg border border-yellow-500 bg-yellow-50 px-3 py-1.5 text-xs font-bold text-yellow-700 transition hover:bg-yellow-100 disabled:opacity-50"
+              class="flex-1 w-full rounded-lg bg-yellow-500 px-3 py-1.5 text-xs font-semibold text-white border-transparent transition hover:bg-yellow-600 disabled:opacity-50"
               @click="onSubmitApproval(draft.scheduleId)"
             >
               {{ submittingId === draft.scheduleId ? 'Mengajukan...' : 'Ajukan' }}
@@ -348,7 +359,7 @@ function closeCreateModal() {
             <button
               v-if="userRole === 'HEAD' && draft.status !== 'PUBLISHED'"
               :disabled="draftStore.isPublishing && publishingId === draft.scheduleId"
-              class="flex-1 rounded-lg border border-teal-600 px-3 py-1.5 text-xs font-bold text-teal-700 transition hover:bg-teal-50 disabled:opacity-50"
+              class="flex-1 w-full rounded-lg border border-teal-600 px-3 py-1.5 text-xs font-bold text-teal-700 transition hover:bg-teal-50 disabled:opacity-50"
               @click="openApprovalModal(draft)"
             >
               Review Jadwal
@@ -374,13 +385,13 @@ function closeCreateModal() {
       @click.self="showCreateModal = false"
     >
       <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h3 class="mb-4 text-lg font-bold text-gray-800">Buat Draft Jadwal Baru</h3>
+        <h3 class="mb-4 text-lg font-bold text-gray-800">Buat Draft Baru</h3>
 
         <div
           v-if="modalError"
           class="mb-4 flex items-center gap-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2.5 text-sm text-red-800"
         >
-          <span>⚠️</span>
+          <AlertCircle class="w-5 h-5 text-red-600" />
           <span class="flex-1">{{ modalError }}</span>
           <button class="text-xs font-semibold underline" @click="modalError = null">Tutup</button>
         </div>

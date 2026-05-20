@@ -1,52 +1,41 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { useScheduleWorkspaceStore } from '@/stores/schedules/scheduleWorkspaceStore'
 import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import SidebarResource from './SidebarResource.vue'
 import ScheduleGrid from './ScheduleGrid.vue'
+import ClassDropdown from './ClassDropdown.vue'
+import ValidationModal from './ValidationModal.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
 import type { ScheduleDraftDTO } from '@/interfaces/schedules/schedule.types'
-import { Trash2 } from 'lucide-vue-next'
+import { Trash2, AlertTriangle, ClipboardList, Lock, Edit3 } from 'lucide-vue-next'
 
-// ─── Props ───────────────────────────────────────────────────────────────────
 const props = defineProps<{ draft: ScheduleDraftDTO }>()
 
-// ─── Emits ───────────────────────────────────────────────────────────────────
 const emit = defineEmits<{ back: [] }>()
 
-// ─── Stores ──────────────────────────────────────────────────────────────────
 const router = useRouter()
 const workspaceStore = useScheduleWorkspaceStore()
 const timeSlotStore = useTimeSlotStore()
 const toast = useToast()
 
-// ─── Local State ─────────────────────────────────────────────────────────────
 const isSaving = ref(false)
 const isClearingClass = ref(false)
 const showClearClassModal = ref(false)
 const isInitializing = ref(true)
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
-/** Flag untuk menandakan grid siap dirender - semua data async sudah resolved */
 const isGridReady = computed(() => {
-  // Grid siap jika:
   if (isInitializing.value) return false
   if (timeSlotStore.isLoading) return false
-
-  // Jika ada kelas aktif, pastikan grid juga sudah selesai loading
   if (workspaceStore.activeClassId && workspaceStore.isLoadingGrid) return false
-
   return true
 })
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   isInitializing.value = true
   try {
-    // PERBAIKAN: Fetch academic years dan init workspace secara paralel
-    // untuk mengurangi waktu inisialisasi
     await Promise.all([
       timeSlotStore.fetchAcademicYears(),
       workspaceStore.initWorkspace(props.draft),
@@ -60,22 +49,31 @@ onMounted(async () => {
   }
 })
 
-// ─── Functions ────────────────────────────────────────────────────────────────
-async function onSelectClass(event: Event) {
-  const classId = (event.target as HTMLSelectElement).value
+onBeforeRouteLeave((to, from, next) => {
+  if (workspaceStore.isWorkspaceActive) {
+    workspaceStore.setPendingNavigation(
+      () => {
+        workspaceStore.resetWorkspace()
+        next()
+      },
+      () => {
+        next(false)
+      }
+    )
+    workspaceStore.openValidationModal()
+  } else {
+    next()
+  }
+})
+
+async function onSelectClass(classId: string) {
   if (classId) await workspaceStore.setActiveClass(classId)
 }
 
 async function onSaveAndClose() {
-  isSaving.value = true
-  try {
-    router.push({
-      name: 'draft-validation',
-      params: { draftId: props.draft.scheduleId },
-    })
-  } finally {
-    isSaving.value = false
-  }
+  router.push({
+    name: 'jadwal-dashboard',
+  })
 }
 
 async function onClearClass() {
@@ -96,8 +94,19 @@ async function confirmClearClass() {
 }
 
 function onBack() {
-  workspaceStore.resetWorkspace()
-  emit('back')
+  if (workspaceStore.activeClassId && workspaceStore.classSummaries.length > 0) {
+    workspaceStore.setPendingNavigation(
+      () => {
+        workspaceStore.resetWorkspace()
+        emit('back')
+      },
+      () => {}
+    )
+    workspaceStore.openValidationModal()
+  } else {
+    workspaceStore.resetWorkspace()
+    emit('back')
+  }
 }
 
 function showToast(msg: string, type: 'success' | 'warning' | 'error') {
@@ -109,9 +118,7 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
 
 <template>
   <div>
-    <!-- ─── Workspace Header ───────────────────────────────────────────────── -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
-      <!-- Back + Title -->
       <div class="flex items-center gap-3">
         <button
           class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100"
@@ -121,32 +128,21 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
         </button>
         <div>
           <h2 class="text-xl font-bold text-emerald-800">{{ draft.name }}</h2>
-          <span class="text-xs text-gray-400">
-            {{ draft.status === 'PUBLISHED' ? '🔒 Terpublikasi' : '✏️ Draft Mode' }}
+          <span class="flex items-center gap-1.5 text-xs text-gray-400 mt-1">
+            <Lock v-if="draft.status === 'PUBLISHED'" class="h-3 w-3" />
+            <Edit3 v-else class="h-3 w-3" />
+            {{ draft.status === 'PUBLISHED' ? 'Terpublikasi' : 'Draft Mode' }}
           </span>
         </div>
       </div>
 
-      <!-- Controls: Class Select + Actions -->
       <div class="flex flex-wrap items-center gap-3">
-        <!-- Class Dropdown -->
-        <select
-          :value="workspaceStore.activeClassId ?? ''"
-          class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none"
-          @change="onSelectClass"
-        >
-          <option value="">— Pilih Kelas —</option>
-          <option
-            v-for="cls in workspaceStore.classSummaries"
-            :key="cls.classId"
-            :value="cls.classId"
-          >
-            {{ cls.className }}
-            ({{ cls.filledHours }}/{{ cls.targetHours }} jam)
-          </option>
-        </select>
+        <ClassDropdown
+          v-model="workspaceStore.activeClassId"
+          :classes="workspaceStore.classSummaries"
+          @update:model-value="onSelectClass"
+        />
 
-        <!-- Clear class button -->
         <button
           v-if="workspaceStore.activeClassId"
           :disabled="isClearingClass || draft.status === 'PUBLISHED'"
@@ -156,18 +152,16 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
           {{ isClearingClass ? 'Menghapus...' : 'Kosongkan Kelas' }}
         </button>
 
-        <!-- Save & Close -->
         <button
           :disabled="isSaving || draft.status === 'PUBLISHED'"
           class="rounded-lg bg-emerald-800 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-900 disabled:opacity-50"
           @click="onSaveAndClose"
         >
-          {{ isSaving ? 'Memvalidasi...' : 'Simpan & Tutup' }}
+          {{ isSaving ? 'Memvalidasi...' : 'Simpan' }}
         </button>
       </div>
     </div>
 
-    <!-- ─── Initial Loading State ─────────────────────────────────────────── -->
     <div
       v-if="isInitializing || timeSlotStore.isLoading"
       class="flex items-center justify-center py-16"
@@ -180,25 +174,36 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
       </div>
     </div>
 
-    <!-- ─── Active Class Workspace ─────────────────────────────────────────── -->
     <div
       v-else-if="workspaceStore.activeClassId"
       class="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]"
     >
+      <div
+        v-if="workspaceStore.activeClassFeasibility?.isFeasible === false"
+        class="col-span-1 lg:col-span-2 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-red-800"
+      >
+        <AlertTriangle class="h-5 w-5 flex-shrink-0 text-red-600" />
+        <div class="text-sm">
+          <p class="font-semibold">Kapasitas Waktu Tidak Mencukupi</p>
+          <p>
+            Total target ({{ workspaceStore.activeClassFeasibility.totalTargetJp }} Jam Pelajaran) melebihi slot yang tersedia ({{ workspaceStore.activeClassFeasibility.availableLessonSlots }} slot). Mohon kurangi target sebesar {{ workspaceStore.activeClassFeasibility.deficit }} Jam Pelajaran.
+          </p>
+        </div>
+      </div>
       <SidebarResource />
       <ScheduleGrid :is-grid-ready="isGridReady" @show-toast="showToast" />
     </div>
 
-    <!-- ─── Empty State (no class selected) ──────────────────────────────── -->
     <div v-else class="rounded-xl border border-gray-200 bg-white py-16 text-center shadow-sm">
-      <div class="mb-3 text-5xl">📋</div>
+      <div class="mb-4 flex justify-center text-gray-300">
+        <ClipboardList class="h-14 w-14" />
+      </div>
       <h3 class="mb-2 text-lg font-bold text-gray-700">Pilih Kelas Terlebih Dahulu</h3>
       <p class="text-sm text-gray-400">
         Gunakan dropdown di atas untuk memilih kelas sebelum menyusun jadwal.
       </p>
     </div>
 
-    <!-- ─── Clear Class Warning Modal ──────────────────────────────────────── -->
     <BaseModal :show="showClearClassModal" @close="showClearClassModal = false">
       <template #header>
         <div class="mb-4 flex justify-center">
@@ -228,5 +233,12 @@ function showToast(msg: string, type: 'success' | 'warning' | 'error') {
         </div>
       </template>
     </BaseModal>
+
+    <ValidationModal
+      :show="workspaceStore.isValidationModalOpen"
+      :summary="workspaceStore.validationSummary"
+      @confirm="workspaceStore.confirmValidationAndNavigate()"
+      @cancel="workspaceStore.cancelValidation()"
+    />
   </div>
 </template>

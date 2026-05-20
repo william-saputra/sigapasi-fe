@@ -1,4 +1,7 @@
 // ─── Legacy types (used by scheduleStore.ts — do NOT remove) ────────────────
+import type { DayOfWeek } from './timeSlot.types'
+export type { DayOfWeek }
+
 export interface ScheduleDraft {
   id: string
   semester_id: string
@@ -67,12 +70,35 @@ export interface ScheduleApprovalListDTO {
 }
 
 // ─── Grup B: Data Persiapan UI ─────────────────────────────────────────────
+export type SlotAvailabilityStatus = 'AVAILABLE' | 'OVERRIDABLE' | 'BLOCKED'
+export type CompletionStatus = 'COMPLETE' | 'PARTIAL' | 'EMPTY'
+export type BlockedReason = 'SLOT_LOCKED' | 'SLOT_BREAK' | 'TEACHER_UNAVAILABLE' | 'TEACHER_CONFLICT'
+
+export const BLOCKED_REASON_MESSAGES: Record<BlockedReason, string> = {
+  SLOT_LOCKED: 'Slot waktu terkunci',
+  SLOT_BREAK: 'Jam istirahat',
+  TEACHER_UNAVAILABLE: 'Guru tidak tersedia di slot ini',
+  TEACHER_CONFLICT: 'Guru sudah mengajar di kelas lain pada waktu ini',
+}
+
 export interface ClassSummaryDTO {
   classId: string
   className: string
   schoolLevelId: string
   filledHours: number
   targetHours: number
+  subjectCompletions: Array<{
+    subjectId: string
+    subjectName: string
+    currentJp: number
+    targetJp: number
+    isMet?: boolean
+  }>
+  completionStatus: CompletionStatus
+  availableLessonSlots: number
+  totalTargetJp: number
+  isFeasible: boolean
+  deficit: number
 }
 
 export interface SidebarItemDTO {
@@ -83,6 +109,7 @@ export interface SidebarItemDTO {
   subjectKode: string
   targetHours: number
   currentHours: number
+  availableSlotsByDay: Record<DayOfWeek, Array<{ slotId: string; status: SlotAvailabilityStatus; existingEntryId?: string | null; blockedReason?: BlockedReason | null }>>
 }
 
 export interface ScheduleEntryDTO {
@@ -138,18 +165,19 @@ export interface ClassValidationResultDTO {
 }
 
 // ─── Grup D: Batch Validation (Seluruh Kelas) ───────────────────────────────
-export interface UnfulfilledTargetDTO {
+export interface IncompleteSubjectDTO {
+  subjectId: string
   subjectName: string
-  targetHours: number
-  allocatedHours: number
-  missingHours: number
+  targetJp: number
+  currentJp: number
+  shortfall: number
 }
 
 export interface ClassValidationSummaryDTO {
   classId: string
   className: string
   isValid: boolean
-  unfulfilledTargets: UnfulfilledTargetDTO[]
+  incompleteSubjects: IncompleteSubjectDTO[]
   conflicts: any[]
 }
 
@@ -178,4 +206,39 @@ export interface EdgePullResult {
   successSlots: string[]
   failedSlots: { slotId: string; error: string }[]
   warnings: { slotId: string; message: string }[]
+}
+
+// ─── Grup F: Proactive Guided UI Types ─────────────────────────────────
+export interface IncompleteClassDetail {
+  classId: string
+  className: string
+  missingSubjects: Array<{
+    subjectName: string
+    missingHours: number
+  }>
+  isFeasible?: boolean
+  deficit?: number
+}
+
+export interface ValidationSummary {
+  totalClasses: number
+  completeCount: number
+  incompleteClasses: IncompleteClassDetail[]
+}
+
+export interface TeacherWorkload {
+  teacherId: string;
+  teacherName: string;
+  totalHours: number;
+  status: 'IDEAL' | 'UNDERLOAD' | 'OVERLOAD';
+}
+
+export interface WorkloadAnalyticsResponse {
+  subjectName: string;
+  idealHoursUsed: number;
+  totalTeachers: number;
+  totalIdeal: number;
+  totalUnderload: number;
+  totalOverload: number;
+  teacherWorkloads: TeacherWorkload[];
 }

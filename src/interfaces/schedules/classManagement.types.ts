@@ -45,4 +45,5 @@ export interface BulkClassSubjectTargetRequestDTO {
 export interface ClassTargetSummaryDTO {
   totalTargetHours: number
   totalSubjects: number
+  availableLessonSlots: number
 }

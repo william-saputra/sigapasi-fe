@@ -1,18 +1,20 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useLeaveStore } from '@/stores/leaves/leaverequest.store'
 import type { CreateLeaveRequestDTO } from '@/interfaces/leaves/leaverequest.interface'
+import { CheckCircle, AlertTriangle, Calendar, Clock } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const leaveStore = useLeaveStore()
-
-onMounted(() => {
-  leaveStore.fetchLeaveQuota()
-})
 
 const showSuccess = ref(false)
 const uploadedFile = ref<File | null>(null)
+const isLoadingData = ref(false)
+
+const leaveId = computed(() => route.params.id as string | undefined)
+const isEditMode = computed(() => !!leaveId.value)
 
 const form = reactive({
   leaveType: 'FULL_DAY',
@@ -39,7 +41,7 @@ const errors = reactive({
   pastDate: false,
   quota: false,
   maxHours: false,
-  onlyWeekend: false, // [BARU] State error jika cuti jatuh sepenuhnya di hari libur
+  onlyWeekend: false,
 })
 
 const isHarian = computed(() => form.leaveType === 'FULL_DAY')
@@ -47,7 +49,7 @@ const isSakit = computed(() => form.category === 'SAKIT')
 
 const isFormInvalid = computed(() => {
   if (!form.category || !form.reason.trim()) return true
-  if (isSakit.value && !uploadedFile.value) return true
+  if (!isEditMode.value && isSakit.value && !uploadedFile.value) return true
 
   if (isHarian.value) {
     if (!form.startDate || !form.endDate) return true
@@ -55,6 +57,36 @@ const isFormInvalid = computed(() => {
     if (!form.singleDate || !form.startTime || !form.endTime) return true
   }
   return false
+})
+
+onMounted(async () => {
+  await leaveStore.fetchLeaveQuota()
+
+  if (isEditMode.value && leaveId.value) {
+    isLoadingData.value = true
+    try {
+      const data = await leaveStore.fetchLeaveRequestById(leaveId.value)
+
+      form.leaveType = data.type
+      form.category = data.category
+      form.reason = data.reason
+
+      if (data.type === 'FULL_DAY') {
+        form.startDate = data.startDate.split('T')[0]
+        form.endDate = data.endDate ? data.endDate.split('T')[0] : data.startDate.split('T')[0]
+      } else {
+        form.singleDate = data.startDate.split('T')[0]
+        form.startTime = data.startTime ? data.startTime.substring(0, 5) : ''
+        form.endTime = data.endTime ? data.endTime.substring(0, 5) : ''
+      }
+    } catch (error) {
+      console.error('Gagal mengambil data cuti:', error)
+      alert('Pengajuan tidak ditemukan atau tidak dapat diakses')
+      router.push({ name: 'leaves-history' })
+    } finally {
+      isLoadingData.value = false
+    }
+  }
 })
 
 function resetErrors() {
@@ -76,30 +108,22 @@ function toDateOnly(dateStr: string) {
   return d
 }
 
-// [BARU] Fungsi menghitung hari kerja efektif (skip Sabtu-Minggu)
 function calculateWorkingDays(startStr: string, endStr: string) {
   if (!startStr || !endStr) return 0
-
   const current = toDateOnly(startStr)
   const end = toDateOnly(endStr)
   let count = 0
-
   while (current <= end) {
     const dayOfWeek = current.getDay()
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      // Bukan Minggu (0) dan Sabtu (6)
-      count++
-    }
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) count++
     current.setDate(current.getDate() + 1)
   }
-
   return count
 }
 
 function validateForm() {
   resetErrors()
   let hasError = false
-
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -116,26 +140,21 @@ function validateForm() {
         hasError = true
       }
 
-      if (!isSakit.value) {
-        if (start < today || end < today) {
+      if (!isEditMode.value) {
+        if (!isSakit.value && (start < today || end < today)) {
           errors.pastDate = true
           hasError = true
-        }
-      } else {
-        if (start < maxBackdateAllowed) {
+        } else if (isSakit.value && start < maxBackdateAllowed) {
           errors.pastDate = true
           hasError = true
         }
       }
 
       const workingDays = calculateWorkingDays(form.startDate, form.endDate)
-
       if (workingDays === 0) {
-        // Jika 0, berarti rentang tanggal full kena Sabtu/Minggu
         errors.onlyWeekend = true
         hasError = true
       } else if (form.category === 'IZIN_PRIBADI') {
-        // Validasi sisa kuota menggunakan workingDays
         if (workingDays > leaveStore.leaveQuota) {
           errors.quota = true
           hasError = true
@@ -143,17 +162,14 @@ function validateForm() {
       }
     }
   } else {
-    // UNTUK PARSIAL
     if (form.singleDate) {
       const single = toDateOnly(form.singleDate)
 
-      if (!isSakit.value) {
-        if (single < today) {
+      if (!isEditMode.value) {
+        if (!isSakit.value && single < today) {
           errors.pastDate = true
           hasError = true
-        }
-      } else {
-        if (single < maxBackdateAllowed) {
+        } else if (isSakit.value && single < maxBackdateAllowed) {
           errors.pastDate = true
           hasError = true
         }
@@ -174,7 +190,6 @@ function validateForm() {
         const [startH = 0, startM = 0] = form.startTime.split(':').map(Number)
         const [endH = 0, endM = 0] = form.endTime.split(':').map(Number)
         const diffHours = endH + endM / 60 - (startH + startM / 60)
-
         if (diffHours > 4) {
           errors.maxHours = true
           hasError = true
@@ -182,7 +197,6 @@ function validateForm() {
       }
     }
   }
-
   return !hasError
 }
 
@@ -201,7 +215,12 @@ async function submitForm() {
   }
 
   try {
-    await leaveStore.createLeaveRequest(payload)
+    if (isEditMode.value && leaveId.value) {
+      await leaveStore.updateLeaveRequest(leaveId.value, payload)
+    } else {
+      await leaveStore.createLeaveRequest(payload)
+    }
+
     showSuccess.value = true
     setTimeout(() => {
       router.push({ name: 'leaves-history' })
@@ -220,32 +239,45 @@ function goBack() {
   <div class="container">
     <div class="request-card">
       <div class="request-card__header">
-        <h2>Pengajuan Cuti Guru</h2>
+        <h2>{{ isEditMode ? 'Edit Pengajuan Cuti' : 'Pengajuan Cuti Guru' }}</h2>
         <div v-if="isHarian" class="quota-badge">
           Sisa Jatah Cuti: <span>{{ leaveStore.leaveQuota }}</span> Hari
         </div>
       </div>
 
       <div class="request-card__body">
-        <div v-if="showSuccess" class="alert-success">
-          ✅ Pengajuan berhasil dikirim! Mengalihkan halaman...
+        <div v-if="isLoadingData" class="alert-info" style="text-align: center; margin-bottom: 20px;">
+          Memuat data pengajuan...
         </div>
 
-        <div v-if="leaveStore.error" class="alert-error">⚠️ Gagal: {{ leaveStore.error }}</div>
+        <div v-if="showSuccess" class="alert-success">
+          <CheckCircle class="icon-alert" :size="20" />
+          <span>Pengajuan berhasil {{ isEditMode ? 'diperbarui' : 'dikirim' }}! Mengalihkan halaman...</span>
+        </div>
 
-        <form @submit.prevent="submitForm">
+        <div v-if="leaveStore.error" class="alert-error">
+          <AlertTriangle class="icon-alert" :size="20" />
+          <span>Gagal: {{ leaveStore.error }}</span>
+        </div>
+
+        <form @submit.prevent="submitForm" v-if="!isLoadingData">
           <div class="form-group">
             <label class="form-label">Tipe Izin</label>
-
             <div class="radio-group-container">
               <label class="radio-card">
                 <input v-model="form.leaveType" type="radio" value="FULL_DAY" />
-                <div class="radio-card-content">📅 Cuti Harian (Full Day)</div>
+                <div class="radio-card-content">
+                  <Calendar :size="18" class="icon-radio" />
+                  <span>Cuti Harian (Full Day)</span>
+                </div>
               </label>
 
               <label class="radio-card">
                 <input v-model="form.leaveType" type="radio" value="PARTIAL" />
-                <div class="radio-card-content">🕒 Izin Parsial (Jam)</div>
+                <div class="radio-card-content">
+                  <Clock :size="18" class="icon-radio" />
+                  <span>Izin Parsial (Jam)</span>
+                </div>
               </label>
             </div>
           </div>
@@ -408,7 +440,7 @@ function goBack() {
           <div class="form-group">
             <label class="form-label">
               Unggah Dokumen Pendukung
-              <span v-if="isSakit" class="required-star">*</span>
+              <span v-if="!isEditMode && isSakit" class="required-star">*</span>
             </label>
             <input
               type="file"
@@ -418,9 +450,14 @@ function goBack() {
               :class="{ 'is-invalid': errors.document }"
             />
             <div v-if="errors.document" class="error-message show">
-              Dokumen pendukung wajib diunggah untuk kategori Sakit.
+              Dokumen pendukung wajib diunggah.
             </div>
-            <div class="note">Format: PDF/JPG/PNG. Maks 2MB. Wajib untuk kategori Sakit.</div>
+            <div class="note" v-if="isEditMode">
+              Kosongkan jika tidak ingin mengubah dokumen pendukung sebelumnya.
+            </div>
+            <div class="note" v-else>
+              Format: PDF/JPG/PNG. Maks 2MB. Wajib untuk kategori Sakit.
+            </div>
           </div>
 
           <div class="action-row">
@@ -437,7 +474,7 @@ function goBack() {
               class="btn-primary"
               :disabled="isFormInvalid || leaveStore.isLoading"
             >
-              {{ leaveStore.isLoading ? 'Mengirim...' : 'Ajukan Permohonan' }}
+              {{ leaveStore.isLoading ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Ajukan Permohonan') }}
             </button>
           </div>
         </form>
@@ -584,6 +621,7 @@ function goBack() {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -601,6 +639,10 @@ function goBack() {
   font-weight: 700;
 }
 
+.icon-radio {
+  color: inherit;
+}
+
 .alert-success {
   background-color: #ecfdf5;
   border: 1px solid var(--primary);
@@ -609,6 +651,9 @@ function goBack() {
   border-radius: 8px;
   margin-bottom: 24px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .alert-error {
@@ -619,6 +664,13 @@ function goBack() {
   border-radius: 8px;
   margin-bottom: 24px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon-alert {
+  flex-shrink: 0;
 }
 
 .action-row {

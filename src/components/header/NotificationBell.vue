@@ -67,12 +67,14 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useNotificationStore } from '@/stores/notifications/notification.store'
 import type { Notifications } from '@/interfaces/notifications/notification.interface'
 
 const MAX_VISIBLE = 5
 
+const router = useRouter()
 const wrapper = ref<HTMLElement | null>(null)
 const open = ref(false)
 
@@ -104,7 +106,6 @@ function getIcon(item: Notifications) {
     info: 'fa-solid fa-circle-info',
     default: 'fa-solid fa-bell',
   }
-
   return map[resolveVariant(item)]
 }
 
@@ -124,6 +125,10 @@ async function handleNotificationClick(item: Notifications) {
   if (!item.read) {
     await notificationStore.markAsRead(item.id)
   }
+  open.value = false
+  if (item.actionUrl) {
+    router.push(item.actionUrl)
+  }
 }
 
 function onWindowClick(event: MouseEvent) {
@@ -137,9 +142,7 @@ function formatRelativeTime(dateString: string) {
   const date = new Date(dateString)
   const now = new Date()
 
-  if (Number.isNaN(date.getTime())) {
-    return '-'
-  }
+  if (Number.isNaN(date.getTime())) return '-'
 
   const diffMs = now.getTime() - date.getTime()
   const diffMinutes = Math.floor(diffMs / 60_000)
@@ -162,7 +165,6 @@ function formatRelativeTime(dateString: string) {
 
 onMounted(async () => {
   window.addEventListener('click', onWindowClick)
-
   await notificationStore.getMyNotification()
   notificationStore.connectNotificationStream()
 })
@@ -189,9 +191,7 @@ onBeforeUnmount(() => {
   user-select: none;
   transition: background 0.15s;
 }
-.notification-bell:hover {
-  background: var(--bg-light);
-}
+.notification-bell:hover { background: var(--bg-light); }
 
 .notification-dot {
   position: absolute;
@@ -238,11 +238,6 @@ onBeforeUnmount(() => {
 }
 .notif-header h3 {
   margin: 0;
-  font-size: 15px;
-  color: var(--text-dark);
-}
-.notif-header h3 {
-  margin: 0;
   font-size: 14px;
   font-weight: 700;
   color: var(--text-dark);
@@ -254,9 +249,7 @@ onBeforeUnmount(() => {
   font-weight: 600;
   white-space: nowrap;
 }
-.mark-read-btn:hover {
-  text-decoration: underline;
-}
+.mark-read-btn:hover { text-decoration: underline; }
 
 /* ── Body ── */
 .notif-body {

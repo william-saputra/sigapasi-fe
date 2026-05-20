@@ -1,20 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 import VButton from '@/components/common/VButton.vue'
 import BaseModal from '@/components/common/BaseModal.vue'
+import { AlertTriangle } from 'lucide-vue-next'
 import { useClassManagementStore } from '@/stores/schedules/classManagementStore'
+import { useTimeSlotStore } from '@/stores/schedules/timeSlotStore'
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const toast = useToast()
 const store = useClassManagementStore()
-const { classes, schoolLevels, allSubjectsByLevel, selectedClass, activeTargets, loading } =
+const { classes, schoolLevels, allSubjectsByLevel, selectedClass, activeTargets, activeTargetSummary, loading } =
   storeToRefs(store)
 
+const timeSlotStore = useTimeSlotStore()
+
 // Fetch initial data
-onMounted(() => {
+onMounted(async () => {
   store.fetchClasses()
   store.fetchSchoolLevels()
+  await timeSlotStore.fetchAcademicYears()
+  await timeSlotStore.fetchSlotStructureForAll()
 })
 
 const searchQuery = ref('')
@@ -139,6 +147,24 @@ const totalHours = computed(() => {
   return activeTargets.value.reduce((total, target) => total + (Number(target.targetHours) || 0), 0)
 })
 
+  const maxCapacity = computed(() => {
+  if (!selectedClass.value?.schoolLevelId) return 0
+  
+  const levelId = selectedClass.value.schoolLevelId
+  let count = 0
+  const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+  for (const day of days) {
+    const dailySlots = timeSlotStore.schedules[day as keyof typeof timeSlotStore.schedules] || []
+    count += dailySlots.filter((s) => s.school_level_id === levelId && s.slot_type !== 'BREAK' && !s.is_locked).length
+  }
+  return count
+})
+
+const isOverCapacity = computed(() => {
+  if (!maxCapacity.value || maxCapacity.value === 0) return false
+  return totalHours.value > maxCapacity.value
+})
+
 const addSubject = () => {
   activeTargets.value.push({
     id: '',
@@ -153,32 +179,28 @@ const removeSubject = async (index: number) => {
   if (!target) return
 
   if (target.id) {
-    await store.deleteTargetForSelectedClass(target.id)
+    const success = await store.deleteTargetForSelectedClass(target.id)
+    if (success) {
+      toast.success('Target mata pelajaran berhasil dihapus.')
+    }
   } else {
     activeTargets.value.splice(index, 1)
+    toast.success('Target mata pelajaran berhasil dihapus.')
   }
 }
 
 const modalState = ref<{
   show: boolean
-  type: 'success' | 'error' | 'confirm'
+  type: 'confirm'
   title: string
   message: string
   onConfirm?: () => void
 }>({
   show: false,
-  type: 'success',
+  type: 'confirm',
   title: '',
   message: '',
 })
-
-const showSuccessModal = (message: string) => {
-  modalState.value = { show: true, type: 'success', title: 'Berhasil', message }
-}
-
-const showErrorModal = (message: string) => {
-  modalState.value = { show: true, type: 'error', title: 'Gagal', message }
-}
 
 const showConfirmModal = (title: string, message: string, onConfirm: () => void) => {
   modalState.value = { show: true, type: 'confirm', title, message, onConfirm }
@@ -192,17 +214,28 @@ const saveConfig = async () => {
   if (!selectedClass.value) return
 
   if (!classNameSuffix.value || classNameSuffix.value.trim() === '') {
-    showErrorModal('Nama Kelas tidak boleh kosong!')
+    toast.error('Nama Kelas tidak boleh kosong!')
     return
   }
 
   if (!selectedClass.value.gradeLevel) {
-    showErrorModal('Tingkat Kelas harus diisi!')
+    toast.error('Tingkat Kelas harus diisi!')
     return
   }
 
   if (selectedClass.value.gradeLevel < 1 || selectedClass.value.gradeLevel > 12) {
-    showErrorModal('Tingkat Kelas harus berada di rentang 1 - 12!')
+    toast.error('Tingkat Kelas harus berada di rentang 1 - 12!')
+    return
+  }
+
+  const hasEmptySubject = activeTargets.value.some((t) => !t.subjectId || t.subjectId === '')
+  if (hasEmptySubject) {
+    toast.error('Mohon pilih mata pelajaran pada baris yang masih kosong, atau klik ikon hapus jika tidak diperlukan.')
+    return
+  }
+
+  if (isOverCapacity.value) {
+    toast.error(`Total alokasi waktu melebihi kapasitas maksimal (${maxCapacity.value} Jam Pelajaran per Minggu).`)
     return
   }
 
@@ -216,19 +249,16 @@ const saveConfig = async () => {
 
   const success = await store.saveAllConfig(targetPayload)
   if (success) {
-    showSuccessModal('Konfigurasi berhasil disimpan!')
-  } else {
-    showErrorModal(store.error || 'Gagal menyimpan konfigurasi!')
+    toast.success('Konfigurasi berhasil disimpan!')
   }
 }
 
 const deleteClassConfirm = async () => {
   const success = await store.deleteSelectedClass()
   if (success) {
-    showSuccessModal('Kelas berhasil dihapus!')
-  } else {
-    showErrorModal(store.error || 'Gagal menghapus kelas!')
+    toast.success('Kelas berhasil dihapus!')
   }
+  closeModal()
 }
 
 const deleteClass = () => {
@@ -280,7 +310,7 @@ const deleteClass = () => {
                   d="M12 4v16m8-8H4"
                 />
               </svg>
-              Baru
+              Kelas
             </span>
           </VButton>
         </div>
@@ -392,7 +422,7 @@ const deleteClass = () => {
                 {{ selectedClass.id ? 'Edit Kelas: ' + selectedClass.name : 'Buat Kelas Baru' }}
               </h1>
               <p class="text-gray-500 text-sm mt-1">
-                Atur informasi dasar dan kebutuhan jam mengajar.
+                Atur informasi dasar dan kebutuhan jam mengajar
               </p>
             </div>
             <button
@@ -493,7 +523,7 @@ const deleteClass = () => {
               class="px-6 py-4 border-b border-gray-50 bg-gray-50/30 flex justify-between items-center"
             >
               <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider">
-                Target Mata Pelajaran
+                Daftar Mata Pelajaran
               </h3>
               <span class="bg-[#014f01]/10 text-[#014f01] py-1 px-3 rounded-full text-xs font-bold">
                 {{ activeTargets.length }} Mapel
@@ -506,7 +536,7 @@ const deleteClass = () => {
                   class="hidden md:flex items-center px-4 mb-2 text-xs font-bold text-gray-400 uppercase tracking-wider"
                 >
                   <div class="flex-1">Mata Pelajaran</div>
-                  <div class="w-48 text-center">Beban Jam / Minggu</div>
+                  <div class="w-48 text-center">Alokasi Jam Pelajaran</div>
                   <div class="w-12"></div>
                 </div>
 
@@ -652,14 +682,22 @@ const deleteClass = () => {
                   />
                 </svg>
               </div>
-              <div>
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                  Total Beban
-                </p>
-                <p class="text-2xl font-black text-gray-800 leading-none">
-                  {{ totalHours }} <span class="text-sm font-semibold text-gray-500">Jam/Mgg</span>
-                </p>
-              </div>
+            <div>
+              <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                TOTAL ALOKASI WAKTU
+              </p>
+              <p
+                class="text-2xl font-black leading-none flex items-center gap-2"
+                :class="isOverCapacity ? 'text-red-600' : 'text-gray-800'"
+              >
+                <AlertTriangle v-if="isOverCapacity" class="w-6 h-6" />
+                <span>
+                  {{ totalHours }}
+                  <template v-if="maxCapacity > 0"> / {{ maxCapacity }}</template>
+                  <span class="text-sm font-semibold text-gray-500"> Jam Pelajaran per Minggu</span>
+                </span>
+              </p>
+            </div>
             </div>
 
             <VButton
@@ -668,7 +706,7 @@ const deleteClass = () => {
               @click="saveConfig"
               class="w-full md:w-auto px-8 py-3.5 shadow-lg shadow-[#014f01]/30 rounded-xl font-bold text-sm"
             >
-              Simpan Konfigurasi
+              Simpan Perubahan
             </VButton>
           </div>
         </section>
@@ -678,33 +716,6 @@ const deleteClass = () => {
     <BaseModal :show="modalState.show" @close="closeModal">
       <template #header>
         <div
-          v-if="modalState.type === 'success'"
-          class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4"
-        >
-          <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </div>
-        <div
-          v-else-if="modalState.type === 'error'"
-          class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4"
-        >
-          <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </div>
-        <div
-          v-else-if="modalState.type === 'confirm'"
           class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-orange-100 mb-4"
         >
           <svg
@@ -732,22 +743,15 @@ const deleteClass = () => {
 
       <template #footer>
         <div class="mt-6 flex gap-3 justify-center">
-          <template v-if="modalState.type === 'confirm'">
-            <VButton variant="secondary" class="w-full justify-center" @click="closeModal"
-              >Batal</VButton
-            >
-            <VButton
-              variant="primary"
-              class="w-full justify-center !bg-red-600 hover:!bg-red-700 active:!bg-red-800"
-              @click="modalState.onConfirm"
-              >Hapus</VButton
-            >
-          </template>
-          <template v-else>
-            <VButton variant="primary" class="w-full justify-center" @click="closeModal"
-              >Tutup</VButton
-            >
-          </template>
+          <VButton variant="secondary" class="w-full justify-center" @click="closeModal"
+            >Batal</VButton
+          >
+          <VButton
+            variant="primary"
+            class="w-full justify-center !bg-red-600 hover:!bg-red-700 active:!bg-red-800"
+            @click="modalState.onConfirm"
+            >Hapus</VButton
+          >
         </div>
       </template>
     </BaseModal>
