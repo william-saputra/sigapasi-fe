@@ -38,11 +38,11 @@ const cards = computed(() => [
     show: canConfigure.value,
   },
   {
-    title: 'Master Slot Waktu',
+    title: 'Ketersediaan Mengajar',
     description:
-      'Lihat seluruh struktur slot waktu dari seluruh jenjang pendidikan dalam satu tampilan.',
+      'Atur slot waktu ketersediaan mengajarmu.',
     icon: LayoutTemplate,
-    link: '/slot-waktu',
+    link: '/ketersediaan-mengajar',
     color: 'teal',
     show: true,
   },

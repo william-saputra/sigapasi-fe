@@ -264,12 +264,12 @@ router.beforeEach(async (to, from, next) => {
       await academicSetupStore.fetchActiveSetup()
     }
 
-    if (!academicSetupStore.activeSemester) {
-      if (to.path !== '/setup-academic') {
-        // Peringatkan user atau redirect
-        return next({ path: '/setup-academic' })
-      }
-    }
+    // if (!academicSetupStore.activeSemester) {
+    //   if (to.path !== '/setup-academic') {
+    //     // Peringatkan user atau redirect
+    //     return next({ path: '/setup-academic' })
+    //   }
+    // }
   }
 
   next()

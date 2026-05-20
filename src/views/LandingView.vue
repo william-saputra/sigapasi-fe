@@ -71,27 +71,7 @@ const statsMap: Record<Role, { label: string; value: string; note: string; icon:
     },
     { label: 'Notifikasi', value: '7', note: 'Belum ditindaklanjuti', icon: 'fa-solid fa-bell' },
   ],
-  HEAD: [
-    {
-      label: 'Total Guru',
-      value: '48',
-      note: '2 cuti hari ini',
-      icon: 'fa-solid fa-chalkboard-user',
-    },
-    { label: 'Kelas Berjalan', value: '22/24', note: '2 kelas kosong', icon: 'fa-solid fa-school' },
-    {
-      label: 'Approval Cuti',
-      value: '5',
-      note: '3 butuh keputusan',
-      icon: 'fa-solid fa-file-circle-check',
-    },
-    {
-      label: 'Skor Evaluasi',
-      value: '4.2',
-      note: 'Rata-rata bulan ini',
-      icon: 'fa-solid fa-chart-line',
-    },
-  ],
+  HEAD: [],
   TEACHER: [
     { label: 'Kelas Hari Ini', value: '3', note: '1 kelas tersisa', icon: 'fa-solid fa-book-open' },
     {
@@ -163,12 +143,6 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       icon: 'fa-solid fa-rotate',
     },
     {
-      title: 'Data Guru',
-      desc: 'Lihat dan perbarui data profil guru.',
-      to: '/guru',
-      icon: 'fa-solid fa-chalkboard-user',
-    },
-    {
       title: 'Atur Reviews',
       desc: 'Kelola periode dan penugasan evaluasi 360 derajat.',
       to: '/reviews/periods',
@@ -177,10 +151,10 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
   ],
   HEAD: [
     {
-      title: 'Dashboard Kinerja',
-      desc: 'Pantau KPI dan kinerja keseluruhan sekolah.',
-      to: '/kinerja',
-      icon: 'fa-solid fa-chart-line',
+      title: 'Persetujuan Jadwal',
+      desc: 'Tinjau dan setujui jadwal pelajaran sekolah.',
+      to: '/persetujuan-jadwal',
+      icon: 'fa-solid fa-calendar-check',
     },
     {
       title: 'Approval Cuti',
@@ -197,7 +171,7 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
     {
       title: 'Jadwal Sekolah',
       desc: 'Pantau jadwal dan kehadiran kelas.',
-      to: '/jadwal',
+      to: '/ringkasan-jadwal',
       icon: 'fa-solid fa-school',
     },
   ],
@@ -219,12 +193,6 @@ const menusMap: Record<Role, { title: string; desc: string; to: string; icon: st
       desc: 'Lihat hasil evaluasi dan feedback.',
       to: '/reviews',
       icon: 'fa-solid fa-star',
-    },
-    {
-      title: 'Kelas Pengganti',
-      desc: 'Cek jadwal penggantian yang ditugaskan.',
-      to: '/assignments',
-      icon: 'fa-solid fa-person-chalkboard',
     },
   ],
 }
